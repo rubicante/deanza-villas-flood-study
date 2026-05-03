@@ -84,6 +84,11 @@
         <abstract></abstract>
       </resourceMetadata>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -107,6 +112,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="flood_plai" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -176,6 +186,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="apn_8" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -199,6 +214,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="LineString" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
 <qgis projectname="deanza-villas-flood-study" saveUser="rubicante" saveDateTime="2026-05-03T03:02:49Z" version="3.34.0">
-  <title>De Anza Villas Flood Study</title>
+  <title>De Anza Villas Flood Study — beginner version</title>
   <projectCrs>
     <spatialrefsys>
       <acronym>aea</acronym>
@@ -15,11 +15,39 @@
     </spatialrefsys>
   </projectCrs>
 
+  <ProjectViewSettings UseProjectScales="0" rotation="0">
+    <Scales/>
+    <DefaultViewExtent xmin="-1874008.2522816802" ymin="1336329.3721825283" xmax="-1872563.412025749" ymax="1337786.6024608684">
+      <spatialrefsys>
+        <acronym>aea</acronym>
+        <authid>EPSG:5070</authid>
+        <description>NAD83 / Conus Albers</description>
+        <ellipsoidacronym>GRS80</ellipsoidacronym>
+        <geographicflag>false</geographicflag>
+        <projectionacronym>aea</projectionacronym>
+        <proj4>+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs</proj4>
+        <srid>5070</srid>
+      </spatialrefsys>
+    </DefaultViewExtent>
+    <PresetFullExtent xmin="-1876176.0574498859" ymin="1334143.7296430091" xmax="-1870396.6966748699" ymax="1339972.650347175">
+      <spatialrefsys>
+        <acronym>aea</acronym>
+        <authid>EPSG:5070</authid>
+        <description>NAD83 / Conus Albers</description>
+        <ellipsoidacronym>GRS80</ellipsoidacronym>
+        <geographicflag>false</geographicflag>
+        <projectionacronym>aea</projectionacronym>
+        <proj4>+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs</proj4>
+        <srid>5070</srid>
+      </spatialrefsys>
+    </PresetFullExtent>
+  </ProjectViewSettings>
+
   <layer-tree-group name="De Anza Villas Flood Study">
-    <layer-tree-layer id="dem_filled" name="Filled DEM" checked="Qt::Checked"/>
+    <layer-tree-layer id="dem_filled" name="Filled DEM" checked="Qt::Unchecked"/>
     <layer-tree-layer id="fema_hazard" name="FEMA flood polygons" checked="Qt::Checked"/>
-    <layer-tree-layer id="context_aoi" name="8 km context AOI" checked="Qt::Checked"/>
-    <layer-tree-layer id="local_aoi" name="2 km local AOI" checked="Qt::Checked"/>
+    <layer-tree-layer id="context_aoi" name="8 km context AOI" checked="Qt::Unchecked"/>
+    <layer-tree-layer id="local_aoi" name="2 km local AOI" checked="Qt::Unchecked"/>
     <layer-tree-layer id="parcel_polygons" name="Parcel polygons" checked="Qt::Checked"/>
     <layer-tree-layer id="parcel_boundary" name="De Anza Villas boundary" checked="Qt::Checked"/>
     <layer-tree-layer id="streams_5000" name="Selected stream network (5000 cells)" checked="Qt::Checked"/>
@@ -56,6 +84,11 @@
         <abstract></abstract>
       </resourceMetadata>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -79,6 +112,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="flood_plai" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -148,6 +186,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="apn_8" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -171,6 +214,11 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <labeling type="simple">
+        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+          <substitutions/>
+        </text-style>
+      </labeling>
     </maplayer>
 
     <maplayer type="vector" geometry="LineString" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
