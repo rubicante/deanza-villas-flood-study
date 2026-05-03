@@ -73,7 +73,7 @@
       <excludeAttributesWFS/>
       <defaults></defaults>
       <previewExpression></previewExpression>
-      <layerOpacity>1</layerOpacity>
+      <layerOpacity>0.72</layerOpacity>
       <blendMode>0</blendMode>
       <resourceMetadata>
         <identifier></identifier>
@@ -85,9 +85,14 @@
       </resourceMetadata>
       <customproperties/>
       <labeling type="simple">
-        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
-          <substitutions/>
-        </text-style>
+        <settings calloutType="simple">
+          <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+            <substitutions/>
+          </text-style>
+          <text-format font="DejaVu Sans" size="10" sizeUnit="Point" color="#172554"/>
+          <placement placement="0"/>
+          <rendering obstacle="0" zIndex="0"/>
+        </settings>
       </labeling>
     </maplayer>
 
@@ -100,6 +105,7 @@
       <title>FEMA flood polygons</title>
       <abstract></abstract>
       <keywords></keywords>
+      <layerOpacity>0.68</layerOpacity>
       <srs>
         <spatialrefsys>
           <authid>EPSG:5070</authid>
@@ -112,10 +118,29 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="fill" name="0">
+      <layer class="SimpleFill" locked="0" pass="0">
+        <prop k="color" v="231,111,81,72"/>
+        <prop k="outline_color" v="166,52,52,210"/>
+        <prop k="outline_style" v="dash"/>
+        <prop k="outline_width" v="0.55"/>
+        <prop k="outline_width_unit" v="MM"/>
+        <prop k="style" v="solid"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
       <labeling type="simple">
-        <text-style fieldName="flood_plai" isExpression="0" useSubstitutions="0">
-          <substitutions/>
-        </text-style>
+        <settings calloutType="simple">
+          <text-style fieldName="flood_plai" isExpression="0" useSubstitutions="0">
+            <substitutions/>
+          </text-style>
+          <text-format font="DejaVu Sans" size="9" sizeUnit="Point" color="#7f1d1d"/>
+          <placement placement="0"/>
+          <rendering obstacle="0" zIndex="0"/>
+        </settings>
       </labeling>
     </maplayer>
 
@@ -128,6 +153,7 @@
       <title>8 km context AOI</title>
       <abstract></abstract>
       <keywords></keywords>
+      <layerOpacity>0.22</layerOpacity>
       <srs>
         <spatialrefsys>
           <authid>EPSG:5070</authid>
@@ -140,6 +166,20 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="fill" name="0">
+      <layer class="SimpleFill" locked="0" pass="0">
+        <prop k="color" v="0,0,0,0"/>
+        <prop k="outline_color" v="120,120,120,170"/>
+        <prop k="outline_style" v="dash"/>
+        <prop k="outline_width" v="0.40"/>
+        <prop k="outline_width_unit" v="MM"/>
+        <prop k="style" v="solid"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -151,6 +191,7 @@
       <title>2 km local AOI</title>
       <abstract></abstract>
       <keywords></keywords>
+      <layerOpacity>0.28</layerOpacity>
       <srs>
         <spatialrefsys>
           <authid>EPSG:5070</authid>
@@ -163,6 +204,20 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="fill" name="0">
+      <layer class="SimpleFill" locked="0" pass="0">
+        <prop k="color" v="0,0,0,0"/>
+        <prop k="outline_color" v="30,160,150,220"/>
+        <prop k="outline_style" v="dash"/>
+        <prop k="outline_width" v="0.50"/>
+        <prop k="outline_width_unit" v="MM"/>
+        <prop k="style" v="solid"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
     </maplayer>
 
     <maplayer type="vector" geometry="Polygon" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -174,6 +229,7 @@
       <title>Parcel polygons</title>
       <abstract></abstract>
       <keywords></keywords>
+      <layerOpacity>0.45</layerOpacity>
       <srs>
         <spatialrefsys>
           <authid>EPSG:5070</authid>
@@ -186,10 +242,29 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="fill" name="0">
+      <layer class="SimpleFill" locked="0" pass="0">
+        <prop k="color" v="255,244,214,38"/>
+        <prop k="outline_color" v="154,109,64,180"/>
+        <prop k="outline_style" v="solid"/>
+        <prop k="outline_width" v="0.35"/>
+        <prop k="outline_width_unit" v="MM"/>
+        <prop k="style" v="solid"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
       <labeling type="simple">
-        <text-style fieldName="apn_8" isExpression="0" useSubstitutions="0">
-          <substitutions/>
-        </text-style>
+        <settings calloutType="simple">
+          <text-style fieldName="apn_8" isExpression="0" useSubstitutions="0">
+            <substitutions/>
+          </text-style>
+          <text-format font="DejaVu Sans" size="9" sizeUnit="Point" color="#3f2a12"/>
+          <placement placement="0"/>
+          <rendering obstacle="0" zIndex="0"/>
+        </settings>
       </labeling>
     </maplayer>
 
@@ -214,10 +289,29 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="fill" name="0">
+      <layer class="SimpleFill" locked="0" pass="0">
+        <prop k="color" v="0,0,0,0"/>
+        <prop k="outline_color" v="23,37,84,255"/>
+        <prop k="outline_style" v="solid"/>
+        <prop k="outline_width" v="1.10"/>
+        <prop k="outline_width_unit" v="MM"/>
+        <prop k="style" v="solid"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
       <labeling type="simple">
-        <text-style fieldName="name" isExpression="0" useSubstitutions="0">
-          <substitutions/>
-        </text-style>
+        <settings calloutType="simple">
+          <text-style fieldName="name" isExpression="0" useSubstitutions="0">
+            <substitutions/>
+          </text-style>
+          <text-format font="DejaVu Sans" size="10" sizeUnit="Point" color="#172554"/>
+          <placement placement="0"/>
+          <rendering obstacle="0" zIndex="0"/>
+        </settings>
       </labeling>
     </maplayer>
 
@@ -242,6 +336,20 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="line" name="0">
+      <layer class="SimpleLine" locked="0" pass="0">
+        <prop k="capstyle" v="round"/>
+        <prop k="joinstyle" v="round"/>
+        <prop k="line_color" v="56,112,196,255"/>
+        <prop k="line_style" v="solid"/>
+        <prop k="line_width" v="0.45"/>
+        <prop k="line_width_unit" v="MM"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
     </maplayer>
 
     <maplayer type="vector" geometry="LineString" hasScaleBasedVisibilityFlag="0" minimumScale="0" maximumScale="1e+08" minLabelScale="0" maxLabelScale="1e+08" scaleBasedLabelVisibilityFlag="0">
@@ -265,6 +373,20 @@
         </spatialrefsys>
       </srs>
       <customproperties/>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+  <symbols>
+    <symbol alpha="1" clip_to_extent="1" type="line" name="0">
+      <layer class="SimpleLine" locked="0" pass="0">
+        <prop k="capstyle" v="round"/>
+        <prop k="joinstyle" v="round"/>
+        <prop k="line_color" v="10,66,156,255"/>
+        <prop k="line_style" v="solid"/>
+        <prop k="line_width" v="0.75"/>
+        <prop k="line_width_unit" v="MM"/>
+      </layer>
+    </symbol>
+  </symbols>
+</renderer-v2>
     </maplayer>
   </projectlayers>
 </qgis>
