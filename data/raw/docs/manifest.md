@@ -1,4 +1,4 @@
-# Phase 1 Source Document Manifest
+# Source Document Manifest
 
 ## Downloaded files
 
@@ -25,4 +25,4 @@
 
 ## Next step
 
-Use these source documents together with FEMA NFHL context to build the phase 1 summary map and memo.
+Use these source documents together with FEMA NFHL context to build the terrain context summary map and memo.

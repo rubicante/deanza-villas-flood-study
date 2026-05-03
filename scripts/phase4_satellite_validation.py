@@ -23,20 +23,20 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
-from scripts.study_config import config_path
+from scripts.study_config import deliverable_path, step_path
 from scripts.study_utils import read_vector
 
 LOCAL_AOI_PATH = config_path("paths", "local_aoi")
 PARCEL_BOUNDARY_PATH = config_path("paths", "parcel_boundary")
 FEMA_PATH = config_path("paths", "hazard_polygons")
 STREAMS_PATH = config_path("paths", "selected_streams")
-OUTDIR = config_path("outputs", "phase4_outdir")
-DOWNLOAD_DIR = config_path("outputs", "phase4_download_dir")
-REPORT_PATH = config_path("outputs", "phase4_report")
-MAP_PATH = config_path("outputs", "phase4_map")
-SUMMARY_CSV = config_path("outputs", "phase4_summary_csv")
-SUMMARY_JSON = config_path("outputs", "phase4_summary_json")
-SELECTED_JSON = config_path("outputs", "phase4_selected_json")
+OUTDIR = step_path("satellite_validation", "outdir")
+DOWNLOAD_DIR = step_path("satellite_validation", "download_dir")
+REPORT_PATH = deliverable_path("satellite_validation_report")
+MAP_PATH = deliverable_path("satellite_validation_map")
+SUMMARY_CSV = step_path("satellite_validation", "summary_csv")
+SUMMARY_JSON = step_path("satellite_validation", "summary_json")
+SELECTED_JSON = step_path("satellite_validation", "selected_json")
 
 SEARCHES = [
     {
@@ -369,7 +369,7 @@ def write_report(
     parcel: gpd.GeoDataFrame,
 ) -> None:
     lines: list[str] = []
-    lines.append("# Phase 4 Satellite/Event Validation")
+    lines.append("# Satellite / Event Validation")
     lines.append("")
     lines.append("Goal: check whether OPERA satellite surface-water products show positive evidence of wetting or flow concentration over the De Anza Villas AOI and parcel.")
     lines.append("")
@@ -441,7 +441,7 @@ def write_report(
     lines.append(f"- Candidate CSV: {SUMMARY_CSV.relative_to(ROOT)}")
     lines.append(f"- Candidate JSON: {SUMMARY_JSON.relative_to(ROOT)}")
     lines.append(f"- Selected JSON: {SELECTED_JSON.relative_to(ROOT)}")
-    lines.append("- Download cache: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/")
+    lines.append(f"- Download cache: `{DOWNLOAD_DIR.relative_to(ROOT)}`")
     lines.append("")
     lines.append("Note: Sentinel-1 GRD fallback was not needed because OPERA DSWx coverage was sufficient for a positive wetting check in this pass.")
     REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")

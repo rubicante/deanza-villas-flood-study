@@ -1,6 +1,6 @@
-# Phase 3 Fan Activity / Evidence Synthesis
+# Fan Activity / Evidence Synthesis
 
-This phase synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.
+This step synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.
 
 ## Source-document signal
 
@@ -38,8 +38,8 @@ Interpretation:
 
 ## Outputs
 
-- Phase 3 report: `outputs/reports/phase3_fan_synthesis.md`
-- Phase 3 map: `outputs/maps/phase3_fan_synthesis.html`
+- Fan synthesis report: `outputs/reports/phase3_fan_synthesis.md`
+- Fan synthesis map: `outputs/maps/phase3_fan_synthesis.html`
 - Terrain stats CSV: `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv`
 - Terrain stats JSON: `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.json`
 - Roughness magnitude raster: `data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif`

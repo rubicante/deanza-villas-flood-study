@@ -3,7 +3,7 @@
 Status: drafted
 Date: 2026-05-02
 
-This plan converts the completed phase 1–4 analysis into one canonical final report with embedded static figures and links to the existing interactive HTML maps.
+This plan converts the completed terrain, parcel, fan-synthesis, and satellite-validation analysis into one canonical final report with embedded static figures and links to the existing interactive HTML maps.
 
 ## Working thesis
 

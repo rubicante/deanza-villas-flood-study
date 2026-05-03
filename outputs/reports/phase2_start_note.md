@@ -1,4 +1,4 @@
-# Phase 2 Start Note
+# Start Note
 
 Prototype terrain processing has started for the Borrego Valley context area.
 

@@ -23,7 +23,7 @@ def derive_terrain(dem_path: Path, outdir: Path) -> dict[str, Path]:
     d8 = outdir / f"{stem}_d8_flow_accum.tif"
 
     # Prototype conditioning: fill sinks so we can validate the terrain workflow.
-    # Later phases can swap in breaching and sensitivity testing.
+    # Later steps can swap in breaching and sensitivity testing.
     wbt.fill_depressions(str(dem_path), str(filled), fix_flats=True)
     wbt.slope(str(filled), str(slope), units="degrees")
     wbt.d8_flow_accumulation(str(filled), str(d8), out_type="cells")

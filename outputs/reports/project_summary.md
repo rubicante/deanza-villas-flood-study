@@ -135,7 +135,7 @@ The key point is that this is evidence of wetting, not a perfect absence test. S
 
 ## 5) What was produced in each phase, and why
 
-### Phase 2 — wash / channel extraction
+### Wash extraction — wash / channel extraction
 
 Produced:
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv`
@@ -149,7 +149,7 @@ Why:
 - to pick a network that matched mapped flood context without being needlessly noisy,
 - to create a clean vector network for later parcel and fan-context work.
 
-### Phase 3 — parcel overlay
+### Parcel overlay — parcel overlay
 
 Produced:
 - `data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv`
@@ -163,7 +163,7 @@ Why:
 - to quantify how much of the selected network lies in the complex boundary and mapped hazard polygons,
 - to preserve a parcel-specific stream layer for later inspection.
 
-### Phase 3 — fan synthesis
+### Fan synthesis — fan synthesis
 
 Produced:
 - `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv`
@@ -178,7 +178,7 @@ Why:
 - to show that the parcel sits in a rugged, active fan drainage fabric,
 - to support the interpretation with simple raster statistics rather than an invented flood model.
 
-### Phase 4 — satellite validation
+### Satellite validation — satellite validation
 
 Produced:
 - `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv`

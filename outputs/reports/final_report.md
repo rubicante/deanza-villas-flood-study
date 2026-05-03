@@ -49,10 +49,10 @@ The terrain and mapped flood context indicate an active fan surface with concent
 
 ### 1) Official flood-context framing
 
-The phase 1 review established the relevant flood setting: Borrego Springs is an alluvial-fan environment where flood water can concentrate in washes, redistribute across the fan, and change course. That context matters because apparent channels are not equivalent to stable, bank-confined streams.
+The terrain context review established the relevant flood setting: Borrego Springs is an alluvial-fan environment where flood water can concentrate in washes, redistribute across the fan, and change course. That context matters because apparent channels are not equivalent to stable, bank-confined streams.
 
 The existing interactive context map remains available here:
-- [Phase 1 context map](../maps/phase1_context.html)
+- [Terrain context map](../maps/phase1_context.html)
 
 ### 2) 1 m terrain reconstruction and wash extraction
 
@@ -66,7 +66,7 @@ Key threshold-sweep result:
 The 5000-cell network remains strongly associated with hazard polygons while being materially simpler than the lower-threshold alternatives.
 
 The existing interactive drainage map remains available here:
-- [Phase 2 channel context map](../maps/phase2_channel_context.html)
+- [Wash extraction context map](../maps/phase2_channel_context.html)
 
 ### 3) Exact parcel overlay
 
@@ -80,7 +80,7 @@ Using the canonical parcel boundary, the selected network intersects the De Anza
 That is not a fringe or isolated signal. It is a direct parcel-scale overlap between the authoritative property geometry and the extracted drainage fabric.
 
 The existing interactive parcel overlay map remains available here:
-- [Phase 3 parcel context map](../maps/phase3_parcel_context.html)
+- [Parcel overlay map](../maps/phase3_parcel_context.html)
 
 ### 4) Fan-activity synthesis
 
@@ -97,7 +97,7 @@ At the selected 5000-cell threshold:
 The correct reading is active fan drainage fabric with channel mobility, not a fixed, benign channel system.
 
 The existing interactive fan synthesis map remains available here:
-- [Phase 3 fan synthesis map](../maps/phase3_fan_synthesis.html)
+- [Fan synthesis map](../maps/phase3_fan_synthesis.html)
 
 ### 5) Satellite validation
 
@@ -109,7 +109,7 @@ The selected HLS scene dated 2023-08-22 provides positive local wetting evidence
 The later S1 scene dated 2024-08-25 does not show local AOI water pixels. That is useful as a weak absence check, but it does not override the positive HLS wetting signal.
 
 The existing interactive validation map remains available here:
-- [Phase 4 satellite validation map](../maps/phase4_satellite_validation.html)
+- [Satellite validation map](../maps/phase4_satellite_validation.html)
 
 ## Figures
 

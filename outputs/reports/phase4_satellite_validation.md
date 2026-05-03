@@ -1,4 +1,4 @@
-# Phase 4 Satellite/Event Validation
+# Satellite / Event Validation
 
 Goal: check whether OPERA satellite surface-water products show positive evidence of wetting or flow concentration over the De Anza Villas AOI and parcel.
 

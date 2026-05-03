@@ -8,16 +8,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.study_config import TARGET_CRS, config_path, config_value, manifest_value
+from scripts.study_config import config_path, config_value, deliverable_path, step_path
 
 PYTHON = ROOT / ".venv/bin/python"
 if not PYTHON.exists():
     PYTHON = Path(sys.executable)
 
-PHASE_COMMANDS = [
+STEP_COMMANDS = [
     [
         str(PYTHON),
-        "scripts/phase2_extract_washes.py",
+        str(config_path("steps", "wash_extraction", "script")),
         "--dem",
         str(config_path("paths", "dem_filled")),
         "--accum",
@@ -31,15 +31,15 @@ PHASE_COMMANDS = [
         "--context-aoi",
         str(config_path("paths", "context_aoi")),
         "--outdir",
-        str(config_path("outputs", "phase2_outdir")),
-        "--report-dir",
-        str(ROOT / "outputs/reports"),
+        str(step_path("wash_extraction", "outdir")),
+        "--report",
+        str(deliverable_path("wash_extraction_report")),
         "--thresholds",
         *[str(x) for x in config_value("study", "default_thresholds")],
     ],
     [
         str(PYTHON),
-        "scripts/phase3_parcel_overlay.py",
+        str(config_path("steps", "parcel_overlay", "script")),
         "--streams",
         str(config_path("paths", "selected_streams")),
         "--parcel-boundary",
@@ -53,15 +53,15 @@ PHASE_COMMANDS = [
         "--context-aoi",
         str(config_path("paths", "context_aoi")),
         "--outdir",
-        str(config_path("outputs", "phase3_parcel_outdir")),
-        "--report-dir",
-        str(ROOT / "outputs/reports"),
+        str(step_path("parcel_overlay", "outdir")),
+        "--report",
+        str(deliverable_path("parcel_overlay_report")),
         "--map-path",
-        str(config_path("outputs", "phase3_parcel_map")),
+        str(deliverable_path("parcel_overlay_map")),
     ],
     [
         str(PYTHON),
-        "scripts/phase3_fan_synthesis.py",
+        str(config_path("steps", "fan_synthesis", "script")),
         "--dem",
         str(config_path("paths", "dem_filled")),
         "--slope",
@@ -79,15 +79,15 @@ PHASE_COMMANDS = [
         "--hazard",
         str(config_path("paths", "hazard_polygons")),
         "--outdir",
-        str(config_path("outputs", "phase3_fan_outdir")),
+        str(step_path("fan_synthesis", "outdir")),
         "--report",
-        str(config_path("outputs", "phase3_fan_report")),
+        str(deliverable_path("fan_synthesis_report")),
         "--map-path",
-        str(config_path("outputs", "phase3_fan_map")),
+        str(deliverable_path("fan_synthesis_map")),
     ],
     [
         str(PYTHON),
-        "scripts/phase4_satellite_validation.py",
+        str(config_path("steps", "satellite_validation", "script")),
     ],
 ]
 
@@ -110,18 +110,18 @@ def verify_inputs() -> None:
         raise FileNotFoundError("Missing required inputs:\n- " + "\n- ".join(missing))
 
 
-def run_phase(command: list[str]) -> None:
-    print(f"[pipeline_v2] running: {' '.join(command)}")
+def run_step(command: list[str]) -> None:
+    print(f"[pipeline] running: {' '.join(command)}")
     subprocess.run(command, check=True, cwd=ROOT)
 
 
 def main() -> None:
-    print(f"[pipeline_v2] canonical CRS: {TARGET_CRS}")
-    print(f"[pipeline_v2] final report: {manifest_value('canonical_deliverables', 'final_report')}")
+    print(f"[pipeline] canonical CRS: {config_value('study', 'crs')}")
+    print(f"[pipeline] final report: {deliverable_path('final_report')}")
     verify_inputs()
-    for command in PHASE_COMMANDS:
-        run_phase(command)
-    print("[pipeline_v2] complete")
+    for command in STEP_COMMANDS:
+        run_step(command)
+    print("[pipeline] complete")
 
 
 if __name__ == "__main__":

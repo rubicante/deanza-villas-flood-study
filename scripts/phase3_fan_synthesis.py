@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
-from scripts.study_config import TARGET_CRS, config_path
+from scripts.study_config import TARGET_CRS, deliverable_path, step_path
 from scripts.study_utils import ensure_crs
 
 DEFAULT_DEM = config_path("paths", "dem_filled")
@@ -31,9 +31,9 @@ DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
 DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
 DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
 DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
-DEFAULT_OUTDIR = config_path("outputs", "phase3_fan_outdir")
-DEFAULT_REPORT = config_path("outputs", "phase3_fan_report")
-DEFAULT_MAP = config_path("outputs", "phase3_fan_map")
+DEFAULT_OUTDIR = step_path("fan_synthesis", "outdir")
+DEFAULT_REPORT = deliverable_path("fan_synthesis_report")
+DEFAULT_MAP = deliverable_path("fan_synthesis_map")
 DEFAULT_Rough_MAG = config_path("paths", "roughness_magnitude")
 DEFAULT_Rough_SCALE = config_path("paths", "roughness_scale")
 
@@ -159,9 +159,9 @@ def write_report(
     context_stats = stats_df[stats_df["area_name"] == "context_aoi"].iloc[0]
 
     lines: list[str] = []
-    lines.append("# Phase 3 Fan Activity / Evidence Synthesis")
+    lines.append("# Fan Activity / Evidence Synthesis")
     lines.append("")
-    lines.append("This phase synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.")
+    lines.append("This step synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.")
     lines.append("")
     lines.append("## Source-document signal")
     lines.append("")
@@ -196,8 +196,8 @@ def write_report(
     lines.append("")
     lines.append("## Outputs")
     lines.append("")
-    lines.append(f"- Phase 3 report: `{report_path.relative_to(ROOT)}`")
-    lines.append(f"- Phase 3 map: `outputs/maps/phase3_fan_synthesis.html`")
+    lines.append(f"- Fan synthesis report: `{report_path.relative_to(ROOT)}`")
+    lines.append(f"- Fan synthesis map: `{map_path.relative_to(ROOT)}`")
     lines.append(f"- Terrain stats CSV: `{stats_csv.relative_to(ROOT)}`")
     lines.append(f"- Terrain stats JSON: `{stats_json.relative_to(ROOT)}`")
     lines.append(f"- Roughness magnitude raster: `{rough_mag_path.relative_to(ROOT)}`")
@@ -329,7 +329,7 @@ def main() -> None:
         stats_df=stats_df,
         stats_csv=stats_csv,
         stats_json=stats_json,
-        parcel_overlay_csv=ROOT / "data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv",
+        parcel_overlay_csv=step_path("parcel_overlay", "metrics_csv"),
         parcel_boundary_path=args.parcel_boundary,
         parcel_polygons_path=args.parcel_polygons,
         local_aoi_path=args.local_aoi,

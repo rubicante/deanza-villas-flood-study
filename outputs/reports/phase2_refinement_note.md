@@ -1,4 +1,4 @@
-# Phase 2 Refinement Note
+# Refinement Note
 
 Analysis-grade local terrain data has now been fetched and conditioned for the DeAnza Villas context area.
 

@@ -39,4 +39,4 @@ Use:
 - keep .env private
 
 Summary:
-- Phase 2–4 are complete. De Anza Villas is on active concentrated-flow / alluvial-fan terrain, and the terrain/parcel/satellite evidence is consistent.
+- The terrain, parcel, and satellite validation steps are complete. De Anza Villas is on active concentrated-flow / alluvial-fan terrain, and the evidence is consistent.

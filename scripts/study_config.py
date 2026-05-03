@@ -46,6 +46,14 @@ def config_value(*keys: str) -> Any:
     return node
 
 
+def step_path(*keys: str) -> Path:
+    return config_path("steps", *keys)
+
+
+def step_value(*keys: str) -> Any:
+    return config_value("steps", *keys)
+
+
 def manifest_path(*keys: str) -> Path:
     node: Any = study_manifest()
     for key in keys:
@@ -58,6 +66,10 @@ def manifest_value(*keys: str) -> Any:
     for key in keys:
         node = node[key]
     return node
+
+
+def deliverable_path(*keys: str) -> Path:
+    return manifest_path("canonical_deliverables", *keys)
 
 
 def relative_to_root(path: Path) -> str:

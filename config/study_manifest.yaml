@@ -6,13 +6,14 @@ canonical_layers:
   local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
   context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
 canonical_deliverables:
-  phase2_report: outputs/reports/phase2_wash_extraction.md
-  phase3_parcel_report: outputs/reports/phase3_parcel_overlay.md
-  phase3_fan_report: outputs/reports/phase3_fan_synthesis.md
-  phase4_report: outputs/reports/phase4_satellite_validation.md
-  phase3_parcel_map: outputs/maps/phase3_parcel_context.html
-  phase3_fan_map: outputs/maps/phase3_fan_synthesis.html
-  phase4_map: outputs/maps/phase4_satellite_validation.html
+  terrain_context_map: outputs/maps/phase1_context.html
+  wash_extraction_report: outputs/reports/phase2_wash_extraction.md
+  parcel_overlay_report: outputs/reports/phase3_parcel_overlay.md
+  parcel_overlay_map: outputs/maps/phase3_parcel_context.html
+  fan_synthesis_report: outputs/reports/phase3_fan_synthesis.md
+  fan_synthesis_map: outputs/maps/phase3_fan_synthesis.html
+  satellite_validation_report: outputs/reports/phase4_satellite_validation.md
+  satellite_validation_map: outputs/maps/phase4_satellite_validation.html
   final_report: outputs/reports/final_report.md
   qgis_main: deanza-villas-flood-study.qgs
   qgis_beginner: deanza-villas-flood-study-beginner.qgs

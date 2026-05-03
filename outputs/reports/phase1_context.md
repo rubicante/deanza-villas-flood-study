@@ -1,8 +1,8 @@
-# Phase 1 Context Memo: Borrego Springs Flood Hazard Context
+# Terrain Context Memo: Borrego Springs Flood Hazard Context
 
-## What phase 1 established
+## What the terrain context established
 
-Phase 1 now has a usable regulatory/context layer stack for Borrego Springs:
+The terrain context layer stack now includes the following layers for Borrego Springs:
 
 - Broad study AOI defined: `data/vectors/aoi_borrego_springs.geojson`
 - Public source docs archived in `data/raw/docs/`
@@ -39,7 +39,7 @@ AOI query results for the broad Borrego Springs study rectangle:
 
 Interpretation:
 - The county/FEMA-derived layer confirms that the Borrego Springs study area sits within a substantial mapped flood hazard environment.
-- The presence of floodway polygons within the AOI is important because it means phase 1 is not just about broad SFHA context; there are also mapped flow-conveyance constraints to account for later.
+- The presence of floodway polygons within the AOI is important because it means this context is not just about broad SFHA coverage; there are also mapped flow-conveyance constraints to account for later.
 
 ## Key document takeaways
 
@@ -62,9 +62,9 @@ Interpretation:
 - Terrain-derived parcel statistics from lidar / DEM analysis
 - Any final property-specific conclusions
 
-## Phase 1 status
+## Current status
 
-Phase 1 is sufficient to move on to parcel-aware work once the parcel polygon is available.
+The terrain context is sufficient to move on to parcel-aware work once the parcel polygon is available.
 
 Recommended next step:
 - bring in the parcel boundary and run parcel-scale overlay metrics against the existing AOI and flood hazard context.

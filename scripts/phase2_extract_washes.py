@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
-from scripts.study_config import DEFAULT_THRESHOLDS, TARGET_CRS, config_path
+from scripts.study_config import DEFAULT_THRESHOLDS, TARGET_CRS, deliverable_path, step_path
 from scripts.study_utils import safe_write_json
 
 DEFAULT_DEM = config_path("paths", "dem_filled")
@@ -24,8 +24,8 @@ DEFAULT_POINTER = config_path("paths", "d8_pointer")
 DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
 DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
 DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
-DEFAULT_OUTDIR = config_path("outputs", "phase2_outdir")
-DEFAULT_REPORT_DIR = ROOT / "outputs/reports"
+DEFAULT_OUTDIR = step_path("wash_extraction", "outdir")
+DEFAULT_REPORT = deliverable_path("wash_extraction_report")
 
 
 @dataclass
@@ -163,7 +163,7 @@ def write_report(
     context_aoi = gpd.read_file(context_aoi_path).to_crs(TARGET_CRS)
 
     lines = []
-    lines.append("# Phase 2 Wash / Channel Extraction")
+    lines.append("# Wash / Channel Extraction")
     lines.append("")
     lines.append("This step extracted candidate channel/wash networks from the 1 m DeAnza Villas D8 flow-accumulation surface and compared them against the mapped county/FEMA-derived flood-hazard polygons and the local fan context AOIs.")
     lines.append("")
@@ -234,7 +234,7 @@ def main() -> None:
     parser.add_argument("--local-aoi", type=Path, default=DEFAULT_LOCAL_AOI)
     parser.add_argument("--context-aoi", type=Path, default=DEFAULT_CONTEXT_AOI)
     parser.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR)
-    parser.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--thresholds", type=int, nargs="*", default=DEFAULT_THRESHOLDS)
     args = parser.parse_args()
 
@@ -249,9 +249,8 @@ def main() -> None:
         thresholds=args.thresholds,
     )
 
-    report_dir = args.report_dir.resolve()
-    report_dir.mkdir(parents=True, exist_ok=True)
-    report_path = report_dir / "phase2_wash_extraction.md"
+    report_path = args.report.resolve()
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     write_report(
         df=df,
         report_path=report_path,

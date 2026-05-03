@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
-from scripts.study_config import TARGET_CRS, config_path
+from scripts.study_config import TARGET_CRS, deliverable_path, step_path
 from scripts.study_utils import ensure_crs
 
 DEFAULT_STREAMS = config_path("paths", "selected_streams")
@@ -24,9 +24,9 @@ DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
 DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
 DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
 DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
-DEFAULT_OUTDIR = config_path("outputs", "phase3_parcel_outdir")
-DEFAULT_REPORT_DIR = ROOT / "outputs/reports"
-DEFAULT_MAP_PATH = config_path("outputs", "phase3_parcel_map")
+DEFAULT_OUTDIR = step_path("parcel_overlay", "outdir")
+DEFAULT_REPORT = deliverable_path("parcel_overlay_report")
+DEFAULT_MAP_PATH = deliverable_path("parcel_overlay_map")
 
 
 @dataclass
@@ -172,7 +172,7 @@ def write_report(
 
     row = df.iloc[0]
     lines: list[str] = []
-    lines.append("# Phase 3 Parcel Overlay")
+    lines.append("# Parcel Overlay")
     lines.append("")
     lines.append("This step wired the authoritative De Anza Villas parcel geometry into the selected 5000-cell channel network and re-ran the overlay metrics against the hazard and fan-context layers.")
     lines.append("")
@@ -221,7 +221,7 @@ def write_report(
         lines.append(f"- Parcel-only stream GPKG: `{clipped_gpkg.relative_to(ROOT)}`")
     lines.append(f"- Canonical parcel boundary: `{parcel_boundary_path.relative_to(ROOT)}`")
     lines.append(f"- Parcel polygon set: `{parcel_polygons_path.relative_to(ROOT)}`")
-    lines.append(f"- Canonical parcel overlay map: `outputs/maps/phase3_parcel_context.html`")
+    lines.append(f"- Canonical parcel overlay map: `{map_path.relative_to(ROOT)}`")
 
     report_path.write_text("\n".join(lines) + "\n")
 
@@ -299,7 +299,7 @@ def main() -> None:
     parser.add_argument("--local-aoi", type=Path, default=DEFAULT_LOCAL_AOI)
     parser.add_argument("--context-aoi", type=Path, default=DEFAULT_CONTEXT_AOI)
     parser.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR)
-    parser.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP_PATH)
     args = parser.parse_args()
 
@@ -313,9 +313,8 @@ def main() -> None:
         outdir=args.outdir,
     )
 
-    report_dir = args.report_dir.resolve()
-    report_dir.mkdir(parents=True, exist_ok=True)
-    report_path = report_dir / "phase3_parcel_overlay.md"
+    report_path = args.report.resolve()
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     write_report(
         df=df,
         report_path=report_path,

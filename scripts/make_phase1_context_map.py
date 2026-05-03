@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import geopandas as gpd
 import folium
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.study_config import deliverable_path, step_path
+
 AOI_PATH = ROOT / "data/vectors/aoi_borrego_springs.geojson"
 FLOOD_PATH = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-OUT_PATH = ROOT / "outputs/maps/phase1_context.html"
+OUT_PATH = step_path("terrain_context", "map")
 
 
 def main() -> None:
@@ -48,7 +54,7 @@ def main() -> None:
 
     folium.GeoJson(
         aoi,
-        name="Phase 1 AOI",
+        name="Terrain context AOI",
         style_function=style_aoi,
         tooltip=folium.GeoJsonTooltip(fields=["name", "status"], aliases=["Name", "Status"]),
     ).add_to(m)

@@ -170,14 +170,14 @@ be short-lived and missed by satellite overpass timing.
 
 ## Analysis Approach
 
-### Phase 1 — Reproduce official/regulatory context
+### Terrain context — reproduce the official/regulatory setting
   1. Fetch FEMA NFHL AO polygons and attributes for Borrego Springs.
   2. Download and archive the Boyle 1989 flood hazard PDF and County guideline PDF.
   3. Attempt to locate source GIS for Boyle contours and DRI active/inactive polygons.
   4. If source GIS is unavailable, georeference/digitize PDF figures with explicit
      uncertainty classes: high confidence near control points, lower confidence elsewhere.
 
-### Phase 2 — Terrain reconstruction and parcel-scale analysis (whitebox-tools + rasterio)
+### Wash extraction and parcel-scale terrain analysis (whitebox-tools + rasterio)
 These tools do the core quantitative work: translate lidar into reproducible terrain
 metrics that can be compared directly against mapped regulatory hazards and parcel
 conditions.
@@ -190,7 +190,7 @@ conditions.
   7. Distance and vertical separation from mapped washes, extracted channels, and AO
      depth/velocity contours.
 
-### Phase 3 — Fan activity and evidence synthesis
+### Fan activity and evidence synthesis
 Use FEMA's three-stage alluvial fan framing:
   - Stage 1: confirm fan landform, composition, morphology, and mountain-front location.
   - Stage 2: compare active/inactive geomorphic evidence from DRI, aerial imagery,
@@ -198,7 +198,7 @@ Use FEMA's three-stage alluvial fan framing:
   - Stage 3: characterize 1-percent-annual-chance severity using FEMA/Boyle/NFHL data;
     do not independently claim calibrated depth or velocity.
 
-### Phase 4 — Satellite/event validation
+### Satellite/event validation
 Use GeoAgent, earthaccess, pystac-client, or direct PO.DAAC STAC calls to retrieve:
   - OPERA DSWx-HLS: optical surface water, cloud-limited, 30 m.
   - OPERA DSWx-S1: SAR surface water/inundated vegetation, 30 m.
@@ -207,7 +207,7 @@ Use GeoAgent, earthaccess, pystac-client, or direct PO.DAAC STAC calls to retrie
 Validation target: look for positive evidence of historical wetting or flow concentration.
 Absence of DSWx water is weak evidence because of temporal sampling limitations.
 
-Progress note: phase 4 validation has been completed; see outputs/reports/phase4_satellite_validation.md and outputs/maps/phase4_satellite_validation.html.
+Progress note: satellite validation has been completed; see outputs/reports/phase4_satellite_validation.md and outputs/maps/phase4_satellite_validation.html.
 
 ### Visualization (leafmap)
 Interactive HTML maps overlaying: terrain indices, channel extraction, HAND, Boyle 1989

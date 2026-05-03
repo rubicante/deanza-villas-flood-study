@@ -15,26 +15,38 @@ paths:
   parcel_boundary: data/vectors/deanza_villas_complex_boundary.geojson
   parcel_polygons: data/vectors/deanza_villas_parcel_polygons.geojson
   selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
-outputs:
-  phase2_outdir: data/processed/terrain/deanza_villas_2km_1m/channels
-  phase2_report: outputs/reports/phase2_wash_extraction.md
-  phase2_summary_csv: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv
-  phase2_summary_json: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.json
-  phase3_parcel_outdir: data/processed/terrain/deanza_villas_2km_1m/parcels
-  phase3_parcel_report: outputs/reports/phase3_parcel_overlay.md
-  phase3_parcel_map: outputs/maps/phase3_parcel_context.html
-  phase3_parcel_metrics_csv: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv
-  phase3_parcel_metrics_json: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.json
-  phase3_parcel_clip_gpkg: data/processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg
-  phase3_fan_outdir: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis
-  phase3_fan_report: outputs/reports/phase3_fan_synthesis.md
-  phase3_fan_map: outputs/maps/phase3_fan_synthesis.html
-  phase3_fan_stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv
-  phase3_fan_stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.json
-  phase4_outdir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4
-  phase4_download_dir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads
-  phase4_report: outputs/reports/phase4_satellite_validation.md
-  phase4_map: outputs/maps/phase4_satellite_validation.html
-  phase4_summary_csv: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv
-  phase4_summary_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.json
-  phase4_selected_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json
+steps:
+  terrain_context:
+    script: scripts/make_phase1_context_map.py
+    map: outputs/maps/phase1_context.html
+  wash_extraction:
+    script: scripts/phase2_extract_washes.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m/channels
+    report: outputs/reports/phase2_wash_extraction.md
+    summary_csv: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv
+    summary_json: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.json
+    selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
+  parcel_overlay:
+    script: scripts/phase3_parcel_overlay.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m/parcels
+    report: outputs/reports/phase3_parcel_overlay.md
+    map: outputs/maps/phase3_parcel_context.html
+    metrics_csv: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv
+    metrics_json: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.json
+    clip_gpkg: data/processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg
+  fan_synthesis:
+    script: scripts/phase3_fan_synthesis.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis
+    report: outputs/reports/phase3_fan_synthesis.md
+    map: outputs/maps/phase3_fan_synthesis.html
+    stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv
+    stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.json
+  satellite_validation:
+    script: scripts/phase4_satellite_validation.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4
+    download_dir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads
+    report: outputs/reports/phase4_satellite_validation.md
+    map: outputs/maps/phase4_satellite_validation.html
+    summary_csv: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv
+    summary_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.json
+    selected_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json

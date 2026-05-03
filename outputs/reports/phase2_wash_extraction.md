@@ -1,4 +1,4 @@
-# Phase 2 Wash / Channel Extraction
+# Wash / Channel Extraction
 
 This step extracted candidate channel/wash networks from the 1 m DeAnza Villas D8 flow-accumulation surface and compared them against the mapped county/FEMA-derived flood-hazard polygons and the local fan context AOIs.
 

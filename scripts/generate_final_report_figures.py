@@ -19,6 +19,7 @@ from rasterio.mask import mask
 from rasterio.plot import plotting_extent
 from rasterio.transform import Affine
 from matplotlib.colors import LightSource
+from scripts.study_config import config_path, deliverable_path, step_path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,10 +35,10 @@ STREAMS = DATA / "processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_
 PARCHAN = DATA / "processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg"
 DEM = DATA / "processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_filled.tif"
 SLOPE = DATA / "processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_slope_degrees.tif"
-FAN_STATS = DATA / "processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv"
-SWEEP = DATA / "processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv"
-VAL_JSON = DATA / "processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json"
-BROWSE = DATA / "processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0_BROWSE.png"
+FAN_STATS = step_path("fan_synthesis", "stats_csv")
+SWEEP = step_path("wash_extraction", "summary_csv")
+VAL_JSON = step_path("satellite_validation", "selected_json")
+BROWSE = None  # resolved from selected validation metadata
 
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
@@ -281,7 +282,7 @@ def fig4_terrain_comparison():
     axes[2].set_ylabel("degrees")
     axes[3].set_ylabel("m")
     fig.suptitle("Figure 4. Parcel vs local AOI vs context terrain comparison", y=0.98, fontsize=13)
-    fig.text(0.5, 0.01, "All values are taken from phase 3 fan-synthesis outputs at the selected 5000-cell stream threshold.", ha="center", fontsize=9)
+    fig.text(0.5, 0.01, "All values are taken from fan-synthesis outputs at the selected 5000-cell stream threshold.", ha="center", fontsize=9)
     fig.tight_layout(rect=[0.03, 0.04, 1, 0.96])
     save(fig, FIGDIR / "figure4_terrain_comparison.png")
 
@@ -291,7 +292,7 @@ def fig5_satellite_validation():
     meta = json.loads(VAL_JSON.read_text())
     if isinstance(meta, list):
         meta = meta[0]
-    img = Image.open(BROWSE).convert("RGB")
+    img = Image.open(Path(meta["browse_path"])).convert("RGB")
     fig = plt.figure(figsize=(11.2, 6.8))
     gs = fig.add_gridspec(1, 2, width_ratios=[1.45, 1.0], wspace=0.05)
     ax_img = fig.add_subplot(gs[0, 0])
