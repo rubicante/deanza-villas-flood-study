@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "name": "aoi_borrego_springs",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Borrego Springs phase 1 study AOI",
+        "description": "Broad context AOI for Borrego Springs alluvial fan flood study; not parcel-specific.",
+        "status": "approximate",
+        "source": "Derived from public Borrego Valley coverage bounds and project context"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-117.5185, 32.5915],
+          [-116.0752, 32.5915],
+          [-116.0752, 33.5073],
+          [-117.5185, 33.5073],
+          [-117.5185, 32.5915]
+        ]]
+      }
+    }
+  ]
+}

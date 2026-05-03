@@ -1,0 +1,32 @@
+[
+  {
+    "collection": "OPERA DSWx-HLS",
+    "native_id": "OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0",
+    "date": "2023-08-22",
+    "local_water_pixels": 12,
+    "parcel_water_pixels": 1,
+    "water_pixels": 73516,
+    "local_water_share": 0.009237875288683603,
+    "parcel_water_share": 0.01098901098901099,
+    "overall_water_share": 0.008248750614314022,
+    "data_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0_B01_WTR.tif",
+    "browse_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-public/OPERA_L3_DSWX-HLS_PROVISIONAL_V1/OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0_BROWSE.png",
+    "local_path": "/home/hermes/workspace/borrego-flood-study/data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0_B01_WTR.tif",
+    "browse_path": "/home/hermes/workspace/borrego-flood-study/data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-HLS_T11SNS_20230822T182232Z_20230824T134308Z_L8_30_v1.0_BROWSE.png"
+  },
+  {
+    "collection": "OPERA DSWx-S1",
+    "native_id": "OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0",
+    "date": "2024-08-25",
+    "local_water_pixels": 0,
+    "parcel_water_pixels": 0,
+    "water_pixels": 327509,
+    "local_water_share": 0.0,
+    "parcel_water_share": 0.0,
+    "overall_water_share": 0.024452294846404238,
+    "data_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-protected/OPERA_L3_DSWX-S1_V1/OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0_B01_WTR.tif",
+    "browse_url": "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-public/OPERA_L3_DSWX-S1_V1/OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0_BROWSE.png",
+    "local_path": "/home/hermes/workspace/borrego-flood-study/data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0_B01_WTR.tif",
+    "browse_path": "/home/hermes/workspace/borrego-flood-study/data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0_BROWSE.png"
+  }
+]

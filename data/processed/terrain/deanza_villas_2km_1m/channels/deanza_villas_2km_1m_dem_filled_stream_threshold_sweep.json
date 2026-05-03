@@ -1,0 +1,38 @@
+[
+  {
+    "threshold_cells": 1000,
+    "segments": 1712,
+    "total_length_m": 76026.91593661907,
+    "hazard_length_m": 32992.22447708699,
+    "hazard_share": 0.43395452874336543,
+    "local_aoi_share": 0.57557072387395,
+    "context_share": 1.0,
+    "mean_segment_length_m": 44.40824529008123,
+    "max_segment_length_m": 386.56941329722554,
+    "segments_touching_hazard": 757
+  },
+  {
+    "threshold_cells": 2500,
+    "segments": 694,
+    "total_length_m": 45873.184795116365,
+    "hazard_length_m": 20783.519598230665,
+    "hazard_share": 0.4530646758243667,
+    "local_aoi_share": 0.5971633066001563,
+    "context_share": 1.0,
+    "mean_segment_length_m": 66.09968990650773,
+    "max_segment_length_m": 412.6285706059047,
+    "segments_touching_hazard": 352
+  },
+  {
+    "threshold_cells": 5000,
+    "segments": 359,
+    "total_length_m": 31848.432512341642,
+    "hazard_length_m": 15057.132478960777,
+    "hazard_share": 0.472774679668331,
+    "local_aoi_share": 0.6187737946459444,
+    "context_share": 1.0,
+    "mean_segment_length_m": 88.71429669175944,
+    "max_segment_length_m": 634.6714536909791,
+    "segments_touching_hazard": 194
+  }
+]

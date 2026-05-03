@@ -1,0 +1,9 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+cache/
+data/raw/opera_test/
+data/**/_tmp*
+outputs/**/_tmp*
