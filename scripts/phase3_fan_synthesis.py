@@ -20,22 +20,22 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
+from scripts.study_config import TARGET_CRS, config_path
+from scripts.study_utils import ensure_crs
 
-TARGET_CRS = "EPSG:5070"
-
-DEFAULT_DEM = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_filled.tif"
-DEFAULT_SLOPE = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_slope_degrees.tif"
-DEFAULT_STREAMS = ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg"
-DEFAULT_PARCEL_BOUNDARY = ROOT / "data/vectors/deanza_villas_complex_boundary.geojson"
-DEFAULT_PARCEL_POLYGONS = ROOT / "data/vectors/deanza_villas_parcel_polygons.geojson"
-DEFAULT_LOCAL_AOI = ROOT / "data/vectors/deanza_villas_2km_aoi.geojson"
-DEFAULT_CONTEXT_AOI = ROOT / "data/vectors/borrego_valley_context_8km_aoi.geojson"
-DEFAULT_HAZARD = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-DEFAULT_OUTDIR = ROOT / "data/processed/terrain/deanza_villas_2km_1m/fan_synthesis"
-DEFAULT_REPORT = ROOT / "outputs/reports/phase3_fan_synthesis.md"
-DEFAULT_MAP = ROOT / "outputs/maps/phase3_fan_synthesis.html"
-DEFAULT_Rough_MAG = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif"
-DEFAULT_Rough_SCALE = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif"
+DEFAULT_DEM = config_path("paths", "dem_filled")
+DEFAULT_SLOPE = config_path("paths", "slope_degrees")
+DEFAULT_STREAMS = config_path("paths", "selected_streams")
+DEFAULT_PARCEL_BOUNDARY = config_path("paths", "parcel_boundary")
+DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
+DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
+DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
+DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
+DEFAULT_OUTDIR = config_path("outputs", "phase3_fan_outdir")
+DEFAULT_REPORT = config_path("outputs", "phase3_fan_report")
+DEFAULT_MAP = config_path("outputs", "phase3_fan_map")
+DEFAULT_Rough_MAG = config_path("paths", "roughness_magnitude")
+DEFAULT_Rough_SCALE = config_path("paths", "roughness_scale")
 
 
 @dataclass
@@ -62,14 +62,8 @@ class AreaStats:
     stream_density_m_per_km2: float
 
 
-def _ensure_crs(gdf: gpd.GeoDataFrame, crs: str = TARGET_CRS) -> gpd.GeoDataFrame:
-    if gdf.crs is None:
-        gdf = gdf.set_crs(4326)
-    return gdf.to_crs(crs)
-
-
 def _read_geom(path: Path) -> gpd.GeoDataFrame:
-    return _ensure_crs(gpd.read_file(path))
+    return ensure_crs(gpd.read_file(path))
 
 
 def _raster_stats(path: Path, geom) -> dict[str, float | int]:
@@ -232,12 +226,12 @@ def write_map(
     context_aoi_path: Path,
     hazard_path: Path,
 ) -> None:
-    streams = _ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
-    parcel_boundary = _ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
-    parcel_polygons = _ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
-    local_aoi = _ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
-    context_aoi = _ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
-    hazard = _ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
+    streams = ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
+    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
+    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
+    local_aoi = ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
+    context_aoi = ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
+    hazard = ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
 
     center = parcel_boundary.geometry.iloc[0].centroid
     m = folium.Map(location=[center.y, center.x], zoom_start=15, tiles=None)
@@ -309,10 +303,10 @@ def main() -> None:
     rough_scale = DEFAULT_Rough_SCALE
     ensure_roughness(args.dem, rough_mag, rough_scale)
 
-    streams = _ensure_crs(gpd.read_file(args.streams))
-    parcel = _ensure_crs(gpd.read_file(args.parcel_boundary)).geometry.iloc[0]
-    local_aoi = _ensure_crs(gpd.read_file(args.local_aoi)).geometry.iloc[0]
-    context_aoi = _ensure_crs(gpd.read_file(args.context_aoi)).geometry.iloc[0]
+    streams = ensure_crs(gpd.read_file(args.streams))
+    parcel = ensure_crs(gpd.read_file(args.parcel_boundary)).geometry.iloc[0]
+    local_aoi = ensure_crs(gpd.read_file(args.local_aoi)).geometry.iloc[0]
+    context_aoi = ensure_crs(gpd.read_file(args.context_aoi)).geometry.iloc[0]
 
     stats = [
         asdict(build_area_stats("parcel", parcel, args.dem, args.slope, rough_mag, streams)),

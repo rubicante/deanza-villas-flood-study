@@ -47,4 +47,3 @@ These are terrain-derived candidate channels/washes, not a regulated FEMA map re
 - Threshold sweep CSV: `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv`
 - Threshold sweep JSON: `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.json`
 - Selected channel network GPKG: `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg`
-- Canonical overlay map: `outputs/maps/phase2_channel_context.html`

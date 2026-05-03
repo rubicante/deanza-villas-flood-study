@@ -34,7 +34,7 @@ Selected scenes:
   browse file: /home/hermes/workspace/borrego-flood-study/data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/OPERA_L3_DSWx-S1_T11SNS_20240825T134510Z_20251107T082429Z_S1A_30_v1.0_BROWSE.png
 
 Interpretation:
-- DSWx-HLS provides positive local evidence: the best scene (2023-08-22) detected 12 water/inundation pixels inside the 2 km AOI and 1 pixel inside the parcel boundary.
+- DSWx-HLS provides positive local evidence: the best scene (2023-08-22) detected 12 water/inundation pixels inside the 2 km AOI and 1 pixels inside the parcel boundary.
 - DSWx-S1 covered the study area, but the searched scenes did not flag local-AOI water pixels. The S1 footprint still showed broader-valley water detections, so the absence at the parcel is weak evidence only.
 - Overall: the satellite record provides positive evidence of wetting in the valley and at least one HLS local detection near the study area; lack of S1 parcel pixels is not evidence of no flooding because the product sampling is sparse and scene timing is limited.
 

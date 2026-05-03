@@ -15,18 +15,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
+from scripts.study_config import TARGET_CRS, config_path
+from scripts.study_utils import ensure_crs
 
-TARGET_CRS = "EPSG:5070"
-
-DEFAULT_STREAMS = ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg"
-DEFAULT_PARCEL_BOUNDARY = ROOT / "data/vectors/deanza_villas_complex_boundary.geojson"
-DEFAULT_PARCEL_POLYGONS = ROOT / "data/vectors/deanza_villas_parcel_polygons.geojson"
-DEFAULT_HAZARD = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-DEFAULT_LOCAL_AOI = ROOT / "data/vectors/deanza_villas_2km_aoi.geojson"
-DEFAULT_CONTEXT_AOI = ROOT / "data/vectors/borrego_valley_context_8km_aoi.geojson"
-DEFAULT_OUTDIR = ROOT / "data/processed/terrain/deanza_villas_2km_1m/parcels"
+DEFAULT_STREAMS = config_path("paths", "selected_streams")
+DEFAULT_PARCEL_BOUNDARY = config_path("paths", "parcel_boundary")
+DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
+DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
+DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
+DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
+DEFAULT_OUTDIR = config_path("outputs", "phase3_parcel_outdir")
 DEFAULT_REPORT_DIR = ROOT / "outputs/reports"
-DEFAULT_MAP_PATH = ROOT / "outputs/maps/phase3_parcel_context.html"
+DEFAULT_MAP_PATH = config_path("outputs", "phase3_parcel_map")
 
 
 @dataclass
@@ -44,12 +44,6 @@ class OverlayStats:
     segments_touching_parcel: int
     segments_touching_hazard: int
     segments_touching_both: int
-
-
-def _ensure_crs(gdf: gpd.GeoDataFrame, crs: str = TARGET_CRS) -> gpd.GeoDataFrame:
-    if gdf.crs is None:
-        gdf = gdf.set_crs(4326)
-    return gdf.to_crs(crs)
 
 
 def _style_boundary(_feature):
@@ -87,12 +81,12 @@ def compute_overlay_metrics(
 ) -> tuple[pd.DataFrame, Path, Path, Path | None]:
     load_env()
 
-    streams = _ensure_crs(gpd.read_file(streams_path))
-    parcel_boundary = _ensure_crs(gpd.read_file(parcel_boundary_path))
-    parcel_polygons = _ensure_crs(gpd.read_file(parcel_polygons_path))
-    hazard = _ensure_crs(gpd.read_file(hazard_path))
-    local_aoi = _ensure_crs(gpd.read_file(local_aoi_path))
-    context_aoi = _ensure_crs(gpd.read_file(context_aoi_path))
+    streams = ensure_crs(gpd.read_file(streams_path))
+    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path))
+    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path))
+    hazard = ensure_crs(gpd.read_file(hazard_path))
+    local_aoi = ensure_crs(gpd.read_file(local_aoi_path))
+    context_aoi = ensure_crs(gpd.read_file(context_aoi_path))
 
     parcel_union = parcel_boundary.geometry.union_all()
     hazard_union = hazard.geometry.union_all()
@@ -170,11 +164,11 @@ def write_report(
     metrics_json: Path,
     clipped_gpkg: Path | None,
 ) -> None:
-    parcel_boundary = _ensure_crs(gpd.read_file(parcel_boundary_path))
-    parcel_polygons = _ensure_crs(gpd.read_file(parcel_polygons_path))
-    hazard = _ensure_crs(gpd.read_file(hazard_path))
-    local_aoi = _ensure_crs(gpd.read_file(local_aoi_path))
-    context_aoi = _ensure_crs(gpd.read_file(context_aoi_path))
+    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path))
+    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path))
+    hazard = ensure_crs(gpd.read_file(hazard_path))
+    local_aoi = ensure_crs(gpd.read_file(local_aoi_path))
+    context_aoi = ensure_crs(gpd.read_file(context_aoi_path))
 
     row = df.iloc[0]
     lines: list[str] = []
@@ -241,12 +235,12 @@ def write_map(
     local_aoi_path: Path,
     context_aoi_path: Path,
 ) -> None:
-    streams = _ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
-    parcel_boundary = _ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
-    parcel_polygons = _ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
-    hazard = _ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
-    local_aoi = _ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
-    context_aoi = _ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
+    streams = ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
+    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
+    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
+    hazard = ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
+    local_aoi = ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
+    context_aoi = ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
 
     center = parcel_boundary.geometry.iloc[0].centroid
     m = folium.Map(location=[center.y, center.x], zoom_start=16, tiles="CartoDB positron")

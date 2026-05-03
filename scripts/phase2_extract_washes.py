@@ -15,17 +15,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
+from scripts.study_config import DEFAULT_THRESHOLDS, TARGET_CRS, config_path
+from scripts.study_utils import safe_write_json
 
-DEFAULT_DEM = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_filled.tif"
-DEFAULT_ACCUM = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_d8_flow_accum.tif"
-DEFAULT_POINTER = ROOT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_d8_pointer.tif"
-DEFAULT_HAZARD = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-DEFAULT_LOCAL_AOI = ROOT / "data/vectors/deanza_villas_2km_aoi.geojson"
-DEFAULT_CONTEXT_AOI = ROOT / "data/vectors/borrego_valley_context_8km_aoi.geojson"
-DEFAULT_OUTDIR = ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels"
+DEFAULT_DEM = config_path("paths", "dem_filled")
+DEFAULT_ACCUM = config_path("paths", "d8_flow_accum")
+DEFAULT_POINTER = config_path("paths", "d8_pointer")
+DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
+DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
+DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
+DEFAULT_OUTDIR = config_path("outputs", "phase2_outdir")
 DEFAULT_REPORT_DIR = ROOT / "outputs/reports"
-DEFAULT_THRESHOLDS = [1000, 2500, 5000]
-TARGET_CRS = "EPSG:5070"
 
 
 @dataclass
@@ -145,7 +145,7 @@ def derive_streams(
     df.to_csv(summary_csv, index=False)
 
     summary_json = outdir / f"{dem_path.stem}_stream_threshold_sweep.json"
-    summary_json.write_text(json.dumps(df.to_dict(orient="records"), indent=2))
+    safe_write_json(df.to_dict(orient="records"), summary_json)
 
     return df, summary_csv, selected_gpkg
 

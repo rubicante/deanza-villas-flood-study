@@ -23,18 +23,20 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
+from scripts.study_config import config_path
+from scripts.study_utils import read_vector
 
-LOCAL_AOI_PATH = ROOT / "data/vectors/deanza_villas_2km_aoi.geojson"
-PARCEL_BOUNDARY_PATH = ROOT / "data/vectors/deanza_villas_complex_boundary.geojson"
-FEMA_PATH = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-STREAMS_PATH = ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg"
-OUTDIR = ROOT / "data/processed/terrain/deanza_villas_2km_1m/validation_phase4"
-DOWNLOAD_DIR = OUTDIR / "downloads"
-REPORT_PATH = ROOT / "outputs/reports/phase4_satellite_validation.md"
-MAP_PATH = ROOT / "outputs/maps/phase4_satellite_validation.html"
-SUMMARY_CSV = OUTDIR / "phase4_satellite_validation_candidates.csv"
-SUMMARY_JSON = OUTDIR / "phase4_satellite_validation_candidates.json"
-SELECTED_JSON = OUTDIR / "phase4_satellite_validation_selected.json"
+LOCAL_AOI_PATH = config_path("paths", "local_aoi")
+PARCEL_BOUNDARY_PATH = config_path("paths", "parcel_boundary")
+FEMA_PATH = config_path("paths", "hazard_polygons")
+STREAMS_PATH = config_path("paths", "selected_streams")
+OUTDIR = config_path("outputs", "phase4_outdir")
+DOWNLOAD_DIR = config_path("outputs", "phase4_download_dir")
+REPORT_PATH = config_path("outputs", "phase4_report")
+MAP_PATH = config_path("outputs", "phase4_map")
+SUMMARY_CSV = config_path("outputs", "phase4_summary_csv")
+SUMMARY_JSON = config_path("outputs", "phase4_summary_json")
+SELECTED_JSON = config_path("outputs", "phase4_selected_json")
 
 SEARCHES = [
     {
@@ -96,10 +98,7 @@ class SelectedScene:
 
 
 def load_geoms(path: Path) -> gpd.GeoDataFrame:
-    gdf = gpd.read_file(path)
-    if gdf.crs is None:
-        gdf = gdf.set_crs(4326)
-    return gdf.to_crs(4326)
+    return read_vector(path, crs="EPSG:4326")
 
 
 def geometry_from_item(item: dict) -> dict:

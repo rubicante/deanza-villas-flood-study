@@ -1,0 +1,18 @@
+canonical_layers:
+  dissolved_parcel_boundary: data/vectors/deanza_villas_complex_boundary.geojson
+  parcel_polygons: data/vectors/deanza_villas_parcel_polygons.geojson
+  selected_stream_network: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
+  mapped_hazard_polygons: data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson
+  local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
+  context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
+canonical_deliverables:
+  phase2_report: outputs/reports/phase2_wash_extraction.md
+  phase3_parcel_report: outputs/reports/phase3_parcel_overlay.md
+  phase3_fan_report: outputs/reports/phase3_fan_synthesis.md
+  phase4_report: outputs/reports/phase4_satellite_validation.md
+  phase3_parcel_map: outputs/maps/phase3_parcel_context.html
+  phase3_fan_map: outputs/maps/phase3_fan_synthesis.html
+  phase4_map: outputs/maps/phase4_satellite_validation.html
+  final_report: outputs/reports/final_report.md
+  qgis_main: deanza-villas-flood-study.qgs
+  qgis_beginner: deanza-villas-flood-study-beginner.qgs
