@@ -195,13 +195,12 @@ Why:
 
 ## 6) QGIS project deliverables
 
-Two QGIS project files were created and refined:
+A single QGIS project file was created and refined:
 - `deanza-villas-flood-study.qgs`
-- `deanza-villas-flood-study-beginner.qgs`
 
-Why they exist:
+Why it exists:
 - to make the study layers easy to open in a desktop GIS,
-- to give a beginner-friendly starting view instead of a blank canvas,
+- to provide a beginner-friendly starting view instead of a blank canvas,
 - to keep the canonical project focused on the study layers with sensible defaults.
 
 High-level QGIS changes:
@@ -252,9 +251,8 @@ Canonical report and maps:
 - `outputs/maps/fan_synthesis.html`
 - `outputs/maps/satellite_validation.html`
 
-QGIS projects:
+QGIS project:
 - `deanza-villas-flood-study.qgs`
-- `deanza-villas-flood-study-beginner.qgs`
 
 Core study data:
 - `data/vectors/deanza_villas_complex_boundary.geojson`

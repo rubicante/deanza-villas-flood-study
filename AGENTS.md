@@ -26,7 +26,6 @@ Use a TODO file when there are pending changes that should be queued before exec
 Recommended conventions:
 - `TODO.md` = queued or pending work for the current effort
 - `DEVLOG.md` = what actually happened, with short timestamped notes
-- `CHANGELOG.md` = public release/history notes, if the project uses one
 
 Operating rules:
 - Put requested future work into `TODO.md` as a checklist or ordered backlog.

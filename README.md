@@ -230,16 +230,19 @@ FEMA NFHL AO zones, OPERA surface water detections, parcel boundaries from SanGI
 
 ---
 
-## Repository Structure (planned)
+## Repository Structure
 
     borrego-flood-study/
     ├── README.md               -- this file
+    ├── AGENTS.md               -- agent entry point
+    ├── DEVLOG.md               -- rolling development log
+    ├── TODO.md                 -- queued work backlog
+    ├── config/                 -- study.yaml, study_manifest.yaml
     ├── data/
     │   ├── raw/                -- downloaded DEMs, FIRM panels, source PDFs
     │   ├── processed/          -- clipped/reprojected rasters, derived products
     │   └── vectors/            -- AOI boundary, parcel, fan polygon layers
-    ├── notebooks/              -- Jupyter notebooks for interactive analysis
-    ├── scripts/                -- standalone Python scripts for each analysis step
+    ├── scripts/                -- pipeline orchestrator and workflow scripts
     └── outputs/
         ├── maps/               -- exported leafmap HTML files
         └── reports/            -- summary tables, risk assessments
