@@ -232,7 +232,7 @@ FEMA NFHL AO zones, OPERA surface water detections, parcel boundaries from SanGI
 
 ## Repository Structure
 
-    borrego-flood-study/
+    deanza-villas-flood-study/
     ├── README.md               -- this file
     ├── AGENTS.md               -- agent entry point
     ├── DEVLOG.md               -- rolling development log

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Generate the canonical final-report figure set for the Borrego Springs flood study.
+"""Generate the canonical final-report figure set for the De Anza Villas flood study.
 
 Outputs are written to outputs/figures/final_report/.
 """

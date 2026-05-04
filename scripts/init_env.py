@@ -1,4 +1,4 @@
-"""Minimal project bootstrap for Borrego flood study.
+"""Minimal project bootstrap for De Anza Villas flood study.
 
 Loads the project-local .env file into os.environ.
 No external dependencies.
