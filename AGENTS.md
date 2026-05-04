@@ -32,7 +32,7 @@ Operating rules:
 - Put requested future work into `TODO.md` as a checklist or ordered backlog.
 - Re-read `TODO.md` before starting a new round of work so queued items stay in view.
 - When the user asks for the same work again, use `TODO.md` to reconcile what is already queued instead of duplicating tasks.
-- As work progresses, move items to in_progress/completed and record material outcomes in `DEVLOG.md`.
+- Mark items `in_progress` while working on them. When done, remove them from `TODO.md` entirely — `DEVLOG.md` is the record of what was completed and when.
 - Treat one-off migration or cleanup plans as temporary; retire them when the work is done.
 
 ## Where to look for the main artifacts
@@ -49,8 +49,7 @@ Operating rules:
 - `outputs/reports/` — narrative reports and one-off logs/plans
 - `outputs/maps/` — HTML maps
 - `data/processed/terrain/` — derived rasters and vectors
-- `deanza-villas-flood-study.qgs` — main QGIS project
-- `deanza-villas-flood-study-beginner.qgs` — beginner-friendly QGIS project
+- `deanza-villas-flood-study.qgs` — QGIS project (beginner-friendly default view)
 
 ## Current project status
 The v2 cleanup and end-to-end rerun completed successfully. Use the rolling dev log for new progress notes.

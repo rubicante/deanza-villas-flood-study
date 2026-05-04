@@ -14,8 +14,8 @@ Guidance:
 - 2026-05-03 17:52 UTC: Created `config/study.yaml`, `config/study_manifest.yaml`, `scripts/study_config.py`, `scripts/study_utils.py`, and `scripts/run_pipeline_v2.py` to centralize canonical paths and orchestration.
 - 2026-05-03 17:52 UTC: Refactored the workflow scripts to import the shared config/helpers instead of repeating hardcoded study paths.
 - 2026-05-03 17:52 UTC: Reran the v2 pipeline successfully in the project virtualenv; the canonical reports and HTML maps were regenerated.
-- 2026-05-03 21:26 UTC: Refactored the pipeline to use neutral workflow step names and shared config/manifest mappings instead of direct `numbered workflow coupling; updated the main reports and validation docs to use neutral language, with remaining numbered labels limited to legacy filenames and preserved historical references.
 - 2026-05-03 17:59 UTC: Retired the temporary v2 plan after moving its historical status notes into `DEVLOG.md`.
+- 2026-05-03 21:26 UTC: Refactored the pipeline to use neutral workflow step names and shared config/manifest mappings instead of direct numbered workflow coupling; updated the main reports and validation docs to use neutral language, with remaining numbered labels limited to legacy filenames and preserved historical references.
 
 ## Log
 
@@ -27,3 +27,4 @@ Guidance:
 - 2026-05-04 15:37 UTC: Consolidated the version-1 phase development notes into `outputs/reports/v1_development_summary.md`, preserving only the salient terrain, parcel, fan, and validation decisions.
 - 2026-05-04 16:22 UTC: Renamed the workflow scripts, maps, and processed outputs to neutral filenames; updated the configs and current reports to use neutral labels; verified repo searches only keep historical numbered references in the preserved version-1 log.
 - 2026-05-04 17:13 UTC: Simplified the repo entry-point docs around `README.md`, `AGENTS.md`, `TODO.md`, `DEVLOG.md`, and `outputs/reports/final_report.md`; retired `outputs/reports/final_report_plan.md`, trimmed redundant startup links, and verified the remaining supporting/history docs are intentionally labeled.
+- 2026-05-04 13:30 UTC: Repository onboarding audit. Removed stale `deanza-villas-flood-study-beginner.qgs` references from AGENTS.md and study_manifest.yaml (file was consolidated into the single .qgs). Merged manifest keys `qgis_main`/`qgis_beginner` into `qgis`. Updated TODO workflow: items are removed when done instead of archived as completed (DEVLOG is the completion record). Fixed DEVLOG timestamp ordering. Cleaned TODO.md to empty backlog.

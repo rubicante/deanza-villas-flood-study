@@ -15,5 +15,4 @@ canonical_deliverables:
   satellite_validation_report: outputs/reports/satellite_validation.md
   satellite_validation_map: outputs/maps/satellite_validation.html
   final_report: outputs/reports/final_report.md
-  qgis_main: deanza-villas-flood-study.qgs
-  qgis_beginner: deanza-villas-flood-study-beginner.qgs
+  qgis: deanza-villas-flood-study.qgs
