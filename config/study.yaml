@@ -8,8 +8,13 @@ paths:
   d8_pointer: data/processed/terrain/deanza_villas_2km_1m_dem_d8_pointer.tif
   dinf_flow_accum: data/processed/terrain/deanza_villas_2km_1m_dem_dinf_flow_accum.tif
   slope_degrees: data/processed/terrain/deanza_villas_2km_1m_dem_slope_degrees.tif
+  profile_curvature: data/processed/terrain/deanza_villas_2km_1m_dem_profile_curvature.tif
+  tpi: data/processed/terrain/deanza_villas_2km_1m_dem_tpi.tif
+  tpi_scale: data/processed/terrain/deanza_villas_2km_1m_dem_tpi_scale.tif
+  curvature_tpi_stats: data/processed/terrain/deanza_villas_2km_1m/curvature_tpi_stats.json
   roughness_magnitude: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif
   roughness_scale: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif
+  dem_hand: data/processed/terrain/deanza_villas_2km_1m_dem_hand.tif
   hazard_polygons: data/raw/fema/nfhl_borrego_valley.geojson
   local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
   context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
@@ -40,6 +45,18 @@ steps:
     outdir: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis
     stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.csv
     stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.json
+  curvature_tpi:
+    script: scripts/curvature_tpi.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m
+    profile_curvature: data/processed/terrain/deanza_villas_2km_1m_dem_profile_curvature.tif
+    tpi: data/processed/terrain/deanza_villas_2km_1m_dem_tpi.tif
+    tpi_scale: data/processed/terrain/deanza_villas_2km_1m_dem_tpi_scale.tif
+    stats_json: data/processed/terrain/deanza_villas_2km_1m/curvature_tpi_stats.json
+  hand:
+    script: scripts/hand.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m
+    raster: data/processed/terrain/deanza_villas_2km_1m_dem_hand.tif
+    stats_json: data/processed/terrain/deanza_villas_2km_1m/hand_stats.json
   satellite_validation:
     script: scripts/satellite_validation.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/satellite_validation

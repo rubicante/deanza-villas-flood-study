@@ -19,6 +19,7 @@ STEPS = [
     "scripts.extract_washes",
     "scripts.parcel_overlay",
     "scripts.fan_synthesis",
+    "scripts.hand",
     "scripts.satellite_validation",
 ]
 
@@ -29,7 +30,7 @@ RENDER_STEPS = [
 ]
 
 # Paths that are generated during the pipeline run, not pre-existing inputs.
-_GENERATED_PATHS = {"d8_pointer", "dinf_flow_accum"}
+_GENERATED_PATHS = {"d8_pointer", "dinf_flow_accum", "dem_hand"}
 
 
 def verify_inputs() -> None:

@@ -1,0 +1,57 @@
+{
+  "inputs": {
+    "dem_filled": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_filled.tif",
+    "local_aoi": "/home/hermes/workspace/deanza-villas-flood-study/data/vectors/deanza_villas_2km_aoi.geojson",
+    "parcel_boundary": "/home/hermes/workspace/deanza-villas-flood-study/data/vectors/deanza_villas_complex_boundary.geojson"
+  },
+  "outputs": {
+    "profile_curvature": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_profile_curvature.tif",
+    "tpi": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_tpi.tif",
+    "tpi_scale": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_tpi_scale.tif",
+    "stats_json": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m/curvature_tpi_stats.json"
+  },
+  "tpi_method": "max_elevation_deviation",
+  "tpi_parameters": {
+    "min_scale": 1,
+    "max_scale": 25,
+    "step": 5
+  },
+  "zones": [
+    {
+      "zone": "local_aoi",
+      "valid_cells": 1165697,
+      "min": -0.4747944176197052,
+      "mean": -0.0010550787533172095,
+      "max": 0.5510987639427185,
+      "metric": "profile_curvature",
+      "raster": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_profile_curvature.tif"
+    },
+    {
+      "zone": "parcel",
+      "valid_cells": 80359,
+      "min": -0.35862961411476135,
+      "mean": -0.0010082179231113873,
+      "max": 0.3314160108566284,
+      "metric": "profile_curvature",
+      "raster": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_profile_curvature.tif"
+    },
+    {
+      "zone": "local_aoi",
+      "valid_cells": 1165697,
+      "min": -38.83615493774414,
+      "mean": -0.010967629421951964,
+      "max": 92.25200653076172,
+      "metric": "tpi",
+      "raster": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_tpi.tif"
+    },
+    {
+      "zone": "parcel",
+      "valid_cells": 80359,
+      "min": -38.83615493774414,
+      "mean": 0.0776485695996172,
+      "max": 92.25200653076172,
+      "metric": "tpi",
+      "raster": "/home/hermes/workspace/deanza-villas-flood-study/data/processed/terrain/deanza_villas_2km_1m_dem_tpi.tif"
+    }
+  ]
+}
