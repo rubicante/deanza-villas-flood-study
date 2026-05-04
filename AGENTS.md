@@ -5,17 +5,17 @@ This file is the fast entry point for agents working in this repository.
 Read this first, then use the linked project docs below to orient yourself quickly.
 
 ## What this repo is
-This is the Borrego Springs / De Anza Villas flood study. The work is geospatial, terrain-driven, and centered on canonical parcel boundaries, canonical output paths, and reproducible phase scripts.
+This is the Borrego Springs / De Anza Villas flood study. The work is geospatial, terrain-driven, and centered on canonical parcel boundaries, canonical output paths, and reproducible workflow scripts.
 
 ## Read first
-1. `README.md` — broad project overview and main links
-2. `outputs/reports/project_summary.md` — concise project summary and file map
+1. `README.md` — broad project overview and canonical deliverables
+2. `TODO.md` — queued work for the current effort
 3. `DEVLOG.md` — rolling active development log for ongoing work
 
 ## Canonical working conventions
 - Prefer canonical paths from `config/study.yaml` and `config/study_manifest.yaml`.
 - Keep one canonical file per deliverable when possible.
-- Do not reintroduce repeated hardcoded paths into phase scripts.
+- Do not reintroduce repeated hardcoded paths into workflow scripts.
 - Preserve exact parcel boundaries when available; do not replace them with approximate footprints.
 - Keep report/map outputs stable so links do not churn.
 - If the active work changes something material, append a short timestamped note to `DEVLOG.md`.
@@ -43,6 +43,9 @@ Operating rules:
 - `scripts/run_pipeline_v2.py` — v2 orchestrator
 - `DEVLOG.md` — rolling development log
 - `TODO.md` — active backlog for queued work, if present
+- `outputs/reports/final_report.md` — canonical final narrative
+- `outputs/reports/project_summary.md` — supporting summary and file map
+- `outputs/reports/v1_development_summary.md` — historical background only
 - `outputs/reports/` — narrative reports and one-off logs/plans
 - `outputs/maps/` — HTML maps
 - `data/processed/terrain/` — derived rasters and vectors

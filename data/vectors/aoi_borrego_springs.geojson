@@ -5,7 +5,7 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "Borrego Springs phase 1 study AOI",
+        "name": "Borrego Springs terrain context AOI",
         "description": "Broad context AOI for Borrego Springs alluvial fan flood study; not parcel-specific.",
         "status": "approximate",
         "source": "Derived from public Borrego Valley coverage bounds and project context"

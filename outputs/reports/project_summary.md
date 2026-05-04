@@ -1,4 +1,4 @@
-# Borrego Springs Flood Study — project summary
+# Borrego Springs Flood Study — supporting project summary and file map
 
 ## 1) What this project was for
 
@@ -14,7 +14,7 @@ Why this mattered:
 1. Project purpose and scope
 2. Data sources and file formats
 3. High-level methods and calculations
-4. What each phase produced and why
+4. What each workflow step produced and why
 5. QGIS project deliverables
 6. Key outputs and file locations
 7. Limits and interpretation boundaries
@@ -106,7 +106,7 @@ This was done to avoid using a rough hand-drawn footprint when an authoritative 
 
 ### 4.4 Fan-activity synthesis
 
-The fan synthesis phase combined three things:
+The fan synthesis step combined three things:
 - terrain shape from the lidar-derived DEM,
 - extracted wash/channel texture from the flow-routing work,
 - the official/regulatory fan context from Boyle, DRI, and county/FEMA materials.
@@ -133,7 +133,7 @@ For each search window:
 
 The key point is that this is evidence of wetting, not a perfect absence test. Sparse overpasses mean a null result does not prove there was no flood.
 
-## 5) What was produced in each phase, and why
+## 5) What was produced in each workflow step, and why
 
 ### Wash extraction — wash / channel extraction
 
@@ -141,8 +141,8 @@ Produced:
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv`
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.json`
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg`
-- `outputs/reports/phase2_wash_extraction.md`
-- `outputs/maps/phase2_channel_context.html`
+- `outputs/reports/wash_extraction.md`
+- `outputs/maps/wash_extraction.html`
 
 Why:
 - to test multiple channel extraction thresholds,
@@ -152,11 +152,11 @@ Why:
 ### Parcel overlay — parcel overlay
 
 Produced:
-- `data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.json`
+- `data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.json`
 - `data/processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg`
-- `outputs/reports/phase3_parcel_overlay.md`
-- `outputs/maps/phase3_parcel_context.html`
+- `outputs/reports/parcel_overlay.md`
+- `outputs/maps/parcel_overlay.html`
 
 Why:
 - to attach the analysis to the actual parcel boundary,
@@ -166,12 +166,12 @@ Why:
 ### Fan synthesis — fan synthesis
 
 Produced:
-- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.json`
+- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.json`
 - `data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif`
 - `data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif`
-- `outputs/reports/phase3_fan_synthesis.md`
-- `outputs/maps/phase3_fan_synthesis.html`
+- `outputs/reports/fan_synthesis.md`
+- `outputs/maps/fan_synthesis.html`
 
 Why:
 - to summarize parcel vs. local AOI vs. fan-context terrain character,
@@ -181,12 +181,12 @@ Why:
 ### Satellite validation — satellite validation
 
 Produced:
-- `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.json`
-- `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json`
-- downloaded OPERA scene files in `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads/`
-- `outputs/reports/phase4_satellite_validation.md`
-- `outputs/maps/phase4_satellite_validation.html`
+- `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_candidates.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_candidates.json`
+- `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_selected.json`
+- downloaded OPERA scene files in `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/downloads/`
+- `outputs/reports/satellite_validation.md`
+- `outputs/maps/satellite_validation.html`
 
 Why:
 - to check whether satellite products showed positive wetting evidence over the study area,
@@ -213,7 +213,7 @@ High-level QGIS changes:
 
 ## 7) How the geometry and statistics were calculated, at a glance
 
-The main pattern across the phases was consistent:
+The main pattern across the workflow steps was consistent:
 1. read vectors or rasters from disk,
 2. reproject to EPSG:5070,
 3. condition the DEM and derive routing rasters,
@@ -236,7 +236,7 @@ This project does not claim a new regulatory flood study. It does claim somethin
 - the parcel sits on active alluvial-fan terrain,
 - the extracted wash/network signal aligns with mapped flood hazard context,
 - the parcel-boundary overlay remains substantial after using the authoritative boundary,
-- the satellite record adds positive wetting evidence in at least one phase-4 search window.
+- the satellite record adds positive wetting evidence in at least one satellite-validation search window.
 
 What it does not do:
 - it does not invent calibrated depth outputs,
@@ -247,10 +247,10 @@ What it does not do:
 
 Canonical report and maps:
 - `outputs/reports/final_report.md`
-- `outputs/maps/phase2_channel_context.html`
-- `outputs/maps/phase3_parcel_context.html`
-- `outputs/maps/phase3_fan_synthesis.html`
-- `outputs/maps/phase4_satellite_validation.html`
+- `outputs/maps/wash_extraction.html`
+- `outputs/maps/parcel_overlay.html`
+- `outputs/maps/fan_synthesis.html`
+- `outputs/maps/satellite_validation.html`
 
 QGIS projects:
 - `deanza-villas-flood-study.qgs`
@@ -265,10 +265,10 @@ Core study data:
 - `data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_d8_flow_accum.tif`
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv`
 - `data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg`
-- `data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv`
-- `data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json`
+- `data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_candidates.csv`
+- `data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_selected.json`
 
 ## 10) Bottom line
 

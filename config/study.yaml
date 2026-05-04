@@ -17,36 +17,36 @@ paths:
   selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
 steps:
   terrain_context:
-    script: scripts/make_phase1_context_map.py
-    map: outputs/maps/phase1_context.html
+    script: scripts/make_terrain_context_map.py
+    map: outputs/maps/terrain_context.html
   wash_extraction:
-    script: scripts/phase2_extract_washes.py
+    script: scripts/extract_washes.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/channels
-    report: outputs/reports/phase2_wash_extraction.md
+    report: outputs/reports/wash_extraction.md
     summary_csv: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv
     summary_json: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.json
     selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
   parcel_overlay:
-    script: scripts/phase3_parcel_overlay.py
+    script: scripts/parcel_overlay.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/parcels
-    report: outputs/reports/phase3_parcel_overlay.md
-    map: outputs/maps/phase3_parcel_context.html
-    metrics_csv: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.csv
-    metrics_json: data/processed/terrain/deanza_villas_2km_1m/parcels/phase3_parcel_overlay_metrics.json
+    report: outputs/reports/parcel_overlay.md
+    map: outputs/maps/parcel_overlay.html
+    metrics_csv: data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.csv
+    metrics_json: data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.json
     clip_gpkg: data/processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg
   fan_synthesis:
-    script: scripts/phase3_fan_synthesis.py
+    script: scripts/fan_synthesis.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis
-    report: outputs/reports/phase3_fan_synthesis.md
-    map: outputs/maps/phase3_fan_synthesis.html
-    stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.csv
-    stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/phase3_fan_synthesis_stats.json
+    report: outputs/reports/fan_synthesis.md
+    map: outputs/maps/fan_synthesis.html
+    stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.csv
+    stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.json
   satellite_validation:
-    script: scripts/phase4_satellite_validation.py
-    outdir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4
-    download_dir: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/downloads
-    report: outputs/reports/phase4_satellite_validation.md
-    map: outputs/maps/phase4_satellite_validation.html
-    summary_csv: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.csv
-    summary_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_candidates.json
-    selected_json: data/processed/terrain/deanza_villas_2km_1m/validation_phase4/phase4_satellite_validation_selected.json
+    script: scripts/satellite_validation.py
+    outdir: data/processed/terrain/deanza_villas_2km_1m/satellite_validation
+    download_dir: data/processed/terrain/deanza_villas_2km_1m/satellite_validation/downloads
+    report: outputs/reports/satellite_validation.md
+    map: outputs/maps/satellite_validation.html
+    summary_csv: data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_candidates.csv
+    summary_json: data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_candidates.json
+    selected_json: data/processed/terrain/deanza_villas_2km_1m/satellite_validation/satellite_validation_selected.json

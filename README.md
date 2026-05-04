@@ -11,6 +11,11 @@ standard is practical decision support: produce maps, evidence layers, and a wri
 assessment strong enough to guide property risk judgment and to challenge vague or
 unsupported flood-risk claims.
 
+Current working docs:
+- `outputs/reports/final_report.md` — canonical final narrative
+- `TODO.md` — queued work for the current effort
+- `DEVLOG.md` — rolling active log
+
 ---
 
 ## Project Feasibility (validated May 2026)
@@ -207,7 +212,7 @@ Use GeoAgent, earthaccess, pystac-client, or direct PO.DAAC STAC calls to retrie
 Validation target: look for positive evidence of historical wetting or flow concentration.
 Absence of DSWx water is weak evidence because of temporal sampling limitations.
 
-Progress note: satellite validation has been completed; see outputs/reports/phase4_satellite_validation.md and outputs/maps/phase4_satellite_validation.html.
+Progress note: satellite validation has been completed; see outputs/reports/satellite_validation.md and outputs/maps/satellite_validation.html.
 
 ### Visualization (leafmap)
 Interactive HTML maps overlaying: terrain indices, channel extraction, HAND, Boyle 1989

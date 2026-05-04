@@ -1,4 +1,4 @@
-# V1 Development Summary
+# V1 Development Summary — historical background
 
 This is the short consolidated record of the version-1 development log. It preserves the choices that mattered for the final Borrego Springs / De Anza Villas analysis and drops the step-by-step workflow noise.
 

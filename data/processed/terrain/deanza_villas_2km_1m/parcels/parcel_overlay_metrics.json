@@ -1,0 +1,17 @@
+[
+  {
+    "layer_name": "selected_stream_network",
+    "total_length_m": 31848.432512341642,
+    "inside_parcel_m": 904.63176742153,
+    "inside_hazard_m": 15057.132478960777,
+    "inside_parcel_and_hazard_m": 875.1716895473422,
+    "outside_parcel_m": 30943.80074492011,
+    "parcel_share": 0.028404279145322914,
+    "hazard_share": 0.472774679668331,
+    "hazard_share_within_parcel": 0.9674341771590028,
+    "segments": 359,
+    "segments_touching_parcel": 22,
+    "segments_touching_hazard": 194,
+    "segments_touching_both": 22
+  }
+]
