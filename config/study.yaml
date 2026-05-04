@@ -10,7 +10,7 @@ paths:
   slope_degrees: data/processed/terrain/deanza_villas_2km_1m_dem_slope_degrees.tif
   roughness_magnitude: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif
   roughness_scale: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif
-  hazard_polygons: data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson
+  hazard_polygons: data/raw/fema/nfhl_borrego_valley.geojson
   local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
   context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
   parcel_boundary: data/vectors/deanza_villas_complex_boundary.geojson

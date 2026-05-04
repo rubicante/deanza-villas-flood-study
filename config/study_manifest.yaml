@@ -2,7 +2,7 @@ canonical_layers:
   dissolved_parcel_boundary: data/vectors/deanza_villas_complex_boundary.geojson
   parcel_polygons: data/vectors/deanza_villas_parcel_polygons.geojson
   selected_stream_network: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
-  mapped_hazard_polygons: data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson
+  mapped_hazard_polygons: data/raw/fema/nfhl_borrego_valley.geojson
   local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
   context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
 canonical_deliverables:

@@ -28,16 +28,16 @@ SELECTED_JSON = step_path("satellite_validation", "selected_json")
 
 SEARCHES = [
     {
-        "label": "OPERA DSWx-HLS",
+        "label": "OPERA DSWx-HLS 2023-2024 all seasons",
         "short_name": "OPERA_L3_DSWX-HLS_V1",
-        "temporal": ("2023-08-15", "2023-09-15"),
-        "max_items": 20,
+        "temporal": ("2023-01-01", "2024-12-31"),
+        "max_items": 400,
     },
     {
-        "label": "OPERA DSWx-S1",
+        "label": "OPERA DSWx-S1 2024 viable coverage",
         "short_name": "OPERA_L3_DSWX-S1_V1",
-        "temporal": ("2024-08-20", "2024-09-05"),
-        "max_items": 20,
+        "temporal": ("2024-08-25", "2024-12-31"),
+        "max_items": 100,
     },
 ]
 

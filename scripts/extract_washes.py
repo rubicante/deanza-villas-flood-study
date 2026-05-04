@@ -4,7 +4,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import rasterio
 from whitebox.whitebox_tools import WhiteboxTools
 
 from scripts.init_env import load_env
@@ -41,6 +43,16 @@ class ThresholdStats:
     flow_type: str = "d8"
 
 
+@dataclass
+class ZoneBetweenStats:
+    low_threshold: int
+    high_threshold: int
+    between_cells: int
+    between_cells_local_aoi: int
+    between_cells_parcel: int
+    flow_type: str
+
+
 def _clean_shapefile_outputs(path: Path) -> None:
     for suffix in [".shp", ".shx", ".dbf", ".prj", ".cpg", ".qpj"]:
         candidate = path.with_suffix(suffix)
@@ -59,7 +71,12 @@ def derive_streams(
     thresholds: list[int],
     flow_type: str = "d8",
     prefix_tag: str = "",
-) -> tuple[pd.DataFrame, Path, Path | None, int | None, int]:
+) -> tuple[pd.DataFrame, Path, int]:
+    """Extract streams at all thresholds. Returns (df, summary_csv, hazard_count).
+
+    All thresholds are kept as a full ensemble — no single "best" is selected.
+    The full sweep CSV and all threshold GPKGs/rasters are the canonical outputs.
+    """
     outdir.mkdir(parents=True, exist_ok=True)
     dem_path = dem_path.resolve()
     accum_path = accum_path.resolve()
@@ -82,8 +99,6 @@ def derive_streams(
     context_aoi = gpd.read_file(context_aoi_path).to_crs(TARGET_CRS).geometry.iloc[0]
 
     rows: list[dict[str, object]] = []
-    selected_threshold: int | None = None
-    selected_gpkg: Path | None = None
 
     for threshold in thresholds:
         stream_raster = outdir / f"{prefix_tag}{dem_path.stem}_streams_{threshold}.tif"
@@ -98,12 +113,9 @@ def derive_streams(
 
         wbt.extract_streams(str(accum_path), str(stream_raster), threshold, zero_background=True)
 
-        # D-infinity: vectorize manually via stream raster cells (D8 pointer
-        # is invalid for D-infinity flow directions).  Use raster cell count
-        # for stats rather than traced vector lengths.
+        # D-infinity: raster cell counts only (no valid D8-pointer vectorization)
         if flow_type == "dinf":
-            import rasterio as _rio
-            with _rio.open(stream_raster) as _sr:
+            with rasterio.open(stream_raster) as _sr:
                 _sdata = _sr.read(1)
                 stream_cells = int((_sdata > 0).sum())
             rows.append({
@@ -151,25 +163,86 @@ def derive_streams(
 
     df = pd.DataFrame(rows).sort_values("threshold_cells").reset_index(drop=True)
 
-    best_hazard = float(df["hazard_share"].max()) if not df.empty else 0.0
-    top = df[df["hazard_share"] >= (0.95 * best_hazard)].copy() if best_hazard else df.copy()
-    if not top.empty:
-        top = top.sort_values(["total_length_m", "threshold_cells"], ascending=[True, True])
-        selected_threshold = int(top.iloc[0]["threshold_cells"])
-        selected_gpkg = outdir / f"{prefix_tag}{dem_path.stem}_streams_{selected_threshold}.gpkg"
-
     summary_csv = outdir / f"{prefix_tag}{dem_path.stem}_stream_threshold_sweep.csv"
     df.to_csv(summary_csv, index=False)
 
     summary_json = outdir / f"{prefix_tag}{dem_path.stem}_stream_threshold_sweep.json"
     safe_write_json(df.to_dict(orient="records"), summary_json)
 
-    return df, summary_csv, selected_gpkg, selected_threshold, hazard_count
+    return df, summary_csv, hazard_count
+
+
+def compute_between_threshold_zones(
+    outdir: Path,
+    thresholds: list[int],
+    dem_stem: str,
+    local_aoi_path: Path,
+    parcel_path: Path | None = None,
+) -> list[ZoneBetweenStats]:
+    """Compare adjacent threshold stream rasters. Cells active at the lower
+    threshold but NOT at the higher threshold are potential avulsion paths."""
+    sorted_t = sorted(thresholds)
+    results: list[ZoneBetweenStats] = []
+
+    local_aoi = gpd.read_file(local_aoi_path).to_crs(TARGET_CRS)
+    local_geom = local_aoi.geometry.iloc[0]
+
+    parcel_geom = None
+    if parcel_path and parcel_path.exists():
+        parcel = gpd.read_file(parcel_path).to_crs(TARGET_CRS)
+        parcel_geom = parcel.geometry.iloc[0]
+
+    for i in range(len(sorted_t) - 1):
+        t_low, t_high = sorted_t[i], sorted_t[i + 1]
+        low_path = outdir / f"{dem_stem}_streams_{t_low}.tif"
+        high_path = outdir / f"{dem_stem}_streams_{t_high}.tif"
+        if not low_path.exists() or not high_path.exists():
+            continue
+
+        with rasterio.open(low_path) as low_src:
+            low_data = low_src.read(1)
+            transform = low_src.transform
+            with rasterio.open(high_path) as high_src:
+                high_data = high_src.read(1)
+
+        # Binary: 1 = stream, 0 = no stream (zero_background was used)
+        low_binary = (low_data > 0).astype(np.uint8)
+        high_binary = (high_data > 0).astype(np.uint8)
+        between = (low_binary == 1) & (high_binary == 0)
+        between_cells = int(between.sum())
+
+        # Count between-zone cells within local AOI and parcel
+        between_local = 0
+        between_parcel = 0
+        if between_cells > 0:
+            from rasterio.features import geometry_mask
+            local_mask_arr = geometry_mask(
+                [local_geom], out_shape=between.shape,
+                transform=transform, invert=True,
+            )
+            between_local = int((between & local_mask_arr).sum())
+            if parcel_geom is not None:
+                parcel_mask_arr = geometry_mask(
+                    [parcel_geom], out_shape=between.shape,
+                    transform=transform, invert=True,
+                )
+                between_parcel = int((between & parcel_mask_arr).sum())
+
+        results.append(ZoneBetweenStats(
+            low_threshold=t_low,
+            high_threshold=t_high,
+            between_cells=between_cells,
+            between_cells_local_aoi=between_local,
+            between_cells_parcel=between_parcel,
+            flow_type="d8",
+        ))
+
+    return results
 
 
 def main() -> None:
-    # D8 stream extraction
-    d8_df, d8_csv, d8_gpkg, d8_threshold, d8_hazard = derive_streams(
+    # D8 stream extraction — full ensemble, all thresholds
+    d8_df, d8_csv, d8_hazard = derive_streams(
         dem_path=DEM_PATH,
         accum_path=D8_ACCUM_PATH,
         pointer_path=POINTER_PATH,
@@ -183,10 +256,10 @@ def main() -> None:
     )
 
     # D-infinity stream extraction
-    dinf_df, dinf_csv, dinf_gpkg, dinf_threshold, dinf_hazard = derive_streams(
+    dinf_df, dinf_csv, dinf_hazard = derive_streams(
         dem_path=DEM_PATH,
         accum_path=DINF_ACCUM_PATH,
-        pointer_path=POINTER_PATH,  # D8 pointer used for vectorization
+        pointer_path=POINTER_PATH,
         hazard_path=HAZARD_PATH,
         local_aoi_path=LOCAL_AOI_PATH,
         context_aoi_path=CONTEXT_AOI_PATH,
@@ -196,12 +269,27 @@ def main() -> None:
         prefix_tag="dinf_",
     )
 
+    # Between-threshold zone analysis (D8 only — meaningful vectorization)
+    parcel_path = config_path("paths", "parcel_boundary")
+    between_zones = compute_between_threshold_zones(
+        outdir=OUTDIR,
+        thresholds=DEFAULT_THRESHOLDS,
+        dem_stem=DEM_PATH.stem,
+        local_aoi_path=LOCAL_AOI_PATH,
+        parcel_path=parcel_path,
+    )
+
+    # Save between-threshold zone summary
+    if between_zones:
+        between_df = pd.DataFrame([asdict(z) for z in between_zones])
+        between_csv = OUTDIR / f"{DEM_PATH.stem}_between_threshold_zones.csv"
+        between_json = OUTDIR / f"{DEM_PATH.stem}_between_threshold_zones.json"
+        between_df.to_csv(between_csv, index=False)
+        safe_write_json(between_df.to_dict(orient="records"), between_json)
+        print(f"between_zones_csv: {between_csv}")
+
     print(f"d8_summary_csv: {d8_csv}")
-    if d8_gpkg is not None:
-        print(f"d8_selected_network: {d8_gpkg}")
     print(f"dinf_summary_csv: {dinf_csv}")
-    if dinf_gpkg is not None:
-        print(f"dinf_selected_network: {dinf_gpkg}")
 
 
 if __name__ == "__main__":

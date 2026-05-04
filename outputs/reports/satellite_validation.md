@@ -5,12 +5,12 @@ Goal: check whether OPERA satellite surface-water products show positive evidenc
 Run date: 2026-05-04 UTC
 
 Search windows:
-- OPERA DSWx-HLS: 2023-08-15 to 2023-09-15 (max 20 items)
-- OPERA DSWx-S1: 2024-08-20 to 2024-09-05 (max 20 items)
+- OPERA DSWx-HLS 2023-2024 all seasons: 2023-01-01 to 2024-12-31 (max 400 items)
+- OPERA DSWx-S1 2024 viable coverage: 2024-08-25 to 2024-12-31 (max 100 items)
 
 Local AOI: data/vectors/deanza_villas_2km_aoi.geojson
 Parcel boundary: data/vectors/deanza_villas_complex_boundary.geojson
-FEMA layer: data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson
+FEMA layer: data/raw/fema/nfhl_borrego_valley.geojson
 Channel network: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
 
 Candidate summary:

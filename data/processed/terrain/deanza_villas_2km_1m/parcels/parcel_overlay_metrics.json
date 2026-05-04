@@ -3,15 +3,15 @@
     "layer_name": "selected_stream_network",
     "total_length_m": 24724.206332605325,
     "inside_parcel_m": 770.6061172698014,
-    "inside_hazard_m": 12144.055054318833,
-    "inside_parcel_and_hazard_m": 737.998525328492,
+    "inside_hazard_m": 17720.896627681366,
+    "inside_parcel_and_hazard_m": 737.9986054045382,
     "outside_parcel_m": 23953.600215335522,
     "parcel_share": 0.031168083088416714,
-    "hazard_share": 0.4911807841655052,
-    "hazard_share_within_parcel": 0.9576857862784224,
+    "hazard_share": 0.7167427900127065,
+    "hazard_share_within_parcel": 0.957685890191491,
     "segments": 237,
     "segments_touching_parcel": 15,
-    "segments_touching_hazard": 131,
+    "segments_touching_hazard": 164,
     "segments_touching_both": 15
   }
 ]
