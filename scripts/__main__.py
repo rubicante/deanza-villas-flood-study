@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Bootstrap: run_pipeline_v2 is the top-level entry point; ensure repo root is importable.
+# Bootstrap: __main__.py is the top-level entry point; ensure repo root is importable.
 _ROOT_BOOTSTRAP = Path(__file__).resolve().parents[1]
 if str(_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_ROOT_BOOTSTRAP))

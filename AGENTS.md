@@ -39,7 +39,7 @@ Operating rules:
 - `config/study_manifest.yaml` — canonical layers and deliverables
 - `scripts/study_config.py` — shared config access helpers
 - `scripts/study_utils.py` — shared geospatial helpers
-- `scripts/run_pipeline_v2.py` — v2 orchestrator
+- `scripts/__main__.py` — study orchestrator (`python -m scripts` from repo root)
 - `DEVLOG.md` — rolling development log
 - `TODO.md` — active backlog for queued work, if present
 - `outputs/reports/final_report.md` — canonical final narrative
