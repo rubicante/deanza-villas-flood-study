@@ -5,7 +5,7 @@ Use this file as the queued-pending work list for the current effort.
 Suggested format:
 - Keep items short and ordered by priority.
 - Use checkboxes or a simple backlog list.
-- Mark items `in_progress` while working on them. When done, remove them — `DEVLOG.md` records the outcome.
+- Mark items `in_progress` while working on them. When done, remove them — DEVLOG.md records the outcome.
 - Add or reconcile items when the same request comes up again.
 
 Recommended relationship to other repo logs:
@@ -14,4 +14,4 @@ Recommended relationship to other repo logs:
 
 ## Backlog
 
-(no items queued)
+(None — previous report/map consolidation pass completed 2026-05-04.)

@@ -22,6 +22,12 @@ STEPS = [
     "scripts.satellite_validation",
 ]
 
+RENDER_STEPS = [
+    "scripts.render_wash_extraction",
+    "scripts.render_parcel_overlay",
+    "scripts.render_satellite_validation",
+]
+
 # Paths that are generated during the pipeline run, not pre-existing inputs.
 _GENERATED_PATHS = {"d8_pointer"}
 
@@ -48,6 +54,8 @@ def main() -> None:
     print(f"[pipeline] steps: {STEPS}")
     verify_inputs()
     for module in STEPS:
+        run_step(module)
+    for module in RENDER_STEPS:
         run_step(module)
     print("[pipeline] complete")
 

@@ -4,6 +4,13 @@ Use this file as the rolling project work log for ongoing changes, status update
 
 Format: `YYYY-MM-DD HH:MM UTC: <brief status update>` — what changed, why, and what was verified.
 
+- 2026-05-04 15:58 UTC: Report/map consolidation pass (all 12 TODO items completed).
+  Content moves: absorbed source-document framing from fan_synthesis.md into final_report.md section 4. Absorbed parcel_overlay.md metrics (segment counts) into final_report.md section 3. Deleted parcel_overlay.md, fan_synthesis.md.
+  Map consolidation: deleted terrain_context.html and fan_synthesis.html. Added satellite basemap toggle to parcel_overlay.html. Removed terrain_context step entirely (script, config paths, manifest entries).
+  Compute/render decoupling: created render_wash_extraction.py, render_parcel_overlay.py, render_satellite_validation.py. Stripped write_report/make_map from extract_washes.py, parcel_overlay.py, satellite_validation.py. fan_synthesis.py now data-compute-only (no report/map). Updated __main__.py to run RENDER_STEPS after compute. Updated study.yaml (removed terrain_context step, removed deleted report/map paths from parcel_overlay and fan_synthesis). Updated study_manifest.yaml canonical_deliverables.
+  Docs: updated final_report.md links and source inventory. Updated project_summary.md file map.
+  Verified: all 8 scripts parse cleanly. Compute pipeline (extract_washes → parcel_overlay → fan_synthesis) and render pipeline (render_wash_extraction → render_parcel_overlay → render_satellite_validation) run end-to-end. All 6 output files present. 4 deleted files confirmed gone.
+
 ## Log
 
 - 2026-05-03 17:52 UTC: Created `config/study.yaml`, `config/study_manifest.yaml`, `scripts/study_config.py`, `scripts/study_utils.py`, and `scripts/run_pipeline_v2.py` to centralize canonical paths and orchestration.

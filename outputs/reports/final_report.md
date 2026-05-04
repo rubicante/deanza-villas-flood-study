@@ -3,7 +3,7 @@
 ## Final report
 
 Static figures: `../figures/final_report/`
-Interactive supplements: `../maps/terrain_context.html`, `../maps/wash_extraction.html`, `../maps/parcel_overlay.html`, `../maps/fan_synthesis.html`, `../maps/satellite_validation.html`
+Interactive supplements: `../maps/wash_extraction.html`, `../maps/parcel_overlay.html`, `../maps/satellite_validation.html`
 
 ### Executive summary
 
@@ -51,9 +51,6 @@ The terrain and mapped flood context indicate an active fan surface with concent
 
 The terrain context review established the relevant flood setting: Borrego Springs is an alluvial-fan environment where flood water can concentrate in washes, redistribute across the fan, and change course. That context matters because apparent channels are not equivalent to stable, bank-confined streams.
 
-The existing interactive context map remains available here:
-- [Terrain context map](../maps/terrain_context.html)
-
 ### 2) 1 m terrain reconstruction and wash extraction
 
 The terrain derivative set shows an active drainage texture rather than a flat, uniform surface. The selected 5000-cell threshold was used because it preserves the relevant concentrated-flow network while remaining legible enough for parcel-scale interpretation.
@@ -76,6 +73,7 @@ Using the canonical parcel boundary, the selected network intersects the De Anza
 - 15,057.1 m of selected network inside mapped hazard polygons (47.3% hazard share)
 - 875.2 m of selected network inside both parcel boundary and mapped hazard polygons
 - 96.7% hazard overlap within the parcel-crossing channel length
+- 22 of 359 channel segments touch the parcel boundary; of those, all 22 also touch hazard polygons
 
 That is not a fringe or isolated signal. It is a direct parcel-scale overlap between the authoritative property geometry and the extracted drainage fabric.
 
@@ -84,7 +82,13 @@ The existing interactive parcel overlay map remains available here:
 
 ### 4) Fan-activity synthesis
 
-The fan-synthesis stage compares the parcel with a local AOI and a broader context AOI. The parcel still shows meaningful terrain complexity and concentrated drainage.
+Borrego Springs sits on coalescing alluvial fans fed by desert canyon systems. The official flood context comes from three main sources:
+
+- DRI 2015 active/inactive fan mapping: about 90% of the 61 sq mi Borrego Springs study area is geomorphically and hydraulically active alluvial fan.
+- Boyle Engineering 1989 / County guidance: flash floods move rapidly down desert canyons; smaller flows occupy existing washes until they are obstructed or aggrade; design-storm floods can sheet-flow across the fan surface and establish new washes; all fan areas are subject to flooding unless properly protected.
+- County guidance also flags fan-terminus washes and local washes as flow-concentrating features that often need additional engineering analysis.
+
+The fan-synthesis terrain analysis compares the parcel with a local AOI and a broader context AOI. The parcel still shows meaningful terrain complexity and concentrated drainage.
 
 At the selected 5000-cell threshold:
 - Parcel stream density: 11,257.1 m/km²
@@ -95,9 +99,6 @@ At the selected 5000-cell threshold:
 - Context AOI mean slope: 14.3°
 
 The correct reading is active fan drainage fabric with channel mobility, not a fixed, benign channel system.
-
-The existing interactive fan synthesis map remains available here:
-- [Fan synthesis map](../maps/fan_synthesis.html)
 
 ### 5) Satellite validation
 
@@ -183,8 +184,6 @@ Primary source files used in the final synthesis:
 - `README.md`
 - `outputs/reports/new_session_handoff.md`
 - `outputs/reports/wash_extraction.md`
-- `outputs/reports/parcel_overlay.md`
-- `outputs/reports/fan_synthesis.md`
 - `outputs/reports/satellite_validation.md`
 - `data/vectors/deanza_villas_complex_boundary.geojson`
 - `data/vectors/deanza_villas_parcel_polygons.geojson`

@@ -6,12 +6,8 @@ canonical_layers:
   local_aoi: data/vectors/deanza_villas_2km_aoi.geojson
   context_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
 canonical_deliverables:
-  terrain_context_map: outputs/maps/terrain_context.html
   wash_extraction_report: outputs/reports/wash_extraction.md
-  parcel_overlay_report: outputs/reports/parcel_overlay.md
   parcel_overlay_map: outputs/maps/parcel_overlay.html
-  fan_synthesis_report: outputs/reports/fan_synthesis.md
-  fan_synthesis_map: outputs/maps/fan_synthesis.html
   satellite_validation_report: outputs/reports/satellite_validation.md
   satellite_validation_map: outputs/maps/satellite_validation.html
   final_report: outputs/reports/final_report.md

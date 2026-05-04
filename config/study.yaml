@@ -19,9 +19,6 @@ paths:
   dem_source_output: data/raw/dem/borrego_valley_3dep_10m.tif
   terrain_outdir: data/processed/terrain
 steps:
-  terrain_context:
-    script: scripts/make_terrain_context_map.py
-    map: outputs/maps/terrain_context.html
   wash_extraction:
     script: scripts/extract_washes.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/channels
@@ -32,7 +29,6 @@ steps:
   parcel_overlay:
     script: scripts/parcel_overlay.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/parcels
-    report: outputs/reports/parcel_overlay.md
     map: outputs/maps/parcel_overlay.html
     metrics_csv: data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.csv
     metrics_json: data/processed/terrain/deanza_villas_2km_1m/parcels/parcel_overlay_metrics.json
@@ -40,8 +36,6 @@ steps:
   fan_synthesis:
     script: scripts/fan_synthesis.py
     outdir: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis
-    report: outputs/reports/fan_synthesis.md
-    map: outputs/maps/fan_synthesis.html
     stats_csv: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.csv
     stats_json: data/processed/terrain/deanza_villas_2km_1m/fan_synthesis/fan_synthesis_stats.json
   satellite_validation:

@@ -246,9 +246,10 @@ What it does not do:
 
 Canonical report and maps:
 - `outputs/reports/final_report.md`
+- `outputs/reports/wash_extraction.md`
+- `outputs/reports/satellite_validation.md`
 - `outputs/maps/wash_extraction.html`
 - `outputs/maps/parcel_overlay.html`
-- `outputs/maps/fan_synthesis.html`
 - `outputs/maps/satellite_validation.html`
 
 QGIS project:

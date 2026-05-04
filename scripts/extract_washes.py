@@ -9,14 +9,12 @@ from whitebox.whitebox_tools import WhiteboxTools
 
 from scripts.init_env import load_env
 from scripts.study_config import (
-    ROOT,
     DEFAULT_THRESHOLDS,
     TARGET_CRS,
     config_path,
-    deliverable_path,
     step_path,
 )
-from scripts.study_utils import optional, safe_write_json
+from scripts.study_utils import safe_write_json
 
 DEM_PATH = config_path("paths", "dem_filled")
 ACCUM_PATH = config_path("paths", "d8_flow_accum")
@@ -25,7 +23,6 @@ HAZARD_PATH = config_path("paths", "hazard_polygons")
 LOCAL_AOI_PATH = config_path("paths", "local_aoi")
 CONTEXT_AOI_PATH = config_path("paths", "context_aoi")
 OUTDIR = step_path("wash_extraction", "outdir")
-REPORT_PATH = deliverable_path("wash_extraction_report")
 
 
 @dataclass
@@ -149,76 +146,6 @@ def derive_streams(
     return df, summary_csv, selected_gpkg, selected_threshold, hazard_count
 
 
-def write_report(
-    df: pd.DataFrame,
-    report_path: Path,
-    hazard_path: Path,
-    selected_gpkg: Path | None,
-    selected_threshold: int | None,
-    hazard_count: int,
-) -> None:
-    selection_block = ""
-
-    if not df.empty and selected_threshold is not None:
-        sel_row = df[df["threshold_cells"] == selected_threshold].iloc[0]
-        _gpkg_rel = selected_gpkg.relative_to(ROOT) if selected_gpkg is not None else None
-        gpkg_line = optional("\nSelected stream network: `{}`\n", _gpkg_rel)
-        selection_block = f"""\
-## Working threshold choice
-
-Selected threshold: {selected_threshold} accumulation cells. It sits in the top hazard-overlap band and is the most concise network among thresholds within 95% of the maximum hazard-share score.
-
-Selected-threshold metrics:
-- total length: {sel_row['total_length_m']:.1f} m
-- mapped hazard overlap: {sel_row['hazard_length_m']:.1f} m ({sel_row['hazard_share']:.1%})
-- inside local 2 km AOI: {sel_row['local_aoi_share']:.1%} of network length
-- inside 8 km fan-context AOI: {sel_row['context_share']:.1%} of network length
-- segments touching mapped hazard polygons: {int(sel_row['segments_touching_hazard'])} of {int(sel_row['segments'])}
-{gpkg_line}"""
-
-    _gpkg_rel = selected_gpkg.relative_to(ROOT) if selected_gpkg is not None else None
-    gpkg_output = optional("- Selected channel network GPKG: `{}`\n", _gpkg_rel)
-
-    report = f"""\
-# Wash / Channel Extraction
-
-This step extracted candidate channel/wash networks from the 1 m DeAnza Villas D8 flow-accumulation surface and compared them against the mapped county/FEMA-derived flood-hazard polygons and the local fan context AOIs.
-
-## Inputs used
-- Hazard polygons: `{hazard_path.relative_to(ROOT)}` ({hazard_count} features)
-- Local AOI: `{LOCAL_AOI_PATH.relative_to(ROOT)}`
-- Context AOI: `{CONTEXT_AOI_PATH.relative_to(ROOT)}`
-- Terrain base: `{DEM_PATH.relative_to(ROOT)}`
-- D8 accumulation: `{ACCUM_PATH.relative_to(ROOT)}`
-
-## Threshold sweep results
-
-```csv
-{df.to_csv(index=False).rstrip()}
-```
-
-{selection_block}
-## Interpretation
-
-- Lower thresholds capture dense sheetflow-like drainage texture but create a very large network that is harder to interpret.
-- Higher thresholds isolate the main washes and produce a cleaner comparison layer for hazard context review.
-- The mapped flood polygons intersect the extracted network substantially enough to support a real channel/wash context comparison rather than a purely synthetic drainage result.
-- For the next pass, the selected network is the right base layer for visual inspection against hazard polygons, fan context, and any parcel geometry once available.
-
-## Context caveat
-
-These are terrain-derived candidate channels/washes, not a regulated FEMA map revision or a licensed engineering drainage determination.
-
-## Outputs
-
-- Threshold sweep CSV: `{OUTDIR.relative_to(ROOT)}/{DEM_PATH.stem}_stream_threshold_sweep.csv`
-- Threshold sweep JSON: `{OUTDIR.relative_to(ROOT)}/{DEM_PATH.stem}_stream_threshold_sweep.json`
-{gpkg_output}"""
-
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(report, encoding="utf-8")
-
-
 def main() -> None:
     df, summary_csv, selected_gpkg, selected_threshold, hazard_count = derive_streams(
         dem_path=DEM_PATH,
@@ -231,17 +158,7 @@ def main() -> None:
         thresholds=DEFAULT_THRESHOLDS,
     )
 
-    write_report(
-        df=df,
-        report_path=REPORT_PATH,
-        hazard_path=HAZARD_PATH,
-        selected_gpkg=selected_gpkg,
-        selected_threshold=selected_threshold,
-        hazard_count=hazard_count,
-    )
-
     print(f"summary_csv: {summary_csv}")
-    print(f"report: {REPORT_PATH}")
     if selected_gpkg is not None:
         print(f"selected_network: {selected_gpkg}")
 
