@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,9 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+# Ensure repo root is importable from step scripts run as __main__
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 CONFIG_DIR = ROOT / "config"
 STUDY_CONFIG_PATH = CONFIG_DIR / "study.yaml"
 STUDY_MANIFEST_PATH = CONFIG_DIR / "study_manifest.yaml"
@@ -50,30 +54,11 @@ def step_path(*keys: str) -> Path:
     return config_path("steps", *keys)
 
 
-def step_value(*keys: str) -> Any:
-    return config_value("steps", *keys)
-
-
-def manifest_path(*keys: str) -> Path:
+def deliverable_path(*keys: str) -> Path:
     node: Any = study_manifest()
-    for key in keys:
+    for key in ("canonical_deliverables", *keys):
         node = node[key]
     return resolve_relative(node)
-
-
-def manifest_value(*keys: str) -> Any:
-    node: Any = study_manifest()
-    for key in keys:
-        node = node[key]
-    return node
-
-
-def deliverable_path(*keys: str) -> Path:
-    return manifest_path("canonical_deliverables", *keys)
-
-
-def relative_to_root(path: Path) -> str:
-    return str(path.resolve().relative_to(ROOT))
 
 
 TARGET_CRS = config_value("study", "crs")

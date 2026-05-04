@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
-
 from whitebox.whitebox_tools import WhiteboxTools
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DEM = ROOT / "data/raw/dem/borrego_valley_3dep_10m.tif"
-DEFAULT_OUTDIR = ROOT / "data/processed/terrain"
+from scripts.study_config import config_path
+
+DEM_PATH = config_path("paths", "dem_source_output")
+OUTDIR = config_path("paths", "terrain_outdir")
 
 
-def derive_terrain(dem_path: Path, outdir: Path) -> dict[str, Path]:
-    outdir.mkdir(parents=True, exist_ok=True)
-    dem_path = dem_path.resolve()
-    outdir = outdir.resolve()
+def derive_terrain() -> None:
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    dem_path = DEM_PATH.resolve()
+    outdir = OUTDIR.resolve()
     wbt = WhiteboxTools()
     wbt.set_working_dir(str(outdir))
 
@@ -28,19 +26,10 @@ def derive_terrain(dem_path: Path, outdir: Path) -> dict[str, Path]:
     wbt.slope(str(filled), str(slope), units="degrees")
     wbt.d8_flow_accumulation(str(filled), str(d8), out_type="cells")
 
-    return {"filled": filled, "slope": slope, "d8_accum": d8}
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Derive initial terrain metrics from a prototype DEM.")
-    parser.add_argument("--dem", type=Path, default=DEFAULT_DEM)
-    parser.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR)
-    args = parser.parse_args()
-
-    outputs = derive_terrain(args.dem, args.outdir)
-    for name, path in outputs.items():
-        print(f"{name}: {path}")
+    print(f"filled: {filled}")
+    print(f"slope: {slope}")
+    print(f"d8_accum: {d8}")
 
 
 if __name__ == "__main__":
-    main()
+    derive_terrain()

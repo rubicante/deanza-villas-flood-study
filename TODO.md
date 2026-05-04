@@ -11,7 +11,6 @@ Suggested format:
 Recommended relationship to other repo logs:
 - `DEVLOG.md` = what actually happened, with short timestamped notes
 - `TODO.md` = what is queued or pending (not an archive of completed work)
-- `CHANGELOG.md` = public release/history notes, if the project uses one
 
 ## Backlog
 

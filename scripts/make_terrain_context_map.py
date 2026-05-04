@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
-import sys
-
 import geopandas as gpd
 import folium
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from scripts.study_config import config_path, step_path
 
-from scripts.study_config import deliverable_path, step_path
-
-AOI_PATH = ROOT / "data/vectors/aoi_borrego_springs.geojson"
-FLOOD_PATH = ROOT / "data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
+AOI_PATH = config_path("paths", "context_aoi")
+FLOOD_PATH = config_path("paths", "hazard_polygons")
 OUT_PATH = step_path("terrain_context", "map")
 
 

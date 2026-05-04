@@ -4,123 +4,51 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# Bootstrap: run_pipeline_v2 is the top-level entry point; ensure repo root is importable.
+_ROOT_BOOTSTRAP = Path(__file__).resolve().parents[1]
+if str(_ROOT_BOOTSTRAP) not in sys.path:
+    sys.path.insert(0, str(_ROOT_BOOTSTRAP))
 
-from scripts.study_config import config_path, config_value, deliverable_path, step_path
+from scripts.study_config import ROOT, config_path, config_value, study_config
 
 PYTHON = ROOT / ".venv/bin/python"
 if not PYTHON.exists():
     PYTHON = Path(sys.executable)
 
-STEP_COMMANDS = [
-    [
-        str(PYTHON),
-        str(config_path("steps", "wash_extraction", "script")),
-        "--dem",
-        str(config_path("paths", "dem_filled")),
-        "--accum",
-        str(config_path("paths", "d8_flow_accum")),
-        "--pointer",
-        str(config_path("paths", "d8_pointer")),
-        "--hazard",
-        str(config_path("paths", "hazard_polygons")),
-        "--local-aoi",
-        str(config_path("paths", "local_aoi")),
-        "--context-aoi",
-        str(config_path("paths", "context_aoi")),
-        "--outdir",
-        str(step_path("wash_extraction", "outdir")),
-        "--report",
-        str(deliverable_path("wash_extraction_report")),
-        "--thresholds",
-        *[str(x) for x in config_value("study", "default_thresholds")],
-    ],
-    [
-        str(PYTHON),
-        str(config_path("steps", "parcel_overlay", "script")),
-        "--streams",
-        str(config_path("paths", "selected_streams")),
-        "--parcel-boundary",
-        str(config_path("paths", "parcel_boundary")),
-        "--parcel-polygons",
-        str(config_path("paths", "parcel_polygons")),
-        "--hazard",
-        str(config_path("paths", "hazard_polygons")),
-        "--local-aoi",
-        str(config_path("paths", "local_aoi")),
-        "--context-aoi",
-        str(config_path("paths", "context_aoi")),
-        "--outdir",
-        str(step_path("parcel_overlay", "outdir")),
-        "--report",
-        str(deliverable_path("parcel_overlay_report")),
-        "--map-path",
-        str(deliverable_path("parcel_overlay_map")),
-    ],
-    [
-        str(PYTHON),
-        str(config_path("steps", "fan_synthesis", "script")),
-        "--dem",
-        str(config_path("paths", "dem_filled")),
-        "--slope",
-        str(config_path("paths", "slope_degrees")),
-        "--streams",
-        str(config_path("paths", "selected_streams")),
-        "--parcel-boundary",
-        str(config_path("paths", "parcel_boundary")),
-        "--parcel-polygons",
-        str(config_path("paths", "parcel_polygons")),
-        "--local-aoi",
-        str(config_path("paths", "local_aoi")),
-        "--context-aoi",
-        str(config_path("paths", "context_aoi")),
-        "--hazard",
-        str(config_path("paths", "hazard_polygons")),
-        "--outdir",
-        str(step_path("fan_synthesis", "outdir")),
-        "--report",
-        str(deliverable_path("fan_synthesis_report")),
-        "--map-path",
-        str(deliverable_path("fan_synthesis_map")),
-    ],
-    [
-        str(PYTHON),
-        str(config_path("steps", "satellite_validation", "script")),
-    ],
+STEPS = [
+    "scripts.extract_washes",
+    "scripts.parcel_overlay",
+    "scripts.fan_synthesis",
+    "scripts.satellite_validation",
 ]
+
+# Paths that are generated during the pipeline run, not pre-existing inputs.
+_GENERATED_PATHS = {"d8_pointer"}
 
 
 def verify_inputs() -> None:
-    required = [
-        config_path("paths", "dem_filled"),
-        config_path("paths", "d8_flow_accum"),
-        config_path("paths", "d8_pointer"),
-        config_path("paths", "hazard_polygons"),
-        config_path("paths", "local_aoi"),
-        config_path("paths", "context_aoi"),
-        config_path("paths", "parcel_boundary"),
-        config_path("paths", "parcel_polygons"),
-        config_path("paths", "selected_streams"),
-        config_path("paths", "slope_degrees"),
-    ]
-    missing = [str(path) for path in required if not path.exists()]
+    missing = []
+    for name in study_config()["paths"]:
+        if name in _GENERATED_PATHS:
+            continue
+        path = config_path("paths", name)
+        if not path.exists():
+            missing.append(str(path))
     if missing:
         raise FileNotFoundError("Missing required inputs:\n- " + "\n- ".join(missing))
 
 
-def run_step(command: list[str]) -> None:
-    print(f"[pipeline] running: {' '.join(command)}")
-    subprocess.run(command, check=True, cwd=ROOT)
+def run_step(module: str) -> None:
+    print(f"[pipeline] running: {module}")
+    subprocess.run([str(PYTHON), "-m", module], check=True, cwd=ROOT)
 
 
 def main() -> None:
     print(f"[pipeline] canonical CRS: {config_value('study', 'crs')}")
-    print(f"[pipeline] final report: {deliverable_path('final_report')}")
+    print(f"[pipeline] steps: {STEPS}")
     verify_inputs()
-    for command in STEP_COMMANDS:
-        run_step(command)
+    for module in STEPS:
+        run_step(module)
     print("[pipeline] complete")
 
 

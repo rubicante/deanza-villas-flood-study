@@ -1,32 +1,30 @@
 from __future__ import annotations
 
-import argparse
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-import sys
 
 import geopandas as gpd
 import pandas as pd
-import folium
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from scripts.init_env import load_env
-from scripts.study_config import TARGET_CRS, deliverable_path, step_path
-from scripts.study_utils import ensure_crs
+from scripts.study_config import (
+    ROOT,
+    config_path,
+    deliverable_path,
+    step_path,
+)
+from scripts.study_utils import build_standard_map, ensure_crs, optional
 
-DEFAULT_STREAMS = config_path("paths", "selected_streams")
-DEFAULT_PARCEL_BOUNDARY = config_path("paths", "parcel_boundary")
-DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
-DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
-DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
-DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
-DEFAULT_OUTDIR = step_path("parcel_overlay", "outdir")
-DEFAULT_REPORT = deliverable_path("parcel_overlay_report")
-DEFAULT_MAP_PATH = deliverable_path("parcel_overlay_map")
+STREAMS_PATH = config_path("paths", "selected_streams")
+PARCEL_BOUNDARY_PATH = config_path("paths", "parcel_boundary")
+PARCEL_POLYGONS_PATH = config_path("paths", "parcel_polygons")
+HAZARD_PATH = config_path("paths", "hazard_polygons")
+LOCAL_AOI_PATH = config_path("paths", "local_aoi")
+CONTEXT_AOI_PATH = config_path("paths", "context_aoi")
+OUTDIR = step_path("parcel_overlay", "outdir")
+REPORT_PATH = deliverable_path("parcel_overlay_report")
+MAP_PATH = deliverable_path("parcel_overlay_map")
 
 
 @dataclass
@@ -46,305 +44,194 @@ class OverlayStats:
     segments_touching_both: int
 
 
-def _style_boundary(_feature):
-    return {"fill": False, "color": "#000000", "weight": 3}
-
-
-def _style_parcels(_feature):
-    return {"fillColor": "#6baed6", "color": "#2171b5", "weight": 1, "fillOpacity": 0.12}
-
-
-def _style_hazard(feature):
-    cls = feature["properties"].get("flood_plai")
-    if cls == "FW100":
-        return {"fillColor": "#d7301f", "color": "#a50f15", "weight": 1, "fillOpacity": 0.30}
-    return {"fillColor": "#fc8d59", "color": "#d7301f", "weight": 1, "fillOpacity": 0.16}
-
-
-def _style_streams(_feature):
-    return {"color": "#2c7fb8", "weight": 2, "opacity": 0.85}
-
-
-def _style_streams_inside(_feature):
-    return {"color": "#006d2c", "weight": 3, "opacity": 0.95}
-
-
 def compute_overlay_metrics(
-    streams_path: Path,
-    parcel_boundary_path: Path,
-    parcel_polygons_path: Path,
-    hazard_path: Path,
-    local_aoi_path: Path,
-    context_aoi_path: Path,
+    streams: gpd.GeoDataFrame,
+    parcel_boundary: gpd.GeoDataFrame,
+    parcel_polygons: gpd.GeoDataFrame,
+    hazard: gpd.GeoDataFrame,
+    local_aoi: gpd.GeoDataFrame,
+    context_aoi: gpd.GeoDataFrame,
     outdir: Path,
     clip_outputs: bool = True,
 ) -> tuple[pd.DataFrame, Path, Path, Path | None]:
-    load_env()
-
-    streams = ensure_crs(gpd.read_file(streams_path))
-    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path))
-    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path))
-    hazard = ensure_crs(gpd.read_file(hazard_path))
-    local_aoi = ensure_crs(gpd.read_file(local_aoi_path))
-    context_aoi = ensure_crs(gpd.read_file(context_aoi_path))
-
+    """Compute overlay metrics and write CSV/JSON to outdir. Returns (df, metrics_csv, metrics_json, clipped_gpkg)."""
     parcel_union = parcel_boundary.geometry.union_all()
     hazard_union = hazard.geometry.union_all()
-    local_union = local_aoi.geometry.union_all()
-    context_union = context_aoi.geometry.union_all()
 
-    streams = streams[streams.geometry.notna()].copy()
-    streams = streams[~streams.geometry.is_empty].copy()
-    streams["length_m"] = streams.geometry.length
-    streams["parcel_len_m"] = streams.geometry.intersection(parcel_union).length
-    streams["hazard_len_m"] = streams.geometry.intersection(hazard_union).length
-    streams["parcel_hazard_len_m"] = streams.geometry.intersection(parcel_union.intersection(hazard_union)).length
-    streams["local_aoi_len_m"] = streams.geometry.intersection(local_union).length
-    streams["context_len_m"] = streams.geometry.intersection(context_union).length
-    streams["touches_parcel"] = streams["parcel_len_m"] > 0
-    streams["touches_hazard"] = streams["hazard_len_m"] > 0
-    streams["touches_both"] = streams["parcel_hazard_len_m"] > 0
+    segs = streams[streams.geometry.notna()].copy()
+    segs = segs[~segs.geometry.is_empty].copy()
+    segs["length_m"] = segs.geometry.length
+    segs["parcel_len_m"] = segs.geometry.intersection(parcel_union).length
+    segs["hazard_len_m"] = segs.geometry.intersection(hazard_union).length
+    segs["parcel_hazard_len_m"] = segs.geometry.intersection(parcel_union.intersection(hazard_union)).length
+    segs["local_aoi_len_m"] = segs.geometry.intersection(local_aoi.geometry.union_all()).length
+    segs["context_len_m"] = segs.geometry.intersection(context_aoi.geometry.union_all()).length
+    segs["touches_parcel"] = segs["parcel_len_m"] > 0
+    segs["touches_hazard"] = segs["hazard_len_m"] > 0
+    segs["touches_both"] = segs["parcel_hazard_len_m"] > 0
 
-    total_length = float(streams["length_m"].sum())
-    parcel_length = float(streams["parcel_len_m"].sum())
-    hazard_length = float(streams["hazard_len_m"].sum())
-    parcel_hazard_length = float(streams["parcel_hazard_len_m"].sum())
-    outside_parcel_length = total_length - parcel_length
+    total_length = float(segs["length_m"].sum())
+    parcel_length = float(segs["parcel_len_m"].sum())
+    hazard_length = float(segs["hazard_len_m"].sum())
+    parcel_hazard_length = float(segs["parcel_hazard_len_m"].sum())
 
-    parcel_layer = pd.DataFrame(
-        [
-            asdict(
-                OverlayStats(
-                    layer_name="selected_stream_network",
-                    total_length_m=total_length,
-                    inside_parcel_m=parcel_length,
-                    inside_hazard_m=hazard_length,
-                    inside_parcel_and_hazard_m=parcel_hazard_length,
-                    outside_parcel_m=outside_parcel_length,
-                    parcel_share=(parcel_length / total_length) if total_length else 0.0,
-                    hazard_share=(hazard_length / total_length) if total_length else 0.0,
-                    hazard_share_within_parcel=(parcel_hazard_length / parcel_length) if parcel_length else 0.0,
-                    segments=int(len(streams)),
-                    segments_touching_parcel=int(streams["touches_parcel"].sum()),
-                    segments_touching_hazard=int(streams["touches_hazard"].sum()),
-                    segments_touching_both=int(streams["touches_both"].sum()),
-                )
-            )
-        ]
-    )
+    df = pd.DataFrame([
+        asdict(OverlayStats(
+            layer_name="selected_stream_network",
+            total_length_m=total_length,
+            inside_parcel_m=parcel_length,
+            inside_hazard_m=hazard_length,
+            inside_parcel_and_hazard_m=parcel_hazard_length,
+            outside_parcel_m=total_length - parcel_length,
+            parcel_share=(parcel_length / total_length) if total_length else 0.0,
+            hazard_share=(hazard_length / total_length) if total_length else 0.0,
+            hazard_share_within_parcel=(parcel_hazard_length / parcel_length) if parcel_length else 0.0,
+            segments=int(len(segs)),
+            segments_touching_parcel=int(segs["touches_parcel"].sum()),
+            segments_touching_hazard=int(segs["touches_hazard"].sum()),
+            segments_touching_both=int(segs["touches_both"].sum()),
+        ))
+    ])
 
     outdir.mkdir(parents=True, exist_ok=True)
     metrics_csv = outdir / "parcel_overlay_metrics.csv"
     metrics_json = outdir / "parcel_overlay_metrics.json"
-    parcel_layer.to_csv(metrics_csv, index=False)
-    metrics_json.write_text(json.dumps(parcel_layer.to_dict(orient="records"), indent=2))
+    df.to_csv(metrics_csv, index=False)
+    metrics_json.write_text(json.dumps(df.to_dict(orient="records"), indent=2))
 
     clipped_gpkg: Path | None = None
     if clip_outputs:
-        inside = streams[streams["parcel_len_m"] > 0].copy()
+        inside = segs[segs["parcel_len_m"] > 0].copy()
         clipped_gpkg = outdir / "deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg"
         if clipped_gpkg.exists():
             clipped_gpkg.unlink()
-        inside = inside.drop(columns=["touches_parcel", "touches_hazard", "touches_both"])  # keep clean output
+        inside = inside.drop(columns=["touches_parcel", "touches_hazard", "touches_both"])
         inside.to_file(clipped_gpkg, driver="GPKG")
 
-    return parcel_layer, metrics_csv, metrics_json, clipped_gpkg
+    return df, metrics_csv, metrics_json, clipped_gpkg
 
 
 def write_report(
     df: pd.DataFrame,
     report_path: Path,
     streams_path: Path,
-    parcel_boundary_path: Path,
-    parcel_polygons_path: Path,
-    hazard_path: Path,
-    local_aoi_path: Path,
-    context_aoi_path: Path,
+    parcel_boundary: gpd.GeoDataFrame,
+    parcel_polygons: gpd.GeoDataFrame,
+    hazard: gpd.GeoDataFrame,
     metrics_csv: Path,
     metrics_json: Path,
     clipped_gpkg: Path | None,
 ) -> None:
-    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path))
-    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path))
-    hazard = ensure_crs(gpd.read_file(hazard_path))
-    local_aoi = ensure_crs(gpd.read_file(local_aoi_path))
-    context_aoi = ensure_crs(gpd.read_file(context_aoi_path))
-
     row = df.iloc[0]
-    lines: list[str] = []
-    lines.append("# Parcel Overlay")
-    lines.append("")
-    lines.append("This step wired the authoritative De Anza Villas parcel geometry into the selected 5000-cell channel network and re-ran the overlay metrics against the hazard and fan-context layers.")
-    lines.append("")
-    lines.append("## Inputs used")
-    lines.append(f"- Selected stream network: `{streams_path.relative_to(ROOT)}`")
-    lines.append(f"- Parcel boundary: `{parcel_boundary_path.relative_to(ROOT)}`")
-    lines.append(f"- Parcel polygons: `{parcel_polygons_path.relative_to(ROOT)}` ({len(parcel_polygons)} features)")
-    lines.append(f"- Hazard polygons: `{hazard_path.relative_to(ROOT)}` ({len(hazard)} features)")
-    lines.append(f"- Local AOI: `{local_aoi_path.relative_to(ROOT)}`")
-    lines.append(f"- Context AOI: `{context_aoi_path.relative_to(ROOT)}`")
-    lines.append("")
-    lines.append("## Parcel-aware overlay metrics")
-    lines.append("")
-    lines.append("```csv")
-    lines.append(df.to_csv(index=False).rstrip())
-    lines.append("```")
-    lines.append("")
-    lines.append("Key readout:")
-    lines.append(f"- network length inside parcel boundary: {row['inside_parcel_m']:.1f} m ({row['parcel_share']:.1%})")
-    lines.append(f"- network length inside mapped hazard polygons: {row['inside_hazard_m']:.1f} m ({row['hazard_share']:.1%})")
-    lines.append(f"- network length inside both parcel boundary and hazard polygons: {row['inside_parcel_and_hazard_m']:.1f} m")
-    lines.append(f"- hazard share within parcel boundary: {row['hazard_share_within_parcel']:.1%}")
-    lines.append(f"- segments touching parcel boundary: {int(row['segments_touching_parcel'])} of {int(row['segments'])}")
-    lines.append(f"- segments touching hazard polygons: {int(row['segments_touching_hazard'])} of {int(row['segments'])}")
-    lines.append(f"- segments touching both parcel and hazard: {int(row['segments_touching_both'])} of {int(row['segments'])}")
-    lines.append("")
-    if clipped_gpkg is not None:
-        lines.append(f"Clipped parcel-only stream layer: `{clipped_gpkg.relative_to(ROOT)}`")
-        lines.append("")
-    lines.append("## Interpretation")
-    lines.append("")
-    lines.append("- The authoritative boundary confirms how much of the selected drainage network actually crosses or sits within the De Anza Villas parcel complex.")
-    lines.append("- Comparing the network to the dissolved parcel boundary avoids using a hand-drawn approximation for parcel-scale risk context.")
-    lines.append("- The hazard overlap remains substantial after parcel-aware clipping, so the parcel context does not eliminate the channel/wash signal; it localizes it.")
-    lines.append("- The parcel polygons are preserved as a separate layer for later per-APN interrogation, while the dissolved boundary is the canonical single-file parcel geometry.")
-    lines.append("")
-    lines.append("## Context caveat")
-    lines.append("")
-    lines.append("These are terrain-derived and parcel-overlay context metrics, not a licensed engineering flood determination or FEMA map revision.")
-    lines.append("")
-    lines.append("## Outputs")
-    lines.append("")
-    lines.append(f"- Metrics CSV: `{metrics_csv.relative_to(ROOT)}`")
-    lines.append(f"- Metrics JSON: `{metrics_json.relative_to(ROOT)}`")
-    if clipped_gpkg is not None:
-        lines.append(f"- Parcel-only stream GPKG: `{clipped_gpkg.relative_to(ROOT)}`")
-    lines.append(f"- Canonical parcel boundary: `{parcel_boundary_path.relative_to(ROOT)}`")
-    lines.append(f"- Parcel polygon set: `{parcel_polygons_path.relative_to(ROOT)}`")
-    lines.append(f"- Canonical parcel overlay map: `{map_path.relative_to(ROOT)}`")
+    _clipped = clipped_gpkg.relative_to(ROOT) if clipped_gpkg is not None else None
+    clipped_line = optional("\nClipped parcel-only stream layer: `{}`\n", _clipped)
+    clipped_output = optional("- Parcel-only stream GPKG: `{}`\n", _clipped)
 
-    report_path.write_text("\n".join(lines) + "\n")
+    report = f"""\
+# Parcel Overlay
 
+This step wired the authoritative De Anza Villas parcel geometry into the selected 5000-cell channel network and re-ran the overlay metrics against the hazard and fan-context layers.
 
-def write_map(
-    map_path: Path,
-    streams_path: Path,
-    parcel_boundary_path: Path,
-    parcel_polygons_path: Path,
-    hazard_path: Path,
-    local_aoi_path: Path,
-    context_aoi_path: Path,
-) -> None:
-    streams = ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
-    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
-    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
-    hazard = ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
-    local_aoi = ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
-    context_aoi = ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
+## Inputs used
+- Selected stream network: `{streams_path.relative_to(ROOT)}`
+- Parcel boundary: `{PARCEL_BOUNDARY_PATH.relative_to(ROOT)}`
+- Parcel polygons: `{PARCEL_POLYGONS_PATH.relative_to(ROOT)}` ({len(parcel_polygons)} features)
+- Hazard polygons: `{HAZARD_PATH.relative_to(ROOT)}` ({len(hazard)} features)
+- Local AOI: `{LOCAL_AOI_PATH.relative_to(ROOT)}`
+- Context AOI: `{CONTEXT_AOI_PATH.relative_to(ROOT)}`
 
-    center = parcel_boundary.geometry.iloc[0].centroid
-    m = folium.Map(location=[center.y, center.x], zoom_start=16, tiles="CartoDB positron")
+## Parcel-aware overlay metrics
 
-    folium.GeoJson(
-        hazard,
-        name="Mapped flood hazard polygons",
-        style_function=_style_hazard,
-        tooltip=folium.GeoJsonTooltip(fields=["flood_plai"], aliases=["Class"]),
-    ).add_to(m)
+```csv
+{df.to_csv(index=False).rstrip()}
+```
 
-    folium.GeoJson(
-        context_aoi,
-        name="8 km fan context AOI",
-        style_function=lambda _feature: {"fill": False, "color": "#636363", "weight": 2, "dashArray": "4 4"},
-    ).add_to(m)
+Key readout:
+- network length inside parcel boundary: {row['inside_parcel_m']:.1f} m ({row['parcel_share']:.1%})
+- network length inside mapped hazard polygons: {row['inside_hazard_m']:.1f} m ({row['hazard_share']:.1%})
+- network length inside both parcel boundary and hazard polygons: {row['inside_parcel_and_hazard_m']:.1f} m
+- hazard share within parcel boundary: {row['hazard_share_within_parcel']:.1%}
+- segments touching parcel boundary: {int(row['segments_touching_parcel'])} of {int(row['segments'])}
+- segments touching hazard polygons: {int(row['segments_touching_hazard'])} of {int(row['segments'])}
+- segments touching both parcel and hazard: {int(row['segments_touching_both'])} of {int(row['segments'])}
+{clipped_line}
+## Interpretation
 
-    folium.GeoJson(
-        local_aoi,
-        name="2 km local AOI",
-        style_function=lambda _feature: {"fill": False, "color": "#969696", "weight": 2, "dashArray": "2 4"},
-    ).add_to(m)
+- The authoritative boundary confirms how much of the selected drainage network actually crosses or sits within the De Anza Villas parcel complex.
+- Comparing the network to the dissolved parcel boundary avoids using a hand-drawn approximation for parcel-scale risk context.
+- The hazard overlap remains substantial after parcel-aware clipping, so the parcel context does not eliminate the channel/wash signal; it localizes it.
+- The parcel polygons are preserved as a separate layer for later per-APN interrogation, while the dissolved boundary is the canonical single-file parcel geometry.
 
-    folium.GeoJson(
-        parcel_polygons,
-        name="De Anza Villas parcel polygons",
-        style_function=_style_parcels,
-        tooltip=folium.GeoJsonTooltip(fields=["apn", "situs_address", "situs_street", "situs_suffix"], aliases=["APN", "Number", "Street", "Suffix"]),
-    ).add_to(m)
+## Context caveat
 
-    folium.GeoJson(
-        parcel_boundary,
-        name="Dissolved parcel boundary",
-        style_function=_style_boundary,
-        tooltip=folium.GeoJsonTooltip(fields=["name", "parcel_count"], aliases=["Name", "Parcels"]),
-    ).add_to(m)
+These are terrain-derived and parcel-overlay context metrics, not a licensed engineering flood determination or FEMA map revision.
 
-    folium.GeoJson(
-        streams,
-        name="Selected stream network",
-        style_function=_style_streams,
-        tooltip=folium.GeoJsonTooltip(fields=[f for f in streams.columns if f != "geometry"], aliases=[f for f in streams.columns if f != "geometry"]),
-    ).add_to(m)
+## Outputs
 
-    folium.LayerControl(collapsed=False).add_to(m)
-    map_path.parent.mkdir(parents=True, exist_ok=True)
-    m.save(map_path)
+- Metrics CSV: `{metrics_csv.relative_to(ROOT)}`
+- Metrics JSON: `{metrics_json.relative_to(ROOT)}`
+{clipped_output}- Canonical parcel boundary: `{PARCEL_BOUNDARY_PATH.relative_to(ROOT)}`
+- Parcel polygon set: `{PARCEL_POLYGONS_PATH.relative_to(ROOT)}`
+- Canonical parcel overlay map: `{MAP_PATH.relative_to(ROOT)}`
+"""
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(report, encoding="utf-8")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Re-run overlay metrics with the De Anza Villas parcel boundary wired in.")
-    parser.add_argument("--streams", type=Path, default=DEFAULT_STREAMS)
-    parser.add_argument("--parcel-boundary", type=Path, default=DEFAULT_PARCEL_BOUNDARY)
-    parser.add_argument("--parcel-polygons", type=Path, default=DEFAULT_PARCEL_POLYGONS)
-    parser.add_argument("--hazard", type=Path, default=DEFAULT_HAZARD)
-    parser.add_argument("--local-aoi", type=Path, default=DEFAULT_LOCAL_AOI)
-    parser.add_argument("--context-aoi", type=Path, default=DEFAULT_CONTEXT_AOI)
-    parser.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR)
-    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP_PATH)
-    args = parser.parse_args()
+    load_env()
+
+    # Read all vectors once; pass GeoDataFrames to all downstream functions.
+    streams = ensure_crs(gpd.read_file(STREAMS_PATH))
+    parcel_boundary = ensure_crs(gpd.read_file(PARCEL_BOUNDARY_PATH))
+    parcel_polygons = ensure_crs(gpd.read_file(PARCEL_POLYGONS_PATH))
+    hazard = ensure_crs(gpd.read_file(HAZARD_PATH))
+    local_aoi = ensure_crs(gpd.read_file(LOCAL_AOI_PATH))
+    context_aoi = ensure_crs(gpd.read_file(CONTEXT_AOI_PATH))
 
     df, metrics_csv, metrics_json, clipped_gpkg = compute_overlay_metrics(
-        streams_path=args.streams,
-        parcel_boundary_path=args.parcel_boundary,
-        parcel_polygons_path=args.parcel_polygons,
-        hazard_path=args.hazard,
-        local_aoi_path=args.local_aoi,
-        context_aoi_path=args.context_aoi,
-        outdir=args.outdir,
+        streams=streams,
+        parcel_boundary=parcel_boundary,
+        parcel_polygons=parcel_polygons,
+        hazard=hazard,
+        local_aoi=local_aoi,
+        context_aoi=context_aoi,
+        outdir=OUTDIR,
     )
 
-    report_path = args.report.resolve()
-    report_path.parent.mkdir(parents=True, exist_ok=True)
     write_report(
         df=df,
-        report_path=report_path,
-        streams_path=args.streams,
-        parcel_boundary_path=args.parcel_boundary,
-        parcel_polygons_path=args.parcel_polygons,
-        hazard_path=args.hazard,
-        local_aoi_path=args.local_aoi,
-        context_aoi_path=args.context_aoi,
+        report_path=REPORT_PATH,
+        streams_path=STREAMS_PATH,
+        parcel_boundary=parcel_boundary,
+        parcel_polygons=parcel_polygons,
+        hazard=hazard,
         metrics_csv=metrics_csv,
         metrics_json=metrics_json,
         clipped_gpkg=clipped_gpkg,
     )
 
-    write_map(
-        map_path=args.map_path,
-        streams_path=clipped_gpkg if clipped_gpkg is not None and clipped_gpkg.exists() else args.streams,
-        parcel_boundary_path=args.parcel_boundary,
-        parcel_polygons_path=args.parcel_polygons,
-        hazard_path=args.hazard,
-        local_aoi_path=args.local_aoi,
-        context_aoi_path=args.context_aoi,
+    map_streams = clipped_gpkg if clipped_gpkg is not None and clipped_gpkg.exists() else STREAMS_PATH
+    m = build_standard_map(
+        center_gdf=parcel_boundary,
+        zoom=16,
+        hazard=hazard,
+        context_aoi=context_aoi,
+        local_aoi=local_aoi,
+        parcel_polygons=parcel_polygons,
+        parcel_boundary=parcel_boundary,
+        streams=ensure_crs(gpd.read_file(map_streams)) if map_streams != STREAMS_PATH else streams,
     )
+    MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    m.save(str(MAP_PATH))
 
-    print(report_path)
+    print(REPORT_PATH)
     print(metrics_csv)
     print(metrics_json)
     if clipped_gpkg is not None:
         print(clipped_gpkg)
-    print(args.map_path)
+    print(MAP_PATH)
 
 
 if __name__ == "__main__":

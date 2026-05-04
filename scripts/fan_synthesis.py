@@ -1,41 +1,38 @@
 from __future__ import annotations
 
-import argparse
 import json
-import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-import folium
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
 from rasterio.mask import mask
-from scipy.ndimage import maximum_filter, minimum_filter
 from whitebox.whitebox_tools import WhiteboxTools
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
 from scripts.init_env import load_env
-from scripts.study_config import TARGET_CRS, deliverable_path, step_path
-from scripts.study_utils import ensure_crs
+from scripts.study_config import (
+    ROOT,
+    config_path,
+    deliverable_path,
+    step_path,
+)
+from scripts.study_utils import build_standard_map, ensure_crs
 
-DEFAULT_DEM = config_path("paths", "dem_filled")
-DEFAULT_SLOPE = config_path("paths", "slope_degrees")
-DEFAULT_STREAMS = config_path("paths", "selected_streams")
-DEFAULT_PARCEL_BOUNDARY = config_path("paths", "parcel_boundary")
-DEFAULT_PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
-DEFAULT_LOCAL_AOI = config_path("paths", "local_aoi")
-DEFAULT_CONTEXT_AOI = config_path("paths", "context_aoi")
-DEFAULT_HAZARD = config_path("paths", "hazard_polygons")
-DEFAULT_OUTDIR = step_path("fan_synthesis", "outdir")
-DEFAULT_REPORT = deliverable_path("fan_synthesis_report")
-DEFAULT_MAP = deliverable_path("fan_synthesis_map")
-DEFAULT_Rough_MAG = config_path("paths", "roughness_magnitude")
-DEFAULT_Rough_SCALE = config_path("paths", "roughness_scale")
+DEM_PATH = config_path("paths", "dem_filled")
+SLOPE_PATH = config_path("paths", "slope_degrees")
+STREAMS_PATH = config_path("paths", "selected_streams")
+PARCEL_BOUNDARY_PATH = config_path("paths", "parcel_boundary")
+PARCEL_POLYGONS_PATH = config_path("paths", "parcel_polygons")
+LOCAL_AOI_PATH = config_path("paths", "local_aoi")
+CONTEXT_AOI_PATH = config_path("paths", "context_aoi")
+HAZARD_PATH = config_path("paths", "hazard_polygons")
+ROUGH_MAG_PATH = config_path("paths", "roughness_magnitude")
+ROUGH_SCALE_PATH = config_path("paths", "roughness_scale")
+OUTDIR = step_path("fan_synthesis", "outdir")
+REPORT_PATH = deliverable_path("fan_synthesis_report")
+MAP_PATH = deliverable_path("fan_synthesis_map")
 
 
 @dataclass
@@ -62,10 +59,6 @@ class AreaStats:
     stream_density_m_per_km2: float
 
 
-def _read_geom(path: Path) -> gpd.GeoDataFrame:
-    return ensure_crs(gpd.read_file(path))
-
-
 def _raster_stats(path: Path, geom) -> dict[str, float | int]:
     with rasterio.open(path) as ds:
         arr, _ = mask(ds, [geom], crop=True, filled=False)
@@ -82,10 +75,9 @@ def _raster_stats(path: Path, geom) -> dict[str, float | int]:
         }
 
 
-def _stream_stats(streams: gpd.GeoDataFrame, geom) -> tuple[float, int]:
+def _stream_stats(streams: gpd.GeoDataFrame, geom) -> float:
     inside = streams[streams.intersects(geom)].copy()
-    length = float(inside.geometry.intersection(geom).length.sum())
-    return length, int(len(inside))
+    return float(inside.geometry.intersection(geom).length.sum())
 
 
 def ensure_roughness(dem_path: Path, rough_mag: Path, rough_scale: Path) -> None:
@@ -111,7 +103,7 @@ def build_area_stats(
     slope = _raster_stats(slope_path, geom)
     rough = _raster_stats(rough_mag_path, geom)
     area_m2 = float(geom.area)
-    stream_length_m, _ = _stream_stats(streams, geom)
+    stream_length_m = _stream_stats(streams, geom)
     return AreaStats(
         area_name=area_name,
         area_m2=area_m2,
@@ -142,14 +134,6 @@ def write_report(
     stats_csv: Path,
     stats_json: Path,
     parcel_overlay_csv: Path,
-    parcel_boundary_path: Path,
-    parcel_polygons_path: Path,
-    local_aoi_path: Path,
-    context_aoi_path: Path,
-    hazard_path: Path,
-    streams_path: Path,
-    rough_mag_path: Path,
-    rough_scale_path: Path,
 ) -> None:
     parcel_overlay = pd.read_csv(parcel_overlay_csv)
     parcel_row = parcel_overlay.iloc[0]
@@ -158,204 +142,125 @@ def write_report(
     local_stats = stats_df[stats_df["area_name"] == "local_aoi"].iloc[0]
     context_stats = stats_df[stats_df["area_name"] == "context_aoi"].iloc[0]
 
-    lines: list[str] = []
-    lines.append("# Fan Activity / Evidence Synthesis")
-    lines.append("")
-    lines.append("This step synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.")
-    lines.append("")
-    lines.append("## Source-document signal")
-    lines.append("")
-    lines.append("- DRI 2015 active/inactive fan mapping: the Borrego Springs study area is dominated by active alluvial-fan landforms; the working summary used in this project is that about 90% of the 61 sq mi study area is geomorphically and hydraulically active.")
-    lines.append("- Boyle / County guidance: flash floods move rapidly down desert canyons, smaller flows occupy existing washes until they are obstructed or aggrade, design-storm floods can sheet-flow across the fan and establish new washes, and all fan areas are subject to flooding unless properly protected.")
-    lines.append("- County guidance also flags fan-terminus washes and local washes as flow-concentrating features that often need additional engineering analysis.")
-    lines.append("")
-    lines.append("## Terrain evidence from the 1 m DEM")
-    lines.append("")
-    lines.append("```csv")
-    lines.append(stats_df.to_csv(index=False).rstrip())
-    lines.append("```")
-    lines.append("")
-    lines.append("Interpretation:")
-    lines.append(f"- The local 2 km AOI has a p95-p5 elevation relief of {local_stats['relief_p95_p5_m']:.1f} m, mean slope of {local_stats['slope_mean_deg']:.1f}°, and mean multiscale roughness of {local_stats['rough_mean_m']:.1f} m.")
-    lines.append(f"- The De Anza Villas parcel boundary itself still carries {parcel_stats['relief_p95_p5_m']:.1f} m of p95-p5 relief, mean slope of {parcel_stats['slope_mean_deg']:.1f}°, and mean roughness of {parcel_stats['rough_mean_m']:.1f} m.")
-    lines.append(f"- The broader fan context AOI remains rugged: p95-p5 relief {context_stats['relief_p95_p5_m']:.1f} m, mean slope {context_stats['slope_mean_deg']:.1f}°, mean roughness {context_stats['rough_mean_m']:.1f} m.")
-    lines.append("")
-    lines.append("## Wash / channel texture")
-    lines.append("")
-    lines.append(f"- Selected 5000-cell channel network length inside the parcel boundary: {parcel_row['inside_parcel_m']:.1f} m.")
-    lines.append(f"- Parcel-length hazard overlap: {parcel_row['inside_parcel_and_hazard_m']:.1f} m ({parcel_row['hazard_share_within_parcel']:.1%} of parcel-crossing channel length).");
-    lines.append(f"- Parcel stream density: {parcel_stats['stream_density_m_per_km2']:.1f} m/km², versus {context_stats['stream_density_m_per_km2']:.1f} m/km² across the 8 km fan context AOI.")
-    lines.append(f"- The local 2 km AOI has {local_stats['stream_density_m_per_km2']:.1f} m/km², consistent with a concentrated drainage belt near the mountain-front/fan-transition area.")
-    lines.append("")
-    lines.append("## Fan-activity synthesis")
-    lines.append("")
-    lines.append("- Stage 1 — landform confirmation: Borrego Springs sits on coalescing alluvial fans fed by canyon systems; the parcel is on the fan surface, not an isolated benign upland.")
-    lines.append("- Stage 2 — geomorphic activity: the DRI mapping and the dense, branching extracted wash network both support active-fan behavior rather than stable, fixed-drainage behavior.")
-    lines.append("- Stage 3 — flood severity context: Boyle/County/FEMA context remains severe; the regulatory guidance treats the fan as flood-prone and acknowledges avulsion / new-wash formation risk.")
-    lines.append("- Overall: the parcel sits within an active fan drainage fabric. The right reading is concentrated-flow exposure with channel mobility, not a one-time fixed-channel problem.")
-    lines.append("")
-    lines.append("## Outputs")
-    lines.append("")
-    lines.append(f"- Fan synthesis report: `{report_path.relative_to(ROOT)}`")
-    lines.append(f"- Fan synthesis map: `{map_path.relative_to(ROOT)}`")
-    lines.append(f"- Terrain stats CSV: `{stats_csv.relative_to(ROOT)}`")
-    lines.append(f"- Terrain stats JSON: `{stats_json.relative_to(ROOT)}`")
-    lines.append(f"- Roughness magnitude raster: `{rough_mag_path.relative_to(ROOT)}`")
-    lines.append(f"- Roughness scale raster: `{rough_scale_path.relative_to(ROOT)}`")
-    lines.append(f"- Parcel overlay metrics used here: `{parcel_overlay_csv.relative_to(ROOT)}`")
-    lines.append(f"- Parcel boundary: `{parcel_boundary_path.relative_to(ROOT)}`")
-    lines.append(f"- Parcel polygons: `{parcel_polygons_path.relative_to(ROOT)}`")
-    lines.append(f"- Local AOI: `{local_aoi_path.relative_to(ROOT)}`")
-    lines.append(f"- Context AOI: `{context_aoi_path.relative_to(ROOT)}`")
-    lines.append(f"- Hazard polygons: `{hazard_path.relative_to(ROOT)}`")
-    lines.append(f"- Selected channel network: `{streams_path.relative_to(ROOT)}`")
-    lines.append("")
-    lines.append("## Caveat")
-    lines.append("")
-    lines.append("These are evidence-synthesis outputs from public documents and terrain analysis, not a stamped engineering flood report or FEMA map revision.")
+    report = f"""\
+# Fan Activity / Evidence Synthesis
 
-    report_path.write_text("\n".join(lines) + "\n")
+This step synthesizes the Borrego Springs fan-activity evidence from the official flood-protection documents and the 1 m De Anza Villas terrain derivatives.
 
+## Source-document signal
 
-def write_map(
-    map_path: Path,
-    streams_path: Path,
-    parcel_boundary_path: Path,
-    parcel_polygons_path: Path,
-    local_aoi_path: Path,
-    context_aoi_path: Path,
-    hazard_path: Path,
-) -> None:
-    streams = ensure_crs(gpd.read_file(streams_path)).to_crs(4326)
-    parcel_boundary = ensure_crs(gpd.read_file(parcel_boundary_path)).to_crs(4326)
-    parcel_polygons = ensure_crs(gpd.read_file(parcel_polygons_path)).to_crs(4326)
-    local_aoi = ensure_crs(gpd.read_file(local_aoi_path)).to_crs(4326)
-    context_aoi = ensure_crs(gpd.read_file(context_aoi_path)).to_crs(4326)
-    hazard = ensure_crs(gpd.read_file(hazard_path)).to_crs(4326)
+- DRI 2015 active/inactive fan mapping: the Borrego Springs study area is dominated by active alluvial-fan landforms; the working summary used in this project is that about 90% of the 61 sq mi study area is geomorphically and hydraulically active.
+- Boyle / County guidance: flash floods move rapidly down desert canyons, smaller flows occupy existing washes until they are obstructed or aggrade, design-storm floods can sheet-flow across the fan and establish new washes, and all fan areas are subject to flooding unless properly protected.
+- County guidance also flags fan-terminus washes and local washes as flow-concentrating features that often need additional engineering analysis.
 
-    center = parcel_boundary.geometry.iloc[0].centroid
-    m = folium.Map(location=[center.y, center.x], zoom_start=15, tiles=None)
-    folium.TileLayer("Esri.WorldImagery", name="Satellite imagery", attr="Esri").add_to(m)
-    folium.TileLayer("CartoDB positron", name="Light basemap", attr="CartoDB").add_to(m)
+## Terrain evidence from the 1 m DEM
 
-    folium.GeoJson(
-        hazard,
-        name="Mapped flood hazard polygons",
-        style_function=lambda _feature: {"fillColor": "#e34a33", "color": "#b30000", "weight": 1, "fillOpacity": 0.18},
-        tooltip=folium.GeoJsonTooltip(fields=["flood_plai"], aliases=["Hazard class"]),
-    ).add_to(m)
+```csv
+{stats_df.to_csv(index=False).rstrip()}
+```
 
-    folium.GeoJson(
-        context_aoi,
-        name="8 km fan context AOI",
-        style_function=lambda _feature: {"fill": False, "color": "#636363", "weight": 2, "dashArray": "4 4"},
-    ).add_to(m)
+Interpretation:
+- The local 2 km AOI has a p95-p5 elevation relief of {local_stats['relief_p95_p5_m']:.1f} m, mean slope of {local_stats['slope_mean_deg']:.1f}°, and mean multiscale roughness of {local_stats['rough_mean_m']:.1f} m.
+- The De Anza Villas parcel boundary itself still carries {parcel_stats['relief_p95_p5_m']:.1f} m of p95-p5 relief, mean slope of {parcel_stats['slope_mean_deg']:.1f}°, and mean roughness of {parcel_stats['rough_mean_m']:.1f} m.
+- The broader fan context AOI remains rugged: p95-p5 relief {context_stats['relief_p95_p5_m']:.1f} m, mean slope {context_stats['slope_mean_deg']:.1f}°, mean roughness {context_stats['rough_mean_m']:.1f} m.
 
-    folium.GeoJson(
-        local_aoi,
-        name="2 km local AOI",
-        style_function=lambda _feature: {"fill": False, "color": "#969696", "weight": 2, "dashArray": "2 4"},
-    ).add_to(m)
+## Wash / channel texture
 
-    folium.GeoJson(
-        parcel_polygons,
-        name="De Anza Villas parcel polygons",
-        style_function=lambda _feature: {"fillColor": "#9ecae1", "color": "#3182bd", "weight": 1, "fillOpacity": 0.12},
-        tooltip=folium.GeoJsonTooltip(fields=["apn", "situs_address", "subname"], aliases=["APN", "Address", "Subname"]),
-    ).add_to(m)
+- Selected 5000-cell channel network length inside the parcel boundary: {parcel_row['inside_parcel_m']:.1f} m.
+- Parcel-length hazard overlap: {parcel_row['inside_parcel_and_hazard_m']:.1f} m ({parcel_row['hazard_share_within_parcel']:.1%} of parcel-crossing channel length).
+- Parcel stream density: {parcel_stats['stream_density_m_per_km2']:.1f} m/km², versus {context_stats['stream_density_m_per_km2']:.1f} m/km² across the 8 km fan context AOI.
+- The local 2 km AOI has {local_stats['stream_density_m_per_km2']:.1f} m/km², consistent with a concentrated drainage belt near the mountain-front/fan-transition area.
 
-    folium.GeoJson(
-        parcel_boundary,
-        name="Dissolved parcel boundary",
-        style_function=lambda _feature: {"fill": False, "color": "#000000", "weight": 3},
-        tooltip=folium.GeoJsonTooltip(fields=["name", "parcel_count"], aliases=["Name", "Parcels"]),
-    ).add_to(m)
+## Fan-activity synthesis
 
-    folium.GeoJson(
-        streams,
-        name="Selected channel network",
-        style_function=lambda _feature: {"color": "#2b8cbe", "weight": 2, "opacity": 0.85},
-    ).add_to(m)
+- Stage 1 — landform confirmation: Borrego Springs sits on coalescing alluvial fans fed by canyon systems; the parcel is on the fan surface, not an isolated benign upland.
+- Stage 2 — geomorphic activity: the DRI mapping and the dense, branching extracted wash network both support active-fan behavior rather than stable, fixed-drainage behavior.
+- Stage 3 — flood severity context: Boyle/County/FEMA context remains severe; the regulatory guidance treats the fan as flood-prone and acknowledges avulsion / new-wash formation risk.
+- Overall: the parcel sits within an active fan drainage fabric. The right reading is concentrated-flow exposure with channel mobility, not a one-time fixed-channel problem.
 
-    folium.LayerControl(collapsed=False).add_to(m)
-    map_path.parent.mkdir(parents=True, exist_ok=True)
-    m.save(map_path)
+## Outputs
+
+- Fan synthesis report: `{report_path.relative_to(ROOT)}`
+- Fan synthesis map: `{MAP_PATH.relative_to(ROOT)}`
+- Terrain stats CSV: `{stats_csv.relative_to(ROOT)}`
+- Terrain stats JSON: `{stats_json.relative_to(ROOT)}`
+- Roughness magnitude raster: `{ROUGH_MAG_PATH.relative_to(ROOT)}`
+- Roughness scale raster: `{ROUGH_SCALE_PATH.relative_to(ROOT)}`
+- Parcel overlay metrics used here: `{parcel_overlay_csv.relative_to(ROOT)}`
+- Parcel boundary: `{PARCEL_BOUNDARY_PATH.relative_to(ROOT)}`
+- Parcel polygons: `{PARCEL_POLYGONS_PATH.relative_to(ROOT)}`
+- Local AOI: `{LOCAL_AOI_PATH.relative_to(ROOT)}`
+- Context AOI: `{CONTEXT_AOI_PATH.relative_to(ROOT)}`
+- Hazard polygons: `{HAZARD_PATH.relative_to(ROOT)}`
+- Selected channel network: `{STREAMS_PATH.relative_to(ROOT)}`
+
+## Caveat
+
+These are evidence-synthesis outputs from public documents and terrain analysis, not a stamped engineering flood report or FEMA map revision.
+"""
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(report, encoding="utf-8")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Complete fan-activity synthesis for De Anza Villas.")
-    parser.add_argument("--dem", type=Path, default=DEFAULT_DEM)
-    parser.add_argument("--slope", type=Path, default=DEFAULT_SLOPE)
-    parser.add_argument("--streams", type=Path, default=DEFAULT_STREAMS)
-    parser.add_argument("--parcel-boundary", type=Path, default=DEFAULT_PARCEL_BOUNDARY)
-    parser.add_argument("--parcel-polygons", type=Path, default=DEFAULT_PARCEL_POLYGONS)
-    parser.add_argument("--local-aoi", type=Path, default=DEFAULT_LOCAL_AOI)
-    parser.add_argument("--context-aoi", type=Path, default=DEFAULT_CONTEXT_AOI)
-    parser.add_argument("--hazard", type=Path, default=DEFAULT_HAZARD)
-    parser.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR)
-    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    parser.add_argument("--map-path", type=Path, default=DEFAULT_MAP)
-    args = parser.parse_args()
-
     load_env()
 
-    rough_mag = DEFAULT_Rough_MAG
-    rough_scale = DEFAULT_Rough_SCALE
-    ensure_roughness(args.dem, rough_mag, rough_scale)
+    ensure_roughness(DEM_PATH, ROUGH_MAG_PATH, ROUGH_SCALE_PATH)
 
-    streams = ensure_crs(gpd.read_file(args.streams))
-    parcel = ensure_crs(gpd.read_file(args.parcel_boundary)).geometry.iloc[0]
-    local_aoi = ensure_crs(gpd.read_file(args.local_aoi)).geometry.iloc[0]
-    context_aoi = ensure_crs(gpd.read_file(args.context_aoi)).geometry.iloc[0]
+    # Read vectors once; pass GeoDataFrames to all downstream functions.
+    streams = ensure_crs(gpd.read_file(STREAMS_PATH))
+    parcel_boundary = ensure_crs(gpd.read_file(PARCEL_BOUNDARY_PATH))
+    parcel_polygons = ensure_crs(gpd.read_file(PARCEL_POLYGONS_PATH))
+    local_aoi = ensure_crs(gpd.read_file(LOCAL_AOI_PATH))
+    context_aoi = ensure_crs(gpd.read_file(CONTEXT_AOI_PATH))
+    hazard = ensure_crs(gpd.read_file(HAZARD_PATH))
+
+    parcel_geom = parcel_boundary.geometry.iloc[0]
+    local_geom = local_aoi.geometry.iloc[0]
+    context_geom = context_aoi.geometry.iloc[0]
 
     stats = [
-        asdict(build_area_stats("parcel", parcel, args.dem, args.slope, rough_mag, streams)),
-        asdict(build_area_stats("local_aoi", local_aoi, args.dem, args.slope, rough_mag, streams)),
-        asdict(build_area_stats("context_aoi", context_aoi, args.dem, args.slope, rough_mag, streams)),
+        asdict(build_area_stats("parcel", parcel_geom, DEM_PATH, SLOPE_PATH, ROUGH_MAG_PATH, streams)),
+        asdict(build_area_stats("local_aoi", local_geom, DEM_PATH, SLOPE_PATH, ROUGH_MAG_PATH, streams)),
+        asdict(build_area_stats("context_aoi", context_geom, DEM_PATH, SLOPE_PATH, ROUGH_MAG_PATH, streams)),
     ]
     stats_df = pd.DataFrame(stats)
 
-    outdir = args.outdir.resolve()
-    outdir.mkdir(parents=True, exist_ok=True)
-    stats_csv = outdir / "fan_synthesis_stats.csv"
-    stats_json = outdir / "fan_synthesis_stats.json"
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    stats_csv = OUTDIR / "fan_synthesis_stats.csv"
+    stats_json = OUTDIR / "fan_synthesis_stats.json"
     stats_df.to_csv(stats_csv, index=False)
     stats_json.write_text(json.dumps(stats, indent=2))
 
-    report_path = args.report.resolve()
-    report_path.parent.mkdir(parents=True, exist_ok=True)
     write_report(
-        report_path=report_path,
+        report_path=REPORT_PATH,
         stats_df=stats_df,
         stats_csv=stats_csv,
         stats_json=stats_json,
         parcel_overlay_csv=step_path("parcel_overlay", "metrics_csv"),
-        parcel_boundary_path=args.parcel_boundary,
-        parcel_polygons_path=args.parcel_polygons,
-        local_aoi_path=args.local_aoi,
-        context_aoi_path=args.context_aoi,
-        hazard_path=args.hazard,
-        streams_path=args.streams,
-        rough_mag_path=rough_mag,
-        rough_scale_path=rough_scale,
     )
 
-    write_map(
-        map_path=args.map_path.resolve(),
-        streams_path=args.streams,
-        parcel_boundary_path=args.parcel_boundary,
-        parcel_polygons_path=args.parcel_polygons,
-        local_aoi_path=args.local_aoi,
-        context_aoi_path=args.context_aoi,
-        hazard_path=args.hazard,
+    m = build_standard_map(
+        center_gdf=parcel_boundary,
+        zoom=15,
+        satellite_basemap=True,
+        hazard=hazard,
+        context_aoi=context_aoi,
+        local_aoi=local_aoi,
+        parcel_polygons=parcel_polygons,
+        parcel_boundary=parcel_boundary,
+        streams=streams,
     )
+    MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    m.save(str(MAP_PATH))
 
-    print(report_path)
+    print(REPORT_PATH)
     print(stats_csv)
     print(stats_json)
-    print(rough_mag)
-    print(rough_scale)
-    print(args.map_path.resolve())
+    print(ROUGH_MAG_PATH)
+    print(ROUGH_SCALE_PATH)
+    print(MAP_PATH)
 
 
 if __name__ == "__main__":

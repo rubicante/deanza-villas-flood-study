@@ -16,25 +16,21 @@ import pandas as pd
 import geopandas as gpd
 import rasterio
 from rasterio.mask import mask
-from rasterio.plot import plotting_extent
-from rasterio.transform import Affine
 from matplotlib.colors import LightSource
-from scripts.study_config import config_path, deliverable_path, step_path
 from PIL import Image
+from scripts.study_config import ROOT, config_path, step_path
 
-ROOT = Path(__file__).resolve().parents[1]
 FIGDIR = ROOT / "outputs/figures/final_report"
-DATA = ROOT / "data"
 
-PARCEL_BOUNDARY = DATA / "vectors/deanza_villas_complex_boundary.geojson"
-PARCEL_POLYGONS = DATA / "vectors/deanza_villas_parcel_polygons.geojson"
-LOCAL_AOI = DATA / "vectors/deanza_villas_2km_aoi.geojson"
-CONTEXT_AOI = DATA / "vectors/borrego_valley_context_8km_aoi.geojson"
-FEMA = DATA / "raw/fema/oes_know_your_hazards_flooding_borrego.geojson"
-STREAMS = DATA / "processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg"
-PARCHAN = DATA / "processed/terrain/deanza_villas_2km_1m/parcels/deanza_villas_2km_1m_dem_filled_streams_5000_in_parcel.gpkg"
-DEM = DATA / "processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_filled.tif"
-SLOPE = DATA / "processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_slope_degrees.tif"
+PARCEL_BOUNDARY = config_path("paths", "parcel_boundary")
+PARCEL_POLYGONS = config_path("paths", "parcel_polygons")
+LOCAL_AOI = config_path("paths", "local_aoi")
+CONTEXT_AOI = config_path("paths", "context_aoi")
+FEMA = config_path("paths", "hazard_polygons")
+STREAMS = config_path("paths", "selected_streams")
+PARCHAN = step_path("parcel_overlay", "clip_gpkg")
+DEM = config_path("paths", "dem_filled")
+SLOPE = config_path("paths", "slope_degrees")
 FAN_STATS = step_path("fan_synthesis", "stats_csv")
 SWEEP = step_path("wash_extraction", "summary_csv")
 VAL_JSON = step_path("satellite_validation", "selected_json")
@@ -152,7 +148,6 @@ def fig2_terrain_drainage():
     with rasterio.open(DEM) as src:
         dem_arr, dem_transform = mask(src, [geom], crop=True, filled=False)
         dem = np.array(dem_arr[0].filled(np.nan), dtype="float64")
-        extent = plotting_extent(dem[0], dem_transform) if False else None
         # Build hillshade from the cropped DEM.
         z = dem.copy()
         z[~np.isfinite(z)] = np.nan

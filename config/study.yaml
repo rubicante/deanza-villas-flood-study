@@ -15,6 +15,9 @@ paths:
   parcel_boundary: data/vectors/deanza_villas_complex_boundary.geojson
   parcel_polygons: data/vectors/deanza_villas_parcel_polygons.geojson
   selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
+  dem_source_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
+  dem_source_output: data/raw/dem/borrego_valley_3dep_10m.tif
+  terrain_outdir: data/processed/terrain
 steps:
   terrain_context:
     script: scripts/make_terrain_context_map.py
