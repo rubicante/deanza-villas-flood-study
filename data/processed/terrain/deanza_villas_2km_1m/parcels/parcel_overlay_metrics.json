@@ -1,17 +1,17 @@
 [
   {
     "layer_name": "selected_stream_network",
-    "total_length_m": 31848.432512341642,
-    "inside_parcel_m": 904.63176742153,
-    "inside_hazard_m": 15057.132478960777,
-    "inside_parcel_and_hazard_m": 875.1716895473422,
-    "outside_parcel_m": 30943.80074492011,
-    "parcel_share": 0.028404279145322914,
-    "hazard_share": 0.472774679668331,
-    "hazard_share_within_parcel": 0.9674341771590028,
-    "segments": 359,
-    "segments_touching_parcel": 22,
-    "segments_touching_hazard": 194,
-    "segments_touching_both": 22
+    "total_length_m": 24724.206332605325,
+    "inside_parcel_m": 770.6061172698014,
+    "inside_hazard_m": 12144.055054318833,
+    "inside_parcel_and_hazard_m": 737.998525328492,
+    "outside_parcel_m": 23953.600215335522,
+    "parcel_share": 0.031168083088416714,
+    "hazard_share": 0.4911807841655052,
+    "hazard_share_within_parcel": 0.9576857862784224,
+    "segments": 237,
+    "segments_touching_parcel": 15,
+    "segments_touching_hazard": 131,
+    "segments_touching_both": 15
   }
 ]

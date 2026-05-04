@@ -29,7 +29,7 @@ RENDER_STEPS = [
 ]
 
 # Paths that are generated during the pipeline run, not pre-existing inputs.
-_GENERATED_PATHS = {"d8_pointer"}
+_GENERATED_PATHS = {"d8_pointer", "dinf_flow_accum"}
 
 
 def verify_inputs() -> None:

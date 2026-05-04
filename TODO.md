@@ -14,16 +14,6 @@ Recommended relationship to other repo logs:
 
 ## Backlog
 
-### Tier 1 — Foundation fixes (order matters; each step's output feeds the next)
-
-- [ ] Replace warped py3dep DEM with native USGS 3DEP 1m tile. Current DEM has non-square 0.833m × 0.847m pixels from WCS reprojection via py3dep 0.19.0. Replacement: `USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif` from the Eastern San Diego County 2017 QL2 lidar project. Source URL: `https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/CA_Eastern_SanDiegoCo_2016/TIFF/USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif`. Properties verified: EPSG:26911 (NAD83 / UTM 11N), exactly 1.000m × 1.000m square pixels, 10012×10012 px (10km tile), hydro-flattened bare-earth. Single tile covers the entire 2km AOI. The newer S1M seamless product does not cover this area yet (rollout still in progress; only southern-tier states available). Approach: COG format supports HTTP range reads — can extract AOI window via rasterio without downloading full ~100MB tile, or download tile and clip. Reproject once from EPSG:26911 to EPSG:5070 after extraction. Overwrite `data/raw/dem/deanza_villas_2km_1m_dem.tif` and verify square 1m pixels.
-- [ ] Switch terrain_metrics.py from `fill_depressions` only to `breach_depressions` → `fill_depressions` (breach-first-then-fill preserves flow continuity across fan surfaces; simple fill creates artificial flat areas that block D8 routing). Regenerate filled DEM, slope, and D8 flow accumulation rasters.
-- [ ] Add D-infinity (or FD8) flow accumulation alongside existing D8. Run `DInfFlowAccumulation` on the breached+filled DEM. The divergence between D8 and D-infinity on the fan surface is direct evidence of sheet-flow/alluvial fan behavior. Keep both; do not remove D8.
-- [ ] Rerun extract_washes.py on the new DEM + D-infinity accum + breached fill. Compare stream networks against current output — expect more divergent flow paths on the fan surface and different threshold behavior.
-- [ ] Rerun parcel_overlay.py on new stream network.
-- [ ] Rerun fan_synthesis.py on new DEM (roughness, terrain stats at 3 scales).
-- [ ] Regenerate all render outputs (reports, maps, figures) after compute steps pass.
-
 ### Tier 2 — Hazard evidence quality improvements
 
 - [ ] Fetch authoritative FEMA NFHL data for Borrego Valley from ArcGIS REST (California reduced set). Endpoint: `https://services2.arcgis.com/Uq9r85Potqm3MfRV/arcgis/rest/services/S_FLD_HAZ_AR_Reduced_Set_CA_wm/FeatureServer/0`. Query by spatial extent around De Anza Villas (33.256, -116.375, 8km radius), export as GeoJSON. Confirmed: 110 AO zone features for DFIRM 06073C with depth (1–6 ft), velocity (3–11 ft/sec), plus AE zones with STATIC_BFE. Fields: FLD_ZONE, ZONE_SUBTY, DEPTH, VELOCITY, STATIC_BFE, SFHA_TF, DFIRM_ID, STUDY_TYP, SOURCE_CIT, LEN_UNIT, VEL_UNIT, plus revert fields. Caveat: this CA reduced set (Nov 2023) pre-filters out Zone D (undetermined) and Zone X "Area of Minimal Flood Hazard" — acceptable for positive hazard evidence; Zone D areas are independently assessed by terrain/satellite analysis. Save as `data/raw/fema/nfhl_borrego_valley.geojson`. Update study.yaml `hazard_polygons` path and study_manifest.yaml reference. Replace current `data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson` (1,632 features, FP100/FW100 only, no depth/velocity).
@@ -40,4 +30,4 @@ Recommended relationship to other repo logs:
 
 ### Tier 4 — Dependency hygiene
 
-- [ ] Remove py3dep dependency entirely after Tier 1 DEM replacement. py3dep 0.19.0 (current) has a documented data-quality regression (GitHub issue #77) and is only used by fetch_dem.py which is being replaced by direct S3 tile access. Remove from requirements/venv and delete or repurpose fetch_dem.py.
+- [ ] py3dep 0.19.0 retained (not removed). The Eastern SD 2017 QL2 lidar tiles don't cover the parcel; py3dep WCS mosaic is the correct DEM source. The known 0.19.0 non-square pixel regression (GitHub #77) is worked around by reprojecting py3dep output to exactly 1m square pixels in EPSG:5070 via rasterio. Option: pin py3dep once a fixed version is released.

@@ -3,10 +3,11 @@ study:
   crs: EPSG:5070
   default_thresholds: [1000, 2500, 5000]
 paths:
-  dem_filled: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_filled.tif
-  d8_flow_accum: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_d8_flow_accum.tif
-  d8_pointer: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_d8_pointer.tif
-  slope_degrees: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_slope_degrees.tif
+  dem_filled: data/processed/terrain/deanza_villas_2km_1m_dem_filled.tif
+  d8_flow_accum: data/processed/terrain/deanza_villas_2km_1m_dem_d8_flow_accum.tif
+  d8_pointer: data/processed/terrain/deanza_villas_2km_1m_dem_d8_pointer.tif
+  dinf_flow_accum: data/processed/terrain/deanza_villas_2km_1m_dem_dinf_flow_accum.tif
+  slope_degrees: data/processed/terrain/deanza_villas_2km_1m_dem_slope_degrees.tif
   roughness_magnitude: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif
   roughness_scale: data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif
   hazard_polygons: data/raw/fema/oes_know_your_hazards_flooding_borrego.geojson
@@ -17,6 +18,7 @@ paths:
   selected_streams: data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_streams_5000.gpkg
   dem_source_aoi: data/vectors/borrego_valley_context_8km_aoi.geojson
   dem_source_output: data/raw/dem/borrego_valley_3dep_10m.tif
+  dem_source_1m: data/raw/dem/deanza_villas_2km_1m_dem.tif
   terrain_outdir: data/processed/terrain
 steps:
   wash_extraction:

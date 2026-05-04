@@ -1,38 +1,41 @@
 [
   {
     "threshold_cells": 1000,
-    "segments": 1712,
-    "total_length_m": 76026.91593661907,
-    "hazard_length_m": 32992.22447708699,
-    "hazard_share": 0.43395452874336543,
-    "local_aoi_share": 0.57557072387395,
+    "segments": 1123,
+    "total_length_m": 58030.57643911989,
+    "hazard_length_m": 25789.92590447915,
+    "hazard_share": 0.4444196057837796,
+    "local_aoi_share": 0.6101244447364547,
     "context_share": 1.0,
-    "mean_segment_length_m": 44.40824529008123,
-    "max_segment_length_m": 386.56941329722554,
-    "segments_touching_hazard": 757
+    "mean_segment_length_m": 51.67460056911833,
+    "max_segment_length_m": 396.37972567696727,
+    "segments_touching_hazard": 528,
+    "flow_type": "d8"
   },
   {
     "threshold_cells": 2500,
-    "segments": 694,
-    "total_length_m": 45873.184795116365,
-    "hazard_length_m": 20783.519598230665,
-    "hazard_share": 0.4530646758243667,
-    "local_aoi_share": 0.5971633066001563,
+    "segments": 454,
+    "total_length_m": 35842.98655569301,
+    "hazard_length_m": 16833.666874043032,
+    "hazard_share": 0.4696502298402729,
+    "local_aoi_share": 0.630144375802554,
     "context_share": 1.0,
-    "mean_segment_length_m": 66.09968990650773,
-    "max_segment_length_m": 412.6285706059047,
-    "segments_touching_hazard": 352
+    "mean_segment_length_m": 78.94930959403746,
+    "max_segment_length_m": 611.6589462905463,
+    "segments_touching_hazard": 233,
+    "flow_type": "d8"
   },
   {
     "threshold_cells": 5000,
-    "segments": 359,
-    "total_length_m": 31848.432512341642,
-    "hazard_length_m": 15057.132478960777,
-    "hazard_share": 0.472774679668331,
-    "local_aoi_share": 0.6187737946459444,
+    "segments": 237,
+    "total_length_m": 24724.206332605325,
+    "hazard_length_m": 12144.055054318833,
+    "hazard_share": 0.4911807841655052,
+    "local_aoi_share": 0.6512528132166934,
     "context_share": 1.0,
-    "mean_segment_length_m": 88.71429669175944,
-    "max_segment_length_m": 634.6714536909791,
-    "segments_touching_hazard": 194
+    "mean_segment_length_m": 104.32154570719547,
+    "max_segment_length_m": 639.4528855298863,
+    "segments_touching_hazard": 131,
+    "flow_type": "d8"
   }
 ]
