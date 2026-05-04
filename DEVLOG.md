@@ -24,3 +24,4 @@ Guidance:
 - 2026-05-03 18:20 UTC: Added generic plan-file guidance to `AGENTS.md` so queued work can live in `TODO.md` and material execution notes can continue in `DEVLOG.md`.
 - 2026-05-03 18:30 UTC: Renamed the generic plan concept from `PLAN.md` to root `TODO.md` and updated `AGENTS.md` to match.
 - 2026-05-03 18:40 UTC: Removed the `AGENTS.md` pointer from `README.md` so the README stays human-facing.
+- 2026-05-04 15:37 UTC: Consolidated the version-1 phase development notes into `outputs/reports/v1_development_summary.md`, preserving only the salient terrain, parcel, fan, and validation decisions.
