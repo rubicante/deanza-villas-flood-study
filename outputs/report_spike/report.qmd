@@ -29,7 +29,8 @@ import plotly.express as px
 from pathlib import Path
 
 # Repo root is two levels up from this .qmd file (outputs/report_spike/)
-ROOT = Path(__file__).resolve().parent.parent.parent
+# Quarto runs the notebook with cwd = the .qmd's directory
+ROOT = Path.cwd().parent.parent
 
 # Load threshold sweep data
 sweep = pd.read_csv(ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv")
