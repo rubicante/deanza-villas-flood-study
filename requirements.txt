@@ -1,0 +1,24 @@
+# Quarto interactive report — setup and render
+#
+# ONE-TIME SETUP:
+#   Option A (system Python, simplest):
+#     pip3 install -r requirements.txt
+#
+#   Option B (venv, isolates deps):
+#     python3 -m venv .venv && source .venv/bin/activate
+#     pip install -r requirements.txt
+#
+# RENDER:
+#   quarto render report.qmd --to html
+#
+#   # If using venv with Option B:
+#   QUARTO_PYTHON=.venv/bin/python quarto render report.qmd --to html
+#
+# REQUIRES: Quarto CLI (brew install quarto or quarto.org)
+
+pandas>=2.0
+plotly>=5.0
+ipykernel>=6.0
+nbformat>=5.0
+nbclient>=0.8
+tabulate>=0.9

@@ -10,7 +10,7 @@ format:
     page-layout: full
     fig-cap-location: bottom
     title-block-banner: false
-    css: styles.css
+    css: outputs/report_spike/styles.css
     include-in-header:
       - text: |
           <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,9 +28,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from pathlib import Path
 
-# Repo root is two levels up from this .qmd file (outputs/report_spike/)
-# Quarto runs the notebook with cwd = the .qmd's directory
-ROOT = Path.cwd().parent.parent
+ROOT = Path.cwd()
 
 # Load threshold sweep data
 sweep = pd.read_csv(ROOT / "data/processed/terrain/deanza_villas_2km_1m/channels/deanza_villas_2km_1m_dem_filled_stream_threshold_sweep.csv")
@@ -70,7 +68,7 @@ This report stays strictly within the evidence produced by the completed workflo
 
 <div class="figure-wrap float-right">
 
-![De Anza Villas in mapped flood context](../figures/final_report/figure1_context_overview.png)
+![De Anza Villas in mapped flood context](outputs/figures/final_report/figure1_context_overview.png)
 
 <div class="fig-caption">**Figure 1.** The parcel boundary, parcel polygons, local AOI (2 km), and context AOI (8 km) overlaid on FEMA flood hazard zones. Zone AO dominates the fan surface with depth designations from 1 to &gt;3 ft.</div>
 
@@ -88,7 +86,7 @@ The key hazard characteristic: apparent channels are not equivalent to stable, b
 
 <div class="figure-wrap float-left">
 
-![1 m terrain background and the selected drainage fabric](../figures/final_report/figure2_terrain_drainage.png)
+![1 m terrain background and the selected drainage fabric](outputs/figures/final_report/figure2_terrain_drainage.png)
 
 <div class="fig-caption">**Figure 2.** 1 m DEM hillshade with the 5,000-cell D-infinity stream network (blue) and FEMA flood hazard polygons (orange). The drainage texture is dense and active — not a flat, uniform fan surface.</div>
 
@@ -154,7 +152,7 @@ The threshold sweep confirms the pattern: as the accumulation threshold increase
 
 <div class="figure-wrap float-right">
 
-![Exact parcel boundary versus the selected channel network](../figures/final_report/figure3_parcel_overlap.png)
+![Exact parcel boundary versus the selected channel network](outputs/figures/final_report/figure3_parcel_overlap.png)
 
 <div class="fig-caption">**Figure 4.** The authoritative De Anza Villas complex boundary (magenta) and individual parcel polygons (black outline) intersected with the 5,000-cell stream network (blue) and FEMA hazard polygons (orange).</div>
 
@@ -168,7 +166,7 @@ The result is unambiguous: **22 of 359 channel segments touch the parcel boundar
 
 Explore the full interactive map:
 
-<iframe src="../maps/parcel_overlay.html" width="100%" height="550" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
+<iframe src="outputs/maps/parcel_overlay.html" width="100%" height="550" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
 
 ## Quantitative Terrain Comparison
 
@@ -222,7 +220,7 @@ The parcel carries meaningful terrain complexity — 7.3° mean slope, 29 m of r
 
 <div class="figure-wrap">
 
-![Satellite validation summary](../figures/final_report/figure5_satellite_validation.png)
+![Satellite validation summary](outputs/figures/final_report/figure5_satellite_validation.png)
 
 <div class="fig-caption">**Figure 6.** OPERA DSWx-HLS browse image (2023-08-22, Landsat 8) showing water pixels in the study area. The inset panel summarizes water-pixel counts at the parcel, local AOI, and full scene scales.</div>
 
@@ -244,7 +242,7 @@ The later S1 scene (2024-08-25) shows **no local AOI water pixels** and is treat
 
 Explore the full interactive validation map:
 
-<iframe src="../maps/satellite_validation.html" width="100%" height="550" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
+<iframe src="outputs/maps/satellite_validation.html" width="100%" height="550" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
 
 ## Key Findings
 
@@ -283,7 +281,7 @@ The bottom line: the terrain and mapped flood context indicate an active fan sur
 
 Three interactive Leaflet maps are available for detailed exploration:
 
-<iframe src="../maps/wash_extraction.html" width="100%" height="500" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
+<iframe src="outputs/maps/wash_extraction.html" width="100%" height="500" style="border: 1px solid #ddd; border-radius: 4px; margin: 1rem 0;"></iframe>
 
 <div class="fig-caption" style="margin-top: 0.25rem;">Drainage extraction context map — full threshold sweep, D-infinity flow network, FEMA hazard overlay.</div>
 
