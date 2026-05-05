@@ -7,3 +7,6 @@ cache/
 data/raw/opera_test/
 data/**/_tmp*
 outputs/**/_tmp*
+outputs/report_spike/*.html
+outputs/report_spike/*_files/
+outputs/report_spike/.quarto/
