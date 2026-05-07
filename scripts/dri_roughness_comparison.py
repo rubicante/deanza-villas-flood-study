@@ -32,18 +32,17 @@ PROJECT = Path(__file__).resolve().parents[1]
 PDF_URL = "https://cdn.ymaws.com/floodplain.org/resource/resmgr/2015Conference/Wednesday/Borrego-Springs-Alluvial-Fan.pdf"
 PDF_PATH = PROJECT / "data/raw/dri_2015_borrego_fans.pdf"
 EXISTING_PDF = PROJECT / "data/raw/docs/dri_2015_fan_mapping.pdf"
-WORK_DIR = PROJECT / "data/processed/dri_2015"
+WORK_DIR = PROJECT / "data/raw/manual"
 PAGE_RENDER = WORK_DIR / "dri_page_20_300dpi.png"
 MASK_OVERLAY = WORK_DIR / "dri_page_20_class_masks_on_map.png"
-ZONES_4326 = PROJECT / "data/vectors/dri_2015_fan_zones.geojson"
-ZONES_5070 = PROJECT / "data/vectors/dri_2015_fan_zones_epsg5070.geojson"
-STATS_JSON = PROJECT / "data/processed/terrain/deanza_villas_2km_1m/dri_roughness_comparison_stats.json"
-SUMMARY_MD = PROJECT / "outputs/reports/dri_roughness_comparison.md"
-ROUGHNESS_RASTERS = {
-    "roughness_magnitude_m": PROJECT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif",
-    "roughness_scale_m": PROJECT / "data/processed/terrain/deanza_villas_2km_1m/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif",
+ZONES_4326 = PROJECT / "data/derived/vectors/dri_2015_fan_zones.geojson"
+ZONES_5070 = PROJECT / "data/derived/vectors/dri_2015_fan_zones_epsg5070.geojson"
+STATS_JSON = PROJECT / "data/derived/2km_aoi/dri_roughness_comparison_stats.json"
+ROUGHNESS_RASTERS: dict[str, Path] = {
+    "roughness_magnitude_m": PROJECT / "data/derived/2km_aoi/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif",
+    "roughness_scale_m": PROJECT / "data/derived/2km_aoi/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif",
 }
-PARCEL = PROJECT / "data/vectors/deanza_villas_complex_boundary.geojson"
+PARCEL = PROJECT / "data/raw/sangis/deanza_villas_complex_boundary.geojson"
 
 # Coordinates were estimated from the rendered page-20 graticule at 216 dpi
 # (PyMuPDF matrix=3). They are scaled to the target render dpi below. Values are

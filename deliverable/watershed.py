@@ -85,7 +85,7 @@ def delineate_watershed(
     Canyon:
     - Narrow DEM (spikes/henderson-canyon/, lon ~-116.43 to -116.32):
       produced truncated boundary.
-    - Wide DEM (data/processed/terrain/dem_10m_wide.tif, to lon -116.50):
+    - Wide DEM (data/derived/watershed/dem_10m_wide.tif, to lon -116.50):
       captured the full 107 km² headwater with 93.5% HUC-12 overlap.
 
     The output is geometrically equivalent across reruns but not

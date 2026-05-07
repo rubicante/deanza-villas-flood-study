@@ -12,8 +12,7 @@ outputs/report_spike/*_files/
 outputs/report_spike/.quarto/
 report.html
 report_files/
-data/derived/
-data/processed/terrain/dem_*.tif
-data/processed/terrain/deanza_villas_2km_1m/*.tif
+data/derived/henderson/
+data/derived/watershed/
 outputs/maps/*.bin
 outputs/maps/*.parquet

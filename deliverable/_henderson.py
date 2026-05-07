@@ -21,17 +21,16 @@ from deliverable import (
 from deliverable.watershed import delineate_watershed
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / "data" / "vectors"
+DATA = ROOT / "data" / "derived" / "vectors"
 MAPS = ROOT / "outputs" / "maps"
-PROCESSED = ROOT / "data" / "processed" / "terrain"
 DERIVED = ROOT / "data" / "derived" / "henderson"
 TARGET_CRS = "EPSG:5070"
 
 BOUNDARY = DATA / "henderson_watershed_boundary.geojson"
 
 # Input DEMs (fetched, unfilled)
-DEM_1M = PROCESSED / "dem_1m_5070.tif"
-DEM_10M = PROCESSED / "dem_10m_wide.tif"
+DEM_1M = ROOT / "data" / "derived" / "watershed" / "dem_1m_5070.tif"
+DEM_10M = ROOT / "data" / "derived" / "watershed" / "dem_10m_wide.tif"
 
 
 def _export_binary(
