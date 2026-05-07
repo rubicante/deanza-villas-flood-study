@@ -1,0 +1,28 @@
+# Pinned to versions tested with Henderson Canyon watershed build.
+# Do not upgrade without re-running integration tests and diffing outputs.
+#
+# Version pins exist because:
+#   whitebox==2.3.6  — D∞ defaults to SCA (not cells) on d_inf_flow_accumulation;
+#                      D8 accumulation hangs on 165M px rasters with nodata on this
+#                      binary. Upgrading WBT may fix the hang but may also change
+#                      pointer encoding or accumulation behavior.
+#   pyflwdir==0.5.11 — from_array(ftype='d8', check_ftype=False) works with WBT
+#                      powers-of-2 pointer encoding. Future versions may change
+#                      pointer validation or accumulation units.
+#   numba==0.65.1     — required by pyflwdir; tested together
+#   llvmlite==0.47.0  — required by numba
+#   py3dep==0.19.0    — known non-square pixel regression (GitHub #77); workaround
+#                      is reproject to exact 1m rasterio transform. 0.19.0 returns
+#                      native EPSG:5070 (not 4326 as documented).
+#   rasterio==1.5.0   — warp.transform returns Python lists not arrays (np.asarray
+#                      required); mask with crop=True + filled=False for clip
+#   geopandas==1.1.3  — dissolve for FEMA polygons; CRS transforms
+
+whitebox==2.3.6
+pyflwdir==0.5.11
+numba==0.65.1
+llvmlite==0.47.0
+py3dep==0.19.0
+rasterio>=1.5.0
+geopandas>=1.1.0
+numpy>=2.0
