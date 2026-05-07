@@ -2,7 +2,19 @@
 
 Use this file as the rolling project work log for ongoing changes, status updates, and verification notes.
 
-- 2026-05-07 ~01:00 UTC: deliverable/ library extracted from spike code.
+- 2026-05-07 ~12:00 UTC: deliverable/watershed.py — watershed delineation module.
+  New module `delineate_watershed()`: Path-based API taking a filled DEM + pour
+  GeoJSON → WBT D8 pointer → WBT watershed() → rasterio polygonize →
+  shapely unary_union → simplify → WGS84 + EPSG:5070 GeoJSON. Optional
+  snap_pour_points with explicit stream threshold (None by default — snap
+  couples to terrain-dependent stream threshold). Auto-checks boundary
+  edge-touch against DEM extent (warns if within 2px). CRS contract: loads
+  pour geometry, reprojects to DEM CRS, raises on zero overlap.
+  Integrated into _henderson.py as `watershed` command; regenerated
+  Henderson boundary from wide DEM + community bbox: 107.0 km², 93.5%
+  HUC-12 overlap, 0.006% area diff vs committed, no edge-touch warnings.
+  LESSONS.md: added rasterio features.shapes/rasterize int16+raster+uint8
+  mask quirk (silent edge corruption with both uint8).
   Portable DEM/hydrology pipeline: fetch.py (auto-tile py3dep), preprocess.py
   (breach/fill with strategy parameter), d8.py (WBT pointer + pyflwdir accum,
   backends: wbt/pyflwdir/wbt_ptr_pyflwdir/auto), dinf.py (WBT D∞, out_type=cells

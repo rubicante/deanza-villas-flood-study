@@ -111,6 +111,25 @@ pipe buffer and stalls the parent process, appearing as a hang.
 
 **Fix**: `set_verbose_mode(False)` on all WBT calls. The library does this.
 
+
+## rasterio `features.shapes` and `features.rasterize` require int16 raster + uint8 mask
+
+**Symptom**: `features.shapes(binary, mask=mask)` with both arguments as uint8
+produces wrong polygon boundaries — edges drift from the true watershed mask
+by 1-2 pixels. Same failure in `features.rasterize()` when creating pour-point
+rasters from geometry: wrong cell assignments at polygon edges.
+
+**Cause**: rasterio's Cython-level dtype dispatch treats int16 and uint8
+differently for mask handling. uint8 mask triggers a code path that correctly
+respects the mask boundary; uint8 raster + uint8 mask follows a different
+path that corrupts edge cells.
+
+**Fix**: Always pass `binary.astype("int16")` for the value array and
+`mask=mask.astype("uint8")` for the mask, in both `shapes()` and `rasterize()`.
+
+**Affected**: `delineate_watershed()` does this in both pour-point rasterization
+and polygonization steps. External callers using raw rasterio need the same pattern.
+
 ## Breach then fill, not fill-only, for alluvial fans
 
 **Symptom**: `fill_depressions` alone on alluvial fan terrain creates

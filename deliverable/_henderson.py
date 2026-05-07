@@ -18,6 +18,7 @@ from deliverable import (
     extract_streams,
     verify_accumulation, check_d8_dinf_agreement,
 )
+from deliverable.watershed import delineate_watershed
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "vectors"
@@ -194,9 +195,26 @@ def build_d8_10m():
     _export_binary(streams, accum_masked, MAPS / "streams_wide_d8.bin", boundary=BOUNDARY)
 
 
+def build_watershed_boundary():
+    """Generate Henderson Canyon watershed boundary from wide DEM + community bbox."""
+    DERIVED.mkdir(parents=True, exist_ok=True)
+    dem = preprocess_dem(
+        DEM_10M,
+        output=DERIVED / "dem_10m_filled.tif",
+        strategy="breach_then_fill",
+    )
+    delineate_watershed(
+        dem=dem,
+        pour_geometry_path=MAPS / "deanza_community_bbox.geojson",
+        output_boundary=DATA / "henderson_watershed_boundary.geojson",
+        output_boundary_5070=DATA / "henderson_watershed_boundary_5070.geojson",
+        snap_distance_m=None,
+    )
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python _henderson.py [dinf1m|dinf10m|d81m|d810m|all]")
+        print("Usage: python _henderson.py [dinf1m|dinf10m|d81m|d810m|watershed|all]")
         sys.exit(1)
 
     cmd = sys.argv[1]
@@ -208,7 +226,10 @@ if __name__ == "__main__":
         build_d8_1m()
     elif cmd == "d810m":
         build_d8_10m()
+    elif cmd == "watershed":
+        build_watershed_boundary()
     elif cmd == "all":
+        build_watershed_boundary()
         build_dinf_1m()
         build_dinf_10m()
         build_d8_1m()
