@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D∞ Morph Explorer — Henderson Watershed Spike — De Anza Villas</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#c9d1d9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; }
+  #app { display:grid; grid-template-rows:1fr auto; height:100vh; }
+  #map-container { position:relative; }
+  #map { width:100%; height:100%; }
+  #map.bw { filter: grayscale(100%); }
+  #overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
+  #map-veil { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.25); pointer-events:none; z-index:5; }
+  #grayscale-btn { position:absolute; top:16px; left:16px; background:rgba(22,27,34,0.9); border:1px solid #30363d; color:#8b949e; padding:6px 12px; font-size:12px; cursor:pointer; border-radius:6px; z-index:30; transition:all 0.15s; }
+  #grayscale-btn:hover { background:#21262d; color:#c9d1d9; }
+  #grayscale-btn.active { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  #legend { position:absolute; bottom:20px; left:20px; background:rgba(22,27,34,0.9); border:1px solid #30363d; border-radius:8px; padding:12px 16px; font-size:12px; z-index:20; }
+  .legend-item { display:flex; align-items:center; gap:8px; margin:4px 0; }
+  .legend-swatch { width:28px; height:3px; border-radius:1px; flex-shrink:0; }
+  .legend-swatch.dashed { background:none; border:1.5px dashed #58a6ff; height:0; }
+  #controls { background:#161b22; border-top:1px solid #30363d; padding:14px 24px 16px; }
+  #top-row { display:flex; align-items:center; gap:16px; max-width:850px; margin-bottom:4px; }
+  #top-row label { font-size:13px; color:#8b949e; white-space:nowrap; min-width:180px; }
+  #slider-val { font-size:13px; color:#f0f6fc; font-weight:600; min-width:70px; text-align:right; font-variant-numeric:tabular-nums; }
+  input[type=range] { flex:1; -webkit-appearance:none; height:8px; border-radius:4px; background:linear-gradient(to right,#7ee787,#a6d280,#ffd166,#f0883e,#e06c50); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#f0f6fc; border:2px solid #58a6ff; cursor:pointer; }
+  #tick-labels { display:flex; justify-content:space-between; max-width:844px; margin:4px 0 0 282px; font-size:10px; color:#484f58; user-select:none; }
+  #stats { display:flex; gap:32px; margin-top:10px; font-size:13px; }
+  .stat { display:flex; gap:8px; align-items:baseline; }
+  .stat-label { color:#8b949e; }
+  .stat-value { color:#f0f6fc; font-variant-numeric:tabular-nums; font-size:18px; font-weight:600; }
+  .stat-unit { color:#484f58; font-size:11px; }
+  .hint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#8b949e; font-size:14px; z-index:30; transition:opacity 0.3s; }
+  #loading-info { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); color:#484f58; font-size:11px; z-index:30; }
+  .maplibregl-ctrl-attrib { font-size:9px !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="map-veil"></div>
+    <button id="grayscale-btn" title="Toggle grayscale satellite">B/W</button>
+    <select id="theme-picker" style="position:absolute;top:16px;left:72px;background:rgba(22,27,34,0.9);border:1px solid #30363d;color:#c9d1d9;padding:6px 10px;font-size:12px;border-radius:6px;z-index:30;cursor:pointer;appearance:none;-webkit-appearance:none;">
+      <option value="desert">Desert</option>
+      <option value="heat">Heat</option>
+      <option value="depth">Depth</option>
+      <option value="magma">Magma</option>
+      <option value="bone">Bone</option>
+    </select>
+    <canvas id="overlay"></canvas>
+    <div id="legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:#e06c50"></span> 50k+ cells (canyon core)</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#f0883e"></span> ~5,000 cells</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#ffd166"></span> ~1,000 cells</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#7ee787"></span> ~250 cells (marginal)</div>
+      <div class="legend-item"><span class="legend-swatch dashed"></span> Parcel boundary</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#f0883e;height:2px;opacity:0.5"></span> De Anza community</div>
+    </div>
+    <div class="hint" id="hint">Loading data…</div>
+    <div id="loading-info"></div>
+  </div>
+  <div id="controls">
+    <div id="top-row">
+      <label for="threshold">D∞ accumulation threshold (log scale)</label>
+      <input type="range" id="threshold" min="0" max="1000" value="501" step="1">
+      <span id="slider-val">5,000</span>
+    </div>
+    <div id="tick-labels"><span>10</span><span>50</span><span>100</span><span>500</span><span>1k</span><span>5k</span><span>10k</span><span>50k</span><span>500k</span></div>
+    <div id="stats">
+      <div class="stat"><span class="stat-label">Stream cells</span><span class="stat-value" id="stat-cells">—</span></div>
+      <div class="stat"><span class="stat-label">D∞ / D8 ratio</span><span class="stat-value" id="stat-ratio">—</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+
+<script>
+// ── Data URLs ──
+const DINF_BIN_URL = 'threshold_dinf_henderson.bin';
+const PARCEL_URL = 'threshold_morph_parcel.geojson';
+const COMMUNITY_URL = 'deanza_community_poi.geojson';
+
+// ── Log scale ──
+const ACCUM_MIN = 10, ACCUM_MAX = 500000;
+const LOG_MIN = Math.log(ACCUM_MIN), LOG_MAX = Math.log(ACCUM_MAX);
+const LOG_RANGE = LOG_MAX - LOG_MIN;
+function sliderToAccum(pos) { return Math.round(Math.exp(LOG_MIN + (pos/1000)*LOG_RANGE)); }
+function accumToSlider(a) { return Math.round(((Math.log(a)-LOG_MIN)/LOG_RANGE)*1000); }
+
+// ── D∞ binary data ──
+let dinfData = null;  // Float32Array stride 3 [accum, lon, lat]
+let dinfCount = 0;
+
+// ── Map + canvas ──
+let map;
+const container = document.getElementById('map-container');
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+const loadingInfo = document.getElementById('loading-info');
+const hint = document.getElementById('hint');
+const slider = document.getElementById('threshold');
+const sliderVal = document.getElementById('slider-val');
+
+let currentAccum = 5000;
+let needsRender = true;
+
+let currentTheme = 'desert';
+
+// ── Color themes ── each returns {r, g, b, a} for a given log position t (0..1)
+const themes = {
+  desert(t) {
+    const h = 80 - t*70, s = 0.80, l = 0.28 + t*0.32;
+    const c = (1-Math.abs(2*l-1))*s, hp = h/60;
+    const x = c*(1-Math.abs((hp%2)-1)), m = l-c/2;
+    let r1,g1,b1;
+    if (hp<1) {r1=c;g1=x;b1=0;} else if (hp<2) {r1=x;g1=c;b1=0;} else {r1=0;g1=x;b1=c;}
+    return {r:Math.round((r1+m)*255),g:Math.round((g1+m)*255),b:Math.round((b1+m)*255),a:Math.round(25+t*195)};
+  },
+  heat(t) {
+    // transparent cool → hot: blue(0,0,0.5)→cyan→yellow→white, alpha scaled
+    const h = 240 - t*240, s = 1.0, l = 0.15 + t*0.70;
+    const c = (1-Math.abs(2*l-1))*s, hp = h/60;
+    const x = c*(1-Math.abs((hp%2)-1)), m = l-c/2;
+    let r1,g1,b1;
+    if (hp<1) {r1=c;g1=x;b1=0;} else if (hp<2) {r1=x;g1=c;b1=0;} else if (hp<3) {r1=0;g1=c;b1=x;} else if (hp<4) {r1=0;g1=x;b1=c;} else {r1=x;g1=0;b1=c;}
+    return {r:Math.round((r1+m)*255),g:Math.round((g1+m)*255),b:Math.round((b1+m)*255),a:Math.round(30+t*200)};
+  },
+  depth(t) {
+    // reversed: deep navy → teal → ice white (high accum = dark, low = light)
+    const ti = 1-t;
+    const h = 210 + ti*40, s = 0.60 + ti*0.30, l = 0.12 + ti*0.70;
+    const c = (1-Math.abs(2*l-1))*s, hp = h/60;
+    const x = c*(1-Math.abs((hp%2)-1)), m = l-c/2;
+    let r1,g1,b1;
+    if (hp<1) {r1=c;g1=x;b1=0;} else if (hp<2) {r1=x;g1=c;b1=0;} else if (hp<3) {r1=0;g1=c;b1=x;} else if (hp<4) {r1=0;g1=x;b1=c;} else {r1=x;g1=0;b1=c;}
+    return {r:Math.round((r1+m)*255),g:Math.round((g1+m)*255),b:Math.round((b1+m)*255),a:255};
+  },
+  magma(t) {
+    // black → dark purple → magenta → orange → yellow
+    const r = Math.round(t<0.5 ? t*2*120+30 : 150+(t-0.5)*2*105);
+    const g = Math.round(t<0.3 ? 0 : t<0.7 ? (t-0.3)*2.5*100 : 100+(t-0.7)*3.3*155);
+    const b = Math.round(t<0.4 ? t*2.5*100 : t<0.8 ? 100-(t-0.4)*2.5*80 : 20);
+    return {r,g,b,a:Math.round(30+t*210)};
+  },
+  bone(t) {
+    // dark charcoal → mid gray → near-white (monochrome)
+    const v = Math.round(40 + t*200);
+    return {r:v,g:v,b:v,a:Math.round(40+t*200)};
+  }
+};
+
+function accumColor(accum) {
+  const t = Math.max(0, Math.min(1, (Math.log(accum)-LOG_MIN)/LOG_RANGE));
+  return themes[currentTheme](t);
+}
+
+// ── D∞ binary search ──
+function dinfCutoff(threshold) {
+  let lo = 0, hi = dinfCount - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (dinfData[mid*3] >= threshold) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return hi;
+}
+
+// ── Render D∞ cells as canvas overlay ──
+function renderDinfCells() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!map || !dinfData) return;
+
+  const cutoff = dinfCutoff(currentAccum);
+
+  if (cutoff < 0) {
+    document.getElementById('stat-cells').textContent = '0';
+    document.getElementById('stat-ratio').textContent = '—';
+    return;
+  }
+
+  // Cell size scales with zoom: at zoom 15 (1m/px), draw 1px cells
+  const zoom = map.getZoom();
+  const cellSize = Math.max(1, Math.round(Math.pow(2, zoom - 15)));
+
+  // Viewport culling: skip cells outside visible bounds
+  const bounds = map.getBounds();
+  const vpW = bounds.getWest(), vpS = bounds.getSouth();
+  const vpE = bounds.getEast(), vpN = bounds.getNorth();
+
+  // ImageData for bulk writes
+  const imgData = ctx.createImageData(W, H);
+  const buf = imgData.data;
+  const occupancy = new Uint8Array(W * H);
+  let visCount = 0;
+
+  for (let i = 0; i <= cutoff; i++) {
+    const accum = dinfData[i * 3];
+    const lon = dinfData[i * 3 + 1];
+    const lat = dinfData[i * 3 + 2];
+
+    // Skip cells outside viewport (biggest perf win)
+    if (lon < vpW || lon > vpE || lat < vpS || lat > vpN) continue;
+
+    const color = accumColor(accum);
+    const pt = map.project([lon, lat]);
+    const ix = Math.floor(pt.x), iy = Math.floor(pt.y);
+
+    // Write cellSize×cellSize block
+    for (let dy = 0; dy < cellSize; dy++) {
+      const py = iy + dy;
+      if (py < 0 || py >= H) continue;
+      for (let dx = 0; dx < cellSize; dx++) {
+        const px = ix + dx;
+        if (px < 0 || px >= W) continue;
+        const occIdx = py * W + px;
+        if (occupancy[occIdx]) continue;
+        occupancy[occIdx] = 1;
+        const idx = occIdx * 4;
+        buf[idx] = color.r; buf[idx+1] = color.g; buf[idx+2] = color.b; buf[idx+3] = color.a;
+      }
+    }
+    visCount++;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  document.getElementById('stat-cells').textContent = visCount.toLocaleString();
+
+  // D∞/D8 ratio: D8 stream cells at same threshold (from the sweep data)
+  const d8ByThresh = {};
+  let nearestT = 5000;
+  for (const t of [1000,2500,5000]) {
+    if (Math.abs(currentAccum - t) < Math.abs(currentAccum - nearestT)) nearestT = t;
+  }
+  if (d8ByThresh[nearestT]) {
+    document.getElementById('stat-ratio').textContent = (visCount / d8ByThresh[nearestT]).toFixed(2);
+  }
+}
+
+// ── resize canvas to fill container ──
+function sizeCanvas() {
+  const r = container.getBoundingClientRect();
+  canvas.width = r.width;
+  canvas.height = r.height;
+  canvas.style.width = r.width + 'px';
+  canvas.style.height = r.height + 'px';
+}
+
+// ── Initialize ──
+(async function init() {
+  try {
+    // Load data
+    loadingInfo.textContent = 'Loading D∞ binary (2.4 MB)…';
+    const binResp = await fetch(DINF_BIN_URL);
+    const buf = await binResp.arrayBuffer();
+    const header = new Uint32Array(buf, 0, 1);
+    dinfCount = header[0];
+    dinfData = new Float32Array(buf, 4);
+    console.log(`D∞: ${dinfCount.toLocaleString()} cells, range ${dinfData[(dinfCount-1)*3].toFixed(0)}–${dinfData[0].toFixed(0)}`);
+
+    loadingInfo.textContent = 'Loading parcel boundary…';
+    const [parcelData, communityData] = await Promise.all([
+      fetch(PARCEL_URL).then(r => r.json()),
+      fetch(COMMUNITY_URL).then(r => r.json())
+    ]);
+
+    // Compute center from parcel
+    const parcelFeat = parcelData.features[0];
+    let cx = 0, cy = 0, nPts = 0;
+    const coords = parcelFeat.geometry.type === 'Polygon'
+      ? parcelFeat.geometry.coordinates[0]
+      : parcelFeat.geometry.coordinates.flat()[0];
+    for (const [lng, lat] of coords) { cx += lng; cy += lat; nPts++; }
+    cx /= nPts; cy /= nPts;
+
+    // Init MapLibre
+    map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'esri-satellite': {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+            attribution: 'Esri World Imagery'
+          }
+        },
+        layers: [{
+          id: 'satellite',
+          type: 'raster',
+          source: 'esri-satellite',
+          paint: { 'raster-opacity': 0.5 }
+        }]
+      },
+      center: [cx, cy],
+      zoom: 12,
+      maxZoom: 17,
+      attributionControl: false
+    });
+
+    map.addControl(new maplibregl.AttributionControl({ compact: true }));
+
+    // Add parcel boundary as GeoJSON line
+    map.on('load', () => {
+      map.addSource('parcel', { type: 'geojson', data: parcelData });
+      map.addLayer({
+        id: 'parcel-line',
+        type: 'line',
+        source: 'parcel',
+        paint: {
+          'line-color': '#58a6ff',
+          'line-width': 2.5,
+          'line-dasharray': [3, 2]
+        }
+      });
+
+      // Community area (De Anza Desert Club & surrounding development)
+      map.addSource('community', { type: 'geojson', data: communityData });
+      map.addLayer({
+        id: 'community-fill',
+        type: 'fill',
+        source: 'community',
+        paint: {
+          'fill-color': '#f0883e',
+          'fill-opacity': 0.12
+        }
+      });
+      map.addLayer({
+        id: 'community-line',
+        type: 'line',
+        source: 'community',
+        paint: {
+          'line-color': '#f0883e',
+          'line-width': 2,
+          'line-dasharray': [4, 3]
+        }
+      });
+
+      sizeCanvas();
+      renderDinfCells();
+      loadingInfo.textContent = '';
+      hint.style.opacity = '0';
+      setTimeout(() => hint.remove(), 300);
+    });
+
+    // Re-render on every frame during interaction
+    map.on('move', () => { needsRender = true; });
+    map.on('zoom', () => { needsRender = true; });
+    map.on('resize', () => { needsRender = true; });
+    function renderLoop() {
+      if (needsRender) { sizeCanvas(); renderDinfCells(); needsRender = false; }
+      requestAnimationFrame(renderLoop);
+    }
+    requestAnimationFrame(renderLoop);
+
+    // Grayscale toggle
+    const gsBtn = document.getElementById('grayscale-btn');
+    const mapEl = document.getElementById('map');
+    gsBtn.addEventListener('click', () => {
+      const on = mapEl.classList.toggle('bw');
+      gsBtn.classList.toggle('active', on);
+      gsBtn.textContent = on ? 'Color' : 'B/W';
+    });
+
+    // Theme picker
+    document.getElementById('theme-picker').addEventListener('change', (e) => {
+      currentTheme = e.target.value;
+      renderDinfCells();
+    });
+
+    // Slider
+    slider.value = accumToSlider(5000);
+    sliderVal.textContent = '5,000';
+    currentAccum = 5000;
+
+    function onSlider() {
+      currentAccum = sliderToAccum(parseInt(slider.value));
+      sliderVal.textContent = currentAccum.toLocaleString();
+      renderDinfCells();
+    }
+    slider.addEventListener('input', onSlider);
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      const step = e.shiftKey ? 50 : e.ctrlKey ? 10 : 25;
+      let v = parseInt(slider.value);
+      if (e.key === 'ArrowLeft') v = Math.max(0, v - step);
+      else if (e.key === 'ArrowRight') v = Math.min(1000, v + step);
+      else return;
+      slider.value = v;
+      onSlider();
+    });
+
+  } catch (err) {
+    console.error(err);
+    hint.textContent = 'Error: ' + err.message;
+    hint.style.color = '#f85149';
+    loadingInfo.textContent = '';
+  }
+})();
+</script>
+</body>
+</html>

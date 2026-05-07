@@ -12,7 +12,7 @@ Recommended relationship to other repo logs:
 - `DEVLOG.md` = what actually happened, with short timestamped notes
 - `TODO.md` = what is queued or pending (not an archive of completed work)
 
-## Backlog
+## Backlog (existing)
 
 ### Tier 2 — remaining
 

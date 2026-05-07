@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "De Anza Country Club & surrounding development",
+        "source": "OpenStreetMap (OSM way 44500984)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-116.4002, 33.2964],
+          [-116.3814, 33.2964],
+          [-116.3814, 33.2834],
+          [-116.4002, 33.2834],
+          [-116.4002, 33.2964]
+        ]]
+      }
+    }
+  ]
+}

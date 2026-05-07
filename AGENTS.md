@@ -33,6 +33,7 @@ Operating rules:
 - When the user asks for the same work again, use `TODO.md` to reconcile what is already queued instead of duplicating tasks.
 - Mark items `in_progress` while working on them. When done, remove them from `TODO.md` entirely — `DEVLOG.md` is the record of what was completed and when.
 - Treat one-off migration or cleanup plans as temporary; retire them when the work is done.
+- Before forming a hypothesis about why an external tool is producing wrong output, stratify the observed disagreements by relevant terrain/data covariates and check whether the failure pattern is uniform (suggesting your code) or clustered (suggesting a real edge case).
 
 ## Where to look for the main artifacts
 - `config/study.yaml` — stable study paths, CRS, thresholds, and output names
@@ -59,6 +60,3 @@ When you make changes:
 - keep notes short and timestamped
 - mention verification steps and any warnings that matter for future work
 - avoid splitting status across multiple competing docs
-
-## Harness note
-This file is intentionally harness-agnostic. It should make sense whether the work is being done by Hermes, another coding agent, or a human using the command line.
