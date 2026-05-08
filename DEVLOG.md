@@ -2,6 +2,8 @@
 
 Use this file as the rolling project work log for ongoing changes, status updates, and verification notes.
 
+- 2026-05-07 ~22:00 UTC: Stream explorer major update — replaced static layers with toggleable checkboxes (native label[for] + change events). Added DRI 2015 fan zones, 2km AOI buffer, and parcel complex boundary as context layers. Relabeled community bbox → watershed pour-point zone. Changed defaults: only watershed boundary ON; FEMA, HUC-12, parcel boundary now OFF. Removed parcel lots (36) layer. Merged Always on/Off by default sections into flat legend. Committed with 3 new context GeoJSONs in outputs/maps/ (copies of canonical sources for relative-URL loading).
+
 - 2026-05-07 ~22:30 UTC: Parcel correction + downstream regeneration complete.
   **Parcel boundary corrected:** 8.04 ha → 5.06 ha (−37%). Old canonical
   incorrectly included Vista Villas (31 parcels, APN 14026410xx) because the
