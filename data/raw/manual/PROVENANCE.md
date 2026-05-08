@@ -266,14 +266,18 @@ old FEMA). Marked for regeneration when credentials are available.
   149.1 km². CRS: EPSG:4269 (NAD83 geographic).
 - **Source:** USGS Watershed Boundary Dataset, Region 18 (California) shapefile
   from `https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/HU2/Shape/WBD_18_HU2_Shape.zip`.
-- **Acquisition:** **ONE-OFF** — downloaded the full Region 18 WBD shapefile,
-  extracted HUC-12 features, filtered to `huc12='181002030302'`, saved as GeoJSON.
-- **Reproducibility:** NOT currently automated. Plan 2 task: `scripts/fetch_huc12.py`
-  will use the USGS NLDI API for single-HUC retrieval:
-  `https://labs.waterdata.usgs.gov/api/nldi/linked-data/huc12pp/USGS-181002030302/basin`
-  (returns exactly one polygon, no need to download the full Region 18 shapefile).
-- **Notes:** The NLDI basin endpoint is preferred over the S3 download — it's a
-  single API call returning only the needed polygon.
+- **Acquisition:** Reproducible — `scripts/fetch_huc12.py` downloads the Region 18
+  WBD shapefile from USGS S3 (172 MB zip, cached locally in `data/raw/.cache/`),
+  extracts HUC-12 181002030302, simplifies to ~486 vertices (from 1,692), and
+  saves as GeoJSON. Previously one-off; automated 2026-05-07.
+- **Reproducibility:** Reproducible — `python scripts/fetch_huc12.py`.
+- **NLDI note:** The USGS NLDI `/basin` endpoint was tested as a lighter
+  alternative but always returns a simplified polygon (~416 vertices,
+  113.6 km², 24% area loss) regardless of `?simplified=false`. IoU against the
+  WBD polygon is 0.76 — the simplification clips boundary detail relevant to
+  spatial filtering. The WBD S3 shapefile is the authoritative source. The NLDI
+  also migrated from `labs.waterdata.usgs.gov` to `api.water.usgs.gov` in
+  September 2024, and the feature ID format dropped the `USGS-` prefix in v3.
 
 ### dri_2015_fan_zones.geojson (WGS84)
 ### dri_2015_fan_zones_epsg5070.geojson (EPSG:5070)
@@ -348,7 +352,7 @@ Provenance matches the canonical source — see the corresponding entry above.
 | 10m DEM | Reproducible (deliverable/fetch.py) | Already covered |
 | FEMA NFHL | Reproducible (`scripts/fetch_fema.py`) | Already covered |
 | SanGIS parcels (2 files) | **One-off** (no public API) | Manual re-acquisition |
-| HUC-12 boundary | **One-off** | `scripts/fetch_huc12.py` |
+| HUC-12 boundary | Reproducible (`scripts/fetch_huc12.py` via WBD S3) | Already covered |
 | DRI fan zones (2 files) | Reproducible (dri_roughness_comparison.py) | Already covered |
 | Community bbox | **One-off** (hand-drawn) | Study-specific, no script |
 | AOI buffers (2 files) | **One-off** | `scripts/build_aois.py` |
@@ -362,7 +366,7 @@ In implementation order:
 
 1. ✅ **PROVENANCE.md** — this file
 2. ✅ **`scripts/fetch_fema.py`** — ArcGIS REST query → `data/raw/fema/nfhl_borrego_valley.geojson`
-3. **`scripts/fetch_huc12.py`** — NLDI API call → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
+3. ✅ **`scripts/fetch_huc12.py`** — WBD S3 download → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
 4. **`scripts/build_aois.py`** — parcel buffer → AOIs (2km, 8km)
 5. **`scripts/regenerate.py`** — end-to-end smoke test
 

@@ -32,7 +32,7 @@ Implementation order: documentation first, then fetch scripts, then regenerate.p
 
 - [x] `data/raw/manual/PROVENANCE.md` — document one-off artifact origins (DRI digitization, SanGIS parcels, FEMA fetch, HUC-12, reference PDFs, community bbox, AOI buffers)
 - [x] `scripts/fetch_fema.py` — ArcGIS REST query for DFIRM 06073C → `data/raw/fema/nfhl_borrego_valley.geojson`
-- [ ] `scripts/fetch_huc12.py` — USGS NLDI API call for HUC-12 181002030302 → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
+- [x] `scripts/fetch_huc12.py` — USGS NLDI API call for HUC-12 181002030302 → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
 - [x] `scripts/build_aois.py` — parcel buffer → derived AOIs (2km, 8km) → `data/derived/vectors/`
 - [ ] `scripts/regenerate.py` — smoke test: regenerates all canonical artifacts from raw sources and diffs against committed versions
 - [x] Satellite validation regeneration — now working. `scripts/init_env.py` loads `.env` → `earthaccess.login(strategy="environment")`. Auth confirmed (token expires 07/02/2026). Full STAC search + 688 downloads + water classification + render completed.

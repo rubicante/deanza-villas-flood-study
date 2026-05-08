@@ -23,3 +23,4 @@ data/derived/vectors/*_5070.geojson
 data/raw/dri_2015_borrego_fans.pdf
 outputs/maps/*.bin
 outputs/maps/*.parquet
+data/raw/.cache/
