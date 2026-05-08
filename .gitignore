@@ -24,3 +24,4 @@ data/raw/dri_2015_borrego_fans.pdf
 outputs/maps/*.bin
 outputs/maps/*.parquet
 data/raw/.cache/
+data/_regenerate_backup/
