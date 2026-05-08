@@ -12,9 +12,13 @@
   #map { width:100%; height:100%; }
   #overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
   #map-veil { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.25); pointer-events:none; z-index:5; }
-  #legend { position:absolute; bottom:20px; left:20px; background:rgba(22,27,34,0.9); border:1px solid #30363d; border-radius:8px; padding:12px 16px; font-size:12px; z-index:20; max-width:320px; }
-  .legend-item { display:flex; align-items:center; gap:8px; margin:3px 0; }
-  .legend-line { width:28px; height:0; flex-shrink:0; }
+  #legend { position:absolute; bottom:20px; left:20px; background:rgba(22,27,34,0.92); border:1px solid #30363d; border-radius:8px; padding:10px 14px; font-size:12px; z-index:20; max-width:340px; user-select:none; }
+  .legend-item { display:flex; align-items:center; gap:6px; margin:2px 0; cursor:pointer; }
+  .legend-item input[type=checkbox] { margin:0; accent-color:#58a6ff; cursor:pointer; width:13px; height:13px; }
+  .legend-item span.label-text { cursor:pointer; color:#c9d1d9; font-size:12px; white-space:nowrap; }
+  .legend-line { width:20px; height:0; flex-shrink:0; }
+  .legend-section { margin-top:6px; padding-top:4px; border-top:1px solid #21262d; }
+  .legend-section-label { font-size:10px; color:#484f58; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
   #controls { background:#161b22; border-top:1px solid #30363d; padding:14px 24px 16px; }
   #top-row { display:flex; align-items:center; gap:16px; max-width:950px; margin-bottom:4px; }
   #top-row label { font-size:13px; color:#8b949e; white-space:nowrap; min-width:180px; }
@@ -40,10 +44,41 @@
     <div id="map-veil"></div>
     <canvas id="overlay"></canvas>
     <div id="legend">
-      <div class="legend-item"><span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span> D8 watershed (107 km²)</div>
-      <div class="legend-item"><span class="legend-line" style="border-top:1.5px solid rgba(31,119,180,0.6)"></span> HUC-12 Borrego Palm Canyon</div>
-      <div class="legend-item"><span class="legend-line" style="border-top:2px solid #ff7f0e"></span> Community area (De Anza)</div>
-      <div class="legend-item"><span class="legend-line" style="border-top:1px solid #e31a1c"></span> FEMA flood hazard (AO/A)</div>
+      <label class="legend-item" for="tog-watershed">
+        <input type="checkbox" id="tog-watershed" checked>
+        <span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span>
+        <span class="label-text">Watershed boundary (107 km²)</span>
+      </label>
+      <label class="legend-item" for="tog-huc12">
+        <input type="checkbox" id="tog-huc12">
+        <span class="legend-line" style="border-top:1.5px solid rgba(31,119,180,0.6)"></span>
+        <span class="label-text">HUC-12 Borrego Palm Canyon</span>
+      </label>
+      <label class="legend-item" for="tog-fema">
+        <input type="checkbox" id="tog-fema">
+        <span class="legend-line" style="border-top:1px solid #e31a1c"></span>
+        <span class="label-text">FEMA flood hazard (AO/A)</span>
+      </label>
+      <label class="legend-item" for="tog-parcel">
+        <input type="checkbox" id="tog-parcel">
+        <span class="legend-line" style="border-top:2px solid #ff7f0e"></span>
+        <span class="label-text">Parcel boundary (De Anza Villas)</span>
+      </label>
+      <label class="legend-item" for="tog-pourpoint">
+        <input type="checkbox" id="tog-pourpoint">
+        <span class="legend-line" style="border-top:1.5px dashed #8b949e"></span>
+        <span class="label-text">Watershed pour-point zone</span>
+      </label>
+      <label class="legend-item" for="tog-dri">
+        <input type="checkbox" id="tog-dri">
+        <span class="legend-line" style="background:linear-gradient(90deg,#d47a38 50%,#6e7681 50%);height:8px;border-radius:0"></span>
+        <span class="label-text">DRI 2015 fan zones (active/inactive)</span>
+      </label>
+      <label class="legend-item" for="tog-aoi">
+        <input type="checkbox" id="tog-aoi">
+        <span class="legend-line" style="border-top:1px dashed #6e7681"></span>
+        <span class="label-text">2km analysis buffer</span>
+      </label>
     </div>
     <div class="hint" id="hint">Loading data…</div>
     <div id="loading-info"></div>
@@ -81,8 +116,11 @@ const D8_10M_URL   = 'streams_wide_d8.bin';
 const D8_1M_URL    = 'streams_d8_1m.bin';
 const WATERSHED_URL = 'henderson_watershed_boundary.geojson';
 const HUC12_URL = 'borrego_palm_canyon_huc12.geojson';
-const COMMUNITY_URL = 'deanza_community_bbox.geojson';
+const POURPOINT_URL = 'deanza_community_bbox.geojson';
 const FEMA_URL = 'nfhl_borrego_valley.geojson';
+const PARCEL_URL = 'deanza_villas_complex_boundary.geojson';
+const DRI_URL = 'dri_2015_fan_zones.geojson';
+const AOI_URL = 'deanza_villas_2km_aoi.geojson';
 
 const COMM_CENTER = [-116.3908, 33.2899];
 
@@ -226,6 +264,18 @@ async function loadBinary(url, dsKey, label) {
   console.log(`${label}: ${count.toLocaleString()} cells, range ${dMin.toFixed(0)}–${dMax.toFixed(0)}`);
 }
 
+// Layer toggle helper
+function bindLayerToggle(checkboxId, layerIds, mapRef) {
+  const cb = document.getElementById(checkboxId);
+  if (!cb) return;
+  cb.addEventListener('change', () => {
+    const vis = cb.checked ? 'visible' : 'none';
+    layerIds.forEach(id => {
+      if (mapRef.getLayer(id)) mapRef.setLayoutProperty(id, 'visibility', vis);
+    });
+  });
+}
+
 // Initialize
 (async function init() {
   try {
@@ -238,13 +288,16 @@ async function loadBinary(url, dsKey, label) {
       (datasets.dinf1m.count / 1e6).toFixed(1) + 'M';
 
     // Load boundary layers
-    loadingInfo.textContent = 'Loading watershed boundary…';
+    loadingInfo.textContent = 'Loading boundary layers…';
     const wsData = await fetch(WATERSHED_URL).then(r => r.json());
 
-    let huc12Data = null, commData = null, femaData = null;
-    try { huc12Data = await fetch(HUC12_URL).then(r => r.json()); } catch(e) {}
-    try { commData = await fetch(COMMUNITY_URL).then(r => r.json()); } catch(e) {}
-    try { femaData = await fetch(FEMA_URL).then(r => r.json()); } catch(e) {}
+    let huc12Data=null, pourpointData=null, femaData=null, parcelData=null, driData=null, aoiData=null;
+    try { huc12Data = await fetch(HUC12_URL).then(r => r.json()); } catch(e) { console.warn('HUC12:', e); }
+    try { pourpointData = await fetch(POURPOINT_URL).then(r => r.json()); } catch(e) { console.warn('Pourpoint:', e); }
+    try { femaData = await fetch(FEMA_URL).then(r => r.json()); } catch(e) { console.warn('FEMA:', e); }
+    try { parcelData = await fetch(PARCEL_URL).then(r => r.json()); } catch(e) { console.warn('Parcel:', e); }
+    try { driData = await fetch(DRI_URL).then(r => r.json()); } catch(e) { console.warn('DRI:', e); }
+    try { aoiData = await fetch(AOI_URL).then(r => r.json()); } catch(e) { console.warn('AOI:', e); }
 
     // Init MapLibre
     map = new maplibregl.Map({
@@ -259,22 +312,63 @@ async function loadBinary(url, dsKey, label) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     map.on('load', () => {
+      // Watershed boundary — ON by default
       map.addSource('watershed', { type: 'geojson', data: wsData });
       map.addLayer({ id: 'watershed-line', type: 'line', source: 'watershed', paint: { 'line-color': '#58a6ff', 'line-width': 2.5, 'line-dasharray': [3,2] }});
 
+      // HUC-12 — OFF by default
       if (huc12Data) {
         map.addSource('huc12', { type: 'geojson', data: huc12Data });
-        map.addLayer({ id: 'huc12-line', type: 'line', source: 'huc12', paint: { 'line-color': '#1f77b4', 'line-width': 1.5, 'line-opacity': 0.6 }});
-        map.addLayer({ id: 'huc12-fill', type: 'fill', source: 'huc12', paint: { 'fill-color': '#1f77b4', 'fill-opacity': 0.06 }});
+        map.addLayer({ id: 'huc12-fill', type: 'fill', source: 'huc12', paint: { 'fill-color': '#1f77b4', 'fill-opacity': 0.06 }, layout: { visibility: 'none' } }, 'watershed-line');
+        map.addLayer({ id: 'huc12-line', type: 'line', source: 'huc12', paint: { 'line-color': '#1f77b4', 'line-width': 1.5, 'line-opacity': 0.6 }, layout: { visibility: 'none' } }, 'huc12-fill');
       }
-      if (commData) {
-        map.addSource('community', { type: 'geojson', data: commData });
-        map.addLayer({ id: 'community-line', type: 'line', source: 'community', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.9 }});
+
+      // DRI 2015 fan zones — OFF by default
+      if (driData) {
+        const activeFeature = driData.features.find(f => f.properties.fan_class === 'active');
+        const inactiveFeature = driData.features.find(f => f.properties.fan_class === 'inactive');
+        if (activeFeature) {
+          map.addSource('dri-active', { type: 'geojson', data: { type: 'FeatureCollection', features: [activeFeature] } });
+          map.addLayer({ id: 'dri-active-fill', type: 'fill', source: 'dri-active', paint: { 'fill-color': '#d47a38', 'fill-opacity': 0.15, 'fill-outline-color': '#d47a38' }, layout: { visibility: 'none' } }, 'huc12-line');
+        }
+        if (inactiveFeature) {
+          map.addSource('dri-inactive', { type: 'geojson', data: { type: 'FeatureCollection', features: [inactiveFeature] } });
+          map.addLayer({ id: 'dri-inactive-fill', type: 'fill', source: 'dri-inactive', paint: { 'fill-color': '#6e7681', 'fill-opacity': 0.12, 'fill-outline-color': '#6e7681' }, layout: { visibility: 'none' } }, 'dri-active-fill');
+        }
       }
+
+      // FEMA — OFF by default
       if (femaData) {
         map.addSource('fema', { type: 'geojson', data: femaData });
-        map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }});
+        map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } }, 'dri-inactive-fill');
       }
+
+      // 2km AOI buffer — OFF by default
+      if (aoiData) {
+        map.addSource('aoi-2km', { type: 'geojson', data: aoiData });
+        map.addLayer({ id: 'aoi-2km-line', type: 'line', source: 'aoi-2km', paint: { 'line-color': '#6e7681', 'line-width': 1.5, 'line-dasharray': [4,3] }, layout: { visibility: 'none' } }, 'fema-fill');
+      }
+
+      // Pour-point zone — OFF by default
+      if (pourpointData) {
+        map.addSource('pourpoint', { type: 'geojson', data: pourpointData });
+        map.addLayer({ id: 'pourpoint-line', type: 'line', source: 'pourpoint', paint: { 'line-color': '#8b949e', 'line-width': 1.5, 'line-dasharray': [4,4], 'line-opacity': 0.7 }, layout: { visibility: 'none' } }, 'aoi-2km-line');
+      }
+
+      // Parcel complex boundary — OFF by default
+      if (parcelData) {
+        map.addSource('parcel', { type: 'geojson', data: parcelData });
+        map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'none' } }, 'pourpoint-line');
+      }
+
+      // Wire up layer toggles
+      bindLayerToggle('tog-watershed', ['watershed-line'], map);
+      bindLayerToggle('tog-huc12', ['huc12-fill', 'huc12-line'], map);
+      bindLayerToggle('tog-fema', ['fema-fill'], map);
+      bindLayerToggle('tog-parcel', ['parcel-line'], map);
+      bindLayerToggle('tog-pourpoint', ['pourpoint-line'], map);
+      bindLayerToggle('tog-dri', ['dri-active-fill', 'dri-inactive-fill'], map);
+      bindLayerToggle('tog-aoi', ['aoi-2km-line'], map);
 
       sizeCanvas();
       renderCells();
