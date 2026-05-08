@@ -25,3 +25,14 @@ Tier 3 complete. Profile curvature/TPI, HAND relative-position metrics, and DRI 
 ### Tier 4 — Dependency hygiene
 
 - [ ] py3dep 0.19.0 retained (not removed). The Eastern SD 2017 QL2 lidar tiles don't cover the parcel; py3dep WCS mosaic is the correct DEM source. The known 0.19.0 non-square pixel regression (GitHub #77) is worked around by reprojecting py3dep output to exactly 1m square pixels in EPSG:5070 via rasterio. Option: pin py3dep once a fixed version is released.
+
+## Plan 2 — Reproducibility in Code
+
+Implementation order: documentation first, then fetch scripts, then regenerate.py.
+
+- [x] `data/raw/manual/PROVENANCE.md` — document one-off artifact origins (DRI digitization, SanGIS parcels, FEMA fetch, HUC-12, reference PDFs, community bbox, AOI buffers)
+- [x] `scripts/fetch_fema.py` — ArcGIS REST query for DFIRM 06073C → `data/raw/fema/nfhl_borrego_valley.geojson`
+- [ ] `scripts/fetch_huc12.py` — USGS NLDI API call for HUC-12 181002030302 → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
+- [x] `scripts/build_aois.py` — parcel buffer → derived AOIs (2km, 8km) → `data/derived/vectors/`
+- [ ] `scripts/regenerate.py` — smoke test: regenerates all canonical artifacts from raw sources and diffs against committed versions
+- [ ] Satellite validation regeneration — stalled on Earthaccess auth (no EDL credentials in this environment). Outputs (`satellite_validation.html`, `.md`) are known-stale with old parcel boundary and old FEMA. Needs `.netrc` or EARTHDATA_USERNAME/EARTHDATA_PASSWORD to re-run.

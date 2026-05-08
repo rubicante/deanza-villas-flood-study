@@ -14,5 +14,12 @@ report.html
 report_files/
 data/derived/henderson/
 data/derived/watershed/
+data/derived/2km_aoi/channels/
+data/derived/2km_aoi/fan_synthesis/
+data/derived/2km_aoi/parcels/
+data/derived/2km_aoi/satellite_validation/
+data/derived/2km_aoi/*.tif
+data/derived/vectors/*_5070.geojson
+data/raw/dri_2015_borrego_fans.pdf
 outputs/maps/*.bin
 outputs/maps/*.parquet

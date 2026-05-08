@@ -2,6 +2,63 @@
 
 Use this file as the rolling project work log for ongoing changes, status updates, and verification notes.
 
+- 2026-05-07 ~22:30 UTC: Parcel correction + downstream regeneration complete.
+  **Parcel boundary corrected:** 8.04 ha → 5.06 ha (−37%). Old canonical
+  incorrectly included Vista Villas (31 parcels, APN 14026410xx) because the
+  original SanGIS query used `subname LIKE 'DE ANZA VILLAS%'` which matched
+  both communities. AB1785 forced re-acquisition via SANDAG Parcels_East
+  (public FeatureServer), which surfaced the ambiguous match. Corrected
+  filter uses APN prefix `14026410`. Two De Anza blocks (36 parcels) bridged
+  across Monroe St ROW with straight connections (gap-convex-hull method,
+  +6,157 m² fill). New scripts: `fetch_parcels.py` (SANDAG query) and
+  `correct_parcel.py` (filter + bridge).
+
+  **AOI buffers regenerated:** Old AOIs were misnamed — "2km AOI" was ~550m
+  (1.17 km²), "8km AOI" was ~2.4km (18.68 km²). New `build_aois.py` produces
+  correct buffers: 2km=14.54 km², 8km=208.56 km².
+
+  **Downstream regeneration:** Raw 1m DEM re-fetched for new 2km AOI
+  (20.2 Mpx, 4,415×4,567, up from 2.0 Mpx). Full pipeline rerun:
+  terrain_metrics (breach+fill, D8/D∞), extract_washes, parcel_overlay,
+  fan_synthesis (includes new roughness rasters), hand, curvature_tpi,
+  dri_roughness_comparison. Renders updated: wash_extraction.md,
+  parcel_overlay.html. Satellite validation stalled (Earthaccess auth);
+  context layer copies updated. PROVENANCE.md updated with canonical
+  change tables (parcel, FEMA, AOIs) and AB1785 narrative.
+  Fixed latent bugs: `SUMMARY_MD` missing in dri_roughness_comparison.py,
+  `selected_streams` missing from `_GENERATED_PATHS` in __main__.py.
+
+  **Plan 2 status:** 4/5 items done (PROVENANCE.md, fetch_fema.py,
+  build_aois.py pulled forward, fetch_parcels.py + correct_parcel.py as
+  parcel infrastructure). Next: fetch_huc12.py.
+
+- 2026-05-07 ~21:20 UTC: fetch_fema.py — Plan 2 item 2 complete.
+  Created `scripts/fetch_fema.py`: parameterized ArcGIS REST query for
+  DFIRM 06073C within 8km of parcel center. 7 validation gates:
+  feature count (30–60), required fields (11), geometry type, total area
+  (0.5–500 km²), zone values, DFIRM_ID consistency, ArcGIS error-in-body
+  detection. Diff stage compares against canonical with metadata stripped.
+  Default dry-run; --write updates canonical. Re-ran query: endpoint still
+  returns identical schema. Parcel-centered query (vs old hardcoded Borrego
+  Springs center) found 9 additional AO zones — updated canonical from
+  40→49 features (47 AO, 1 A, 1 X). GlobalID/GFID confirmed stable across
+  queries. Byte-identical re-run confirmed. Updated PROVENANCE.md and TODO.md.
+
+- 2026-05-07 ~17:15 UTC: PROVENANCE.md written — Plan 2 item 1 complete.
+  Created `data/raw/manual/PROVENANCE.md` documenting the origin and
+  reproducibility status of every one-off artifact:
+  - 3 reference PDFs (stable URLs, re-downloadable)
+  - 2 DEMs (reproducible via deliverable/fetch.py)
+  - FEMA NFHL (one-off ArcGIS REST query → Plan 2: fetch_fema.py)
+  - 2 SanGIS parcel files (one-off, no public API — frozen source data)
+  - HUC-12 boundary (one-off WBD extraction → Plan 2: fetch_huc12.py via NLDI)
+  - 2 DRI fan zone vectors (reproducible via dri_roughness_comparison.py)
+  - Community bbox (one-off hand-drawn → study-specific, no script)
+  - 2 AOI buffers (one-off → Plan 2: build_aois.py)
+  - Henderson watershed boundary (now reproducible via deliverable/watershed.py)
+  Includes summary table mapping each artifact to its Plan 2 fetch script.
+  Updated TODO.md with Plan 2 checklist (5 items, PROVENANCE.md marked done).
+
 - 2026-05-07 ~12:00 UTC: deliverable/watershed.py — watershed delineation module.
   New module `delineate_watershed()`: Path-based API taking a filled DEM + pour
   GeoJSON → WBT D8 pointer → WBT watershed() → rasterio polygonize →

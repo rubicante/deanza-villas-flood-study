@@ -38,6 +38,7 @@ MASK_OVERLAY = WORK_DIR / "dri_page_20_class_masks_on_map.png"
 ZONES_4326 = PROJECT / "data/derived/vectors/dri_2015_fan_zones.geojson"
 ZONES_5070 = PROJECT / "data/derived/vectors/dri_2015_fan_zones_epsg5070.geojson"
 STATS_JSON = PROJECT / "data/derived/2km_aoi/dri_roughness_comparison_stats.json"
+SUMMARY_MD = PROJECT / "outputs/reports/dri_roughness_comparison.md"
 ROUGHNESS_RASTERS: dict[str, Path] = {
     "roughness_magnitude_m": PROJECT / "data/derived/2km_aoi/deanza_villas_2km_1m_dem_multiscale_roughness_mag.tif",
     "roughness_scale_m": PROJECT / "data/derived/2km_aoi/deanza_villas_2km_1m_dem_multiscale_roughness_scale.tif",
