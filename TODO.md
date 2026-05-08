@@ -35,4 +35,4 @@ Implementation order: documentation first, then fetch scripts, then regenerate.p
 - [ ] `scripts/fetch_huc12.py` — USGS NLDI API call for HUC-12 181002030302 → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
 - [x] `scripts/build_aois.py` — parcel buffer → derived AOIs (2km, 8km) → `data/derived/vectors/`
 - [ ] `scripts/regenerate.py` — smoke test: regenerates all canonical artifacts from raw sources and diffs against committed versions
-- [ ] Satellite validation regeneration — stalled on Earthaccess auth (no EDL credentials in this environment). Outputs (`satellite_validation.html`, `.md`) are known-stale with old parcel boundary and old FEMA. Needs `.netrc` or EARTHDATA_USERNAME/EARTHDATA_PASSWORD to re-run.
+- [x] Satellite validation regeneration — now working. `scripts/init_env.py` loads `.env` → `earthaccess.login(strategy="environment")`. Auth confirmed (token expires 07/02/2026). Full STAC search + 688 downloads + water classification + render completed.
