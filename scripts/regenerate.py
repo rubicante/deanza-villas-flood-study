@@ -141,9 +141,7 @@ STEPS: list[dict[str, Any]] = [
     {"name": "context_copies",    "skip": "",
      "cmd": ["bash", "-c",
              "cp data/raw/fema/nfhl_borrego_valley.geojson outputs/maps/ && "
-             "cp data/derived/vectors/henderson_watershed_boundary.geojson outputs/maps/ && "
-             "cp data/derived/vectors/borrego_palm_canyon_huc12.geojson outputs/maps/ && "
-             "cp data/derived/vectors/deanza_community_bbox.geojson outputs/maps/"]},
+             "cp data/derived/vectors/borrego_palm_canyon_huc12.geojson outputs/maps/"]},
 ]
 
 # Artifacts to diff after each step
@@ -198,9 +196,7 @@ DIFF_MAP: dict[str, list[str]] = {
     ],
     "context_copies": [
         "outputs/maps/nfhl_borrego_valley.geojson",
-        "outputs/maps/henderson_watershed_boundary.geojson",
         "outputs/maps/borrego_palm_canyon_huc12.geojson",
-        "outputs/maps/deanza_community_bbox.geojson",
     ],
 }
 
