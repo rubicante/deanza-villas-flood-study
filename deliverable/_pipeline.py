@@ -32,7 +32,6 @@ PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geoj
 
 # Input DEMs (fetched, unfilled)
 DEM_1M = ROOT / "data" / "derived" / "watershed" / "dem_1m_5070.tif"
-DEM_10M = ROOT / "data" / "derived" / "watershed" / "dem_10m_wide.tif"
 
 
 def _mask_to_boundary(raster_path: Path, boundary: Path,
@@ -132,6 +131,7 @@ def build_dinf_1m():
 def build_dinf_10m():
     """D∞ 10m for parcel contributing area."""
     DERIVED.mkdir(parents=True, exist_ok=True)
+    dem_10m_raw = DERIVED / "dem_10m_clipped.tif"
     dem = DERIVED / "dem_10m_filled.tif"
     accum = DERIVED / "dinf_flow_accum_10m.tif"
     dinf_ptr = DERIVED / "dinf_pointer_10m.tif"
@@ -139,7 +139,9 @@ def build_dinf_10m():
     streams = DERIVED / "streams_dinf_10m_250.tif"
 
     if not dem.exists():
-        dem = preprocess_dem(DEM_10M, output=dem, strategy="breach_then_fill")
+        raw = fetch_dem(CONTRIBUTING_AREA, resolution=10.0, crs=TARGET_CRS,
+                        buffer_m=200, output=dem_10m_raw)
+        dem = preprocess_dem(raw, output=dem, strategy="breach_then_fill")
 
     compute_dinf(dem, output=accum, pointer=dinf_ptr)
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
@@ -183,6 +185,7 @@ def build_d8_1m():
 def build_d8_10m():
     """D8 10m for parcel contributing area."""
     DERIVED.mkdir(parents=True, exist_ok=True)
+    dem_10m_raw = DERIVED / "dem_10m_clipped.tif"
     dem = DERIVED / "dem_10m_filled.tif"
     ptr = DERIVED / "d8_pointer_10m.tif"
     accum = DERIVED / "d8_flow_accum_10m.tif"
@@ -190,7 +193,9 @@ def build_d8_10m():
     streams = DERIVED / "streams_d8_10m_250.tif"
 
     if not dem.exists():
-        dem = preprocess_dem(DEM_10M, output=dem, strategy="breach_then_fill")
+        raw = fetch_dem(CONTRIBUTING_AREA, resolution=10.0, crs=TARGET_CRS,
+                        buffer_m=200, output=dem_10m_raw)
+        dem = preprocess_dem(raw, output=dem, strategy="breach_then_fill")
 
     compute_d8_pointer(dem, output=ptr)
     compute_d8_accum(dem, output=accum, pointer=ptr,
