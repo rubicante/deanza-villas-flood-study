@@ -3,7 +3,7 @@ Stream extraction and generic export.
 
 Key spike lessons:
   - WBT extract_streams with zero_background=True
-  - Keep export format generic (GeoJSON). Project-specific binary in _henderson.py
+  - Keep export format generic (GeoJSON). Project-specific binary in _pipeline.py
 """
 
 from pathlib import Path

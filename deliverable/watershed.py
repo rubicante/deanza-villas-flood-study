@@ -83,7 +83,7 @@ def delineate_watershed(
     clipped at the DEM edge — a silent incorrect result. This function
     warns when the boundary bbox touches the DEM edge. For Henderson
     Canyon:
-    - Narrow DEM (spikes/henderson-canyon/, lon ~-116.43 to -116.32):
+    - Narrow DEM (legacy spike, lon ~-116.43 to -116.32):
       produced truncated boundary.
     - Wide DEM (data/derived/watershed/dem_10m_wide.tif, to lon -116.50):
       captured the full 107 km² headwater with 93.5% HUC-12 overlap.

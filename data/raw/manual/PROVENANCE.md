@@ -8,8 +8,8 @@ script is planned (Plan 2).
 For pipeline-generated artifacts (in `data/derived/2km_aoi/`), see the relevant
 scripts in `scripts/` and their config entries in `config/study.yaml` — those are
 reproducible via `python -m scripts`. For library-generated artifacts (in
-`data/derived/watershed/` and `data/derived/henderson/`), see `deliverable/` —
-those are reproducible via `python -m deliverable._henderson all`.
+`data/derived/watershed/`), see `deliverable/` —
+those are reproducible via `python -m deliverable._pipeline all`.
 
 ---
 
@@ -81,7 +81,7 @@ AOI was 2.0 Mpx (1,412×1,427). The corrected DEM is 20.2 Mpx (4,415×4,567).
 All downstream artifacts were regenerated on 2026-05-07 against the correct extent.
 
 **Stream explorer unaffected:** `outputs/maps/stream_explorer.html` loads Henderson
-watershed pipeline `.bin` files (`deliverable/_henderson.py`), not 2km AOI outputs.
+watershed pipeline `.bin` files (`deliverable/_pipeline.py`), not 2km AOI outputs.
 No regeneration needed.
 
 **Satellite validation deferred:** `scripts/satellite_validation.py` requires
@@ -253,8 +253,7 @@ old FEMA). Marked for regeneration when credentials are available.
 - **Source:** WBT `watershed()` on wide 10m DEM with community-bbox pour points,
   polygonized via `rasterio.features.shapes()` → shapely `unary_union` →
   `simplify(10)`, then reprojected to both CRS.
-- **Acquisition:** NOW REPRODUCIBLE — `python -m deliverable._henderson watershed`
-  calls `deliverable/watershed.py:delineate_watershed()`. Regenerated 2026-05-06.
+- **Acquisition:** Reproducible — powered by `deliverable/watershed.py:delineate_watershed()`.
 - **Reproducibility:** Reproducible. Output is geometrically equivalent but not
   byte-identical across reruns (shapely union ordering is floating-point
   non-deterministic).

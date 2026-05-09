@@ -114,8 +114,8 @@ STEPS: list[dict[str, Any]] = [
              "fetch_dem(boundary=Path('data/derived/vectors/deanza_villas_2km_aoi.geojson'), "
              "resolution=1.0, crs='EPSG:5070', buffer_m=100, "
              "output=Path('data/raw/dem/deanza_villas_2km_1m_dem.tif'))"]},
-    {"name": "henderson_watershed","skip": "skip_henderson",
-     "cmd": [PYTHON, "-m", "deliverable._henderson", "watershed"]},
+    {"name": "watershed_boundary","skip": "skip_watershed",
+     "cmd": [PYTHON, "-m", "deliverable.watershed"]},
     {"name": "terrain_metrics",   "skip": "",
      "cmd": [PYTHON, "-m", "scripts.terrain_metrics"]},
     {"name": "extract_washes",    "skip": "",
@@ -158,7 +158,7 @@ DIFF_MAP: dict[str, list[str]] = {
     ],
     "fetch_fema": ["data/raw/fema/nfhl_borrego_valley.geojson"],
     "fetch_huc12": ["data/derived/vectors/borrego_palm_canyon_huc12.geojson"],
-    "henderson_watershed": [
+    "watershed_boundary": [
         "data/derived/vectors/henderson_watershed_boundary.geojson",
         "data/derived/vectors/henderson_watershed_boundary_5070.geojson",
     ],
@@ -362,7 +362,7 @@ def main() -> int:
     )
     parser.add_argument("--skip-fetches", action="store_true")
     parser.add_argument("--skip-satellite", action="store_true")
-    parser.add_argument("--skip-henderson", action="store_true")
+    parser.add_argument("--skip-watershed", action="store_true")
     parser.add_argument("--step", type=str, help="Run only the named step.")
     args = parser.parse_args()
 
@@ -402,8 +402,8 @@ def main() -> int:
         if skip == "skip_satellite" and args.skip_satellite:
             print(f"[{name}] SKIP (--skip-satellite)")
             continue
-        if skip == "skip_henderson" and args.skip_henderson:
-            print(f"[{name}] SKIP (--skip-henderson)")
+        if skip == "skip_watershed" and args.skip_watershed:
+            print(f"[{name}] SKIP (--skip-watershed)")
             continue
         if args.step and args.step != name:
             continue

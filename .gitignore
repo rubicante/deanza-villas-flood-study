@@ -12,7 +12,6 @@ outputs/report_spike/*_files/
 outputs/report_spike/.quarto/
 report.html
 report_files/
-data/derived/henderson/
 data/derived/watershed/
 data/derived/2km_aoi/channels/
 data/derived/2km_aoi/fan_synthesis/
