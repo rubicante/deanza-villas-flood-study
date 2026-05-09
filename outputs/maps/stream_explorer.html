@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Explorer — Henderson Canyon Watershed (107 km²)</title>
+<title>Stream Explorer — De Anza Villas Flood Study</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#0d1117; color:#c9d1d9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; }
@@ -47,7 +47,7 @@
       <label class="legend-item" for="tog-watershed">
         <input type="checkbox" id="tog-watershed" checked>
         <span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span>
-        <span class="label-text">Watershed boundary (107 km²)</span>
+        <span class="label-text">Parcel contributing area</span>
       </label>
       <label class="legend-item" for="tog-huc12">
         <input type="checkbox" id="tog-huc12">
@@ -63,11 +63,6 @@
         <input type="checkbox" id="tog-parcel">
         <span class="legend-line" style="border-top:2px solid #ff7f0e"></span>
         <span class="label-text">Parcel boundary (De Anza Villas)</span>
-      </label>
-      <label class="legend-item" for="tog-pourpoint">
-        <input type="checkbox" id="tog-pourpoint">
-        <span class="legend-line" style="border-top:1.5px dashed #8b949e"></span>
-        <span class="label-text">Watershed pour-point zone</span>
       </label>
       <label class="legend-item" for="tog-dri">
         <input type="checkbox" id="tog-dri">
@@ -100,8 +95,7 @@
     </div>
     <div id="stats">
       <div class="stat"><span class="stat-label">Cells visible</span><span class="stat-value" id="stat-cells">—</span></div>
-      <div class="stat"><span class="stat-label">Reachable cells</span><span class="stat-value" id="stat-total">—</span></div>
-      <div class="stat"><span class="stat-label" style="color:#d2991d;font-weight:600;">⇢ De Anza Villas only</span></div>
+      <div class="stat"><span class="stat-label">Stream cells</span><span class="stat-value" id="stat-total">—</span></div>
     </div>
   </div>
 </div>
@@ -115,9 +109,8 @@ const DINF_1M_URL  = 'streams_all.bin';
 const DINF_10M_URL = 'streams_wide_dinf.bin';
 const D8_10M_URL   = 'streams_wide_d8.bin';
 const D8_1M_URL    = 'streams_d8_1m.bin';
-const WATERSHED_URL = 'henderson_watershed_boundary.geojson';
+const WATERSHED_URL = 'deanza_parcel_contributing_area.geojson';
 const HUC12_URL = 'borrego_palm_canyon_huc12.geojson';
-const POURPOINT_URL = 'deanza_community_bbox.geojson';
 const FEMA_URL = 'nfhl_borrego_valley.geojson';
 const PARCEL_URL = 'deanza_villas_complex_boundary.geojson';
 const DRI_URL = 'dri_2015_fan_zones.geojson';
@@ -294,9 +287,8 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
     loadingInfo.textContent = 'Loading boundary layers…';
     const wsData = await fetch(WATERSHED_URL).then(r => r.json());
 
-    let huc12Data=null, pourpointData=null, femaData=null, parcelData=null, driData=null, aoiData=null;
+    let huc12Data=null, femaData=null, parcelData=null, driData=null, aoiData=null;
     try { huc12Data = await fetch(HUC12_URL).then(r => r.json()); } catch(e) { console.warn('HUC12:', e); }
-    try { pourpointData = await fetch(POURPOINT_URL).then(r => r.json()); } catch(e) { console.warn('Pourpoint:', e); }
     try { femaData = await fetch(FEMA_URL).then(r => r.json()); } catch(e) { console.warn('FEMA:', e); }
     try { parcelData = await fetch(PARCEL_URL).then(r => r.json()); } catch(e) { console.warn('Parcel:', e); }
     try { driData = await fetch(DRI_URL).then(r => r.json()); } catch(e) { console.warn('DRI:', e); }
@@ -315,7 +307,7 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
     map.on('load', () => {
-      // Watershed boundary — ON by default
+      // Parcel contributing area — ON by default
       map.addSource('watershed', { type: 'geojson', data: wsData });
       map.addLayer({ id: 'watershed-line', type: 'line', source: 'watershed', paint: { 'line-color': '#58a6ff', 'line-width': 2.5, 'line-dasharray': [3,2] }});
 
@@ -352,16 +344,10 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         map.addLayer({ id: 'aoi-2km-line', type: 'line', source: 'aoi-2km', paint: { 'line-color': '#6e7681', 'line-width': 1.5, 'line-dasharray': [4,3] }, layout: { visibility: 'none' } }, 'fema-fill');
       }
 
-      // Pour-point zone — OFF by default
-      if (pourpointData) {
-        map.addSource('pourpoint', { type: 'geojson', data: pourpointData });
-        map.addLayer({ id: 'pourpoint-line', type: 'line', source: 'pourpoint', paint: { 'line-color': '#8b949e', 'line-width': 1.5, 'line-dasharray': [4,4], 'line-opacity': 0.7 }, layout: { visibility: 'none' } }, 'aoi-2km-line');
-      }
-
       // Parcel complex boundary — OFF by default
       if (parcelData) {
         map.addSource('parcel', { type: 'geojson', data: parcelData });
-        map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'none' } }, 'pourpoint-line');
+        map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'none' } }, 'aoi-2km-line');
       }
 
       // Wire up layer toggles
@@ -369,7 +355,6 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
       bindLayerToggle('tog-huc12', ['huc12-fill', 'huc12-line'], map);
       bindLayerToggle('tog-fema', ['fema-fill'], map);
       bindLayerToggle('tog-parcel', ['parcel-line'], map);
-      bindLayerToggle('tog-pourpoint', ['pourpoint-line'], map);
       bindLayerToggle('tog-dri', ['dri-active-fill', 'dri-inactive-fill'], map);
       bindLayerToggle('tog-aoi', ['aoi-2km-line'], map);
 
