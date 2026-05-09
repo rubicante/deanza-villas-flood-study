@@ -19,6 +19,7 @@ from deliverable import (
     verify_accumulation, check_d8_dinf_agreement,
 )
 from deliverable.watershed import delineate_watershed
+from deliverable.reachability import filter_reachable
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "derived" / "vectors"
@@ -27,6 +28,7 @@ DERIVED = ROOT / "data" / "derived" / "henderson"
 TARGET_CRS = "EPSG:5070"
 
 BOUNDARY = DATA / "henderson_watershed_boundary.geojson"
+PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
 
 # Input DEMs (fetched, unfilled)
 DEM_1M = ROOT / "data" / "derived" / "watershed" / "dem_1m_5070.tif"
@@ -89,10 +91,12 @@ def _export_binary(
 
 
 def build_dinf_1m():
-    """D∞ 1m for 107 km² watershed."""
+    """D∞ 1m for 107 km² watershed, watershed-clipped."""
     DERIVED.mkdir(parents=True, exist_ok=True)
     dem = DERIVED / "dem_1m_filled_f32.tif"
     accum = DERIVED / "dinf_flow_accum_1m.tif"
+    accum_masked = DERIVED / "dinf_flow_accum_1m_masked.tif"
+    dinf_ptr = DERIVED / "dinf_pointer_1m.tif"
     streams = DERIVED / "streams_dinf_1m_250.tif"
 
     if not dem.exists():
@@ -100,10 +104,28 @@ def build_dinf_1m():
                         output=DERIVED / "dem_1m_clipped.tif")
         dem = preprocess_dem(raw, output=dem)
 
-    compute_dinf(dem, output=accum)
-    verify_accumulation(accum)
-    extract_streams(accum, threshold=250, output=streams)
-    _export_binary(streams, accum, MAPS / "streams_all.bin", boundary=BOUNDARY)
+    compute_dinf(dem, output=accum, pointer=dinf_ptr)
+
+    # Mask to watershed
+    ws = gpd.read_file(BOUNDARY)
+    ws_5070 = ws.to_crs(TARGET_CRS)
+    with rasterio.open(accum) as src:
+        da = src.read(1)
+        prof = src.profile.copy()
+    ws_mask = rasterio.features.rasterize(
+        [(ws_5070.geometry.iloc[0], 1)],
+        out_shape=da.shape,
+        transform=prof["transform"],
+        dtype="uint8",
+    )
+    masked = np.where(ws_mask, da, 0).astype(prof["dtype"])
+    with rasterio.open(accum_masked, "w", **prof) as dst:
+        dst.write(masked, 1)
+
+    verify_accumulation(accum_masked)
+    extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
+    _export_binary(streams, accum_masked, MAPS / "streams_all.bin", boundary=BOUNDARY)
 
 
 def build_dinf_10m():
@@ -111,13 +133,14 @@ def build_dinf_10m():
     DERIVED.mkdir(parents=True, exist_ok=True)
     dem = DERIVED / "dem_10m_filled.tif"
     accum = DERIVED / "dinf_flow_accum_10m.tif"
+    dinf_ptr = DERIVED / "dinf_pointer_10m.tif"
     accum_masked = DERIVED / "dinf_flow_accum_10m_masked.tif"
     streams = DERIVED / "streams_dinf_10m_250.tif"
 
     if not dem.exists():
         dem = preprocess_dem(DEM_10M, output=dem, strategy="breach_then_fill")
 
-    compute_dinf(dem, output=accum)
+    compute_dinf(dem, output=accum, pointer=dinf_ptr)
 
     # Clip to watershed
     ws = gpd.read_file(BOUNDARY)
@@ -132,15 +155,17 @@ def build_dinf_10m():
 
     verify_accumulation(accum_masked)
     extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_dinf.bin", boundary=BOUNDARY)
 
 
 def build_d8_1m():
-    """D8 1m for 107 km² watershed."""
+    """D8 1m for 107 km² watershed, watershed-clipped."""
     DERIVED.mkdir(parents=True, exist_ok=True)
     dem = DERIVED / "dem_1m_filled_f32.tif"
     ptr = DERIVED / "d8_pointer_1m.tif"
     accum = DERIVED / "d8_flow_accum_1m.tif"
+    accum_masked = DERIVED / "d8_flow_accum_1m_masked.tif"
     streams = DERIVED / "streams_d8_1m_250.tif"
 
     if not dem.exists():
@@ -149,16 +174,35 @@ def build_d8_1m():
         dem = preprocess_dem(raw, output=dem)
 
     compute_d8_pointer(dem, output=ptr)
-    compute_d8_accum(dem, output=accum, pointer=ptr, backend="wbt_ptr_pyflwdir")
+    compute_d8_accum(dem, output=accum, pointer=ptr, backend="wbt_ptr_pyflwdir",
+                     watershed_geom=DATA / "henderson_watershed_boundary_5070.geojson")
 
-    verify_accumulation(accum)
+    # Mask accum to watershed (belt-and-suspenders — accumulation already
+    # watershed-confined via pointer masking, but this matches the 10m pattern)
+    ws = gpd.read_file(BOUNDARY)
+    ws_5070 = ws.to_crs(TARGET_CRS)
+    with rasterio.open(accum) as src:
+        da = src.read(1)
+        prof = src.profile.copy()
+    ws_mask = rasterio.features.rasterize(
+        [(ws_5070.geometry.iloc[0], 1)],
+        out_shape=da.shape,
+        transform=prof["transform"],
+        dtype="uint8",
+    )
+    masked = np.where(ws_mask, da, 0).astype(prof["dtype"])
+    with rasterio.open(accum_masked, "w", **prof) as dst:
+        dst.write(masked, 1)
+
+    verify_accumulation(accum_masked)
     # Cross-check against D∞
     dinf = DERIVED / "dinf_flow_accum_1m.tif"
     if dinf.exists():
         check_d8_dinf_agreement(accum, dinf, tolerance=0.07)
 
-    extract_streams(accum, threshold=250, output=streams)
-    _export_binary(streams, accum, MAPS / "streams_d8_1m.bin", boundary=BOUNDARY)
+    extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
+    _export_binary(streams, accum_masked, MAPS / "streams_d8_1m.bin", boundary=BOUNDARY)
 
 
 def build_d8_10m():
@@ -191,6 +235,7 @@ def build_d8_10m():
 
     verify_accumulation(accum_masked)
     extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_d8.bin", boundary=BOUNDARY)
 
 

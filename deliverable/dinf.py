@@ -16,9 +16,12 @@ from whitebox.whitebox_tools import WhiteboxTools
 def compute_dinf(
     dem: Path,
     output: Path = Path("dinf_flow_accum.tif"),
+    *,
+    pointer: Path | None = None,
 ) -> Path:
     """
     WBT d_inf_flow_accumulation with out_type="cells".
+    If pointer is provided, also computes D∞ pointer via d_inf_pointer.
     Returns output Path. Raises on failure.
     """
     dem = Path(dem).resolve()
@@ -31,6 +34,10 @@ def compute_dinf(
 
     t0 = time.time()
     wbt.d_inf_flow_accumulation(str(dem), str(output), out_type="cells")
+    if pointer is not None:
+        pointer = Path(pointer).resolve()
+        pointer.parent.mkdir(parents=True, exist_ok=True)
+        wbt.d_inf_pointer(str(dem), str(pointer))
     if not output.exists():
         raise RuntimeError(f"WBT d_inf_flow_accumulation failed: {output} not found")
     print(f"  D∞: {time.time()-t0:.0f}s → {output}")

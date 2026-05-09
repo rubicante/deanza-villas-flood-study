@@ -100,7 +100,8 @@
     </div>
     <div id="stats">
       <div class="stat"><span class="stat-label">Cells visible</span><span class="stat-value" id="stat-cells">—</span></div>
-      <div class="stat"><span class="stat-label">Total stream cells</span><span class="stat-value" id="stat-total">6.6M</span></div>
+      <div class="stat"><span class="stat-label">Reachable cells</span><span class="stat-value" id="stat-total">—</span></div>
+      <div class="stat"><span class="stat-label" style="color:#d2991d;font-weight:600;">⇢ De Anza Villas only</span></div>
     </div>
   </div>
 </div>
@@ -279,13 +280,15 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
 // Initialize
 (async function init() {
   try {
-    await loadBinary(DINF_1M_URL, 'dinf1m', 'D∞ 1m (79 MB)');
-    await loadBinary(DINF_10M_URL, 'dinf10m', 'D∞ 10m (0.7 MB)');
-    await loadBinary(D8_10M_URL, 'd810m', 'D8 10m (0.6 MB)');
-    await loadBinary(D8_1M_URL, 'd81m', 'D8 1m (85 MB)');
+    await loadBinary(DINF_1M_URL, 'dinf1m', 'D∞ 1m');
+    await loadBinary(DINF_10M_URL, 'dinf10m', 'D∞ 10m');
+    await loadBinary(D8_10M_URL, 'd810m', 'D8 10m');
+    await loadBinary(D8_1M_URL, 'd81m', 'D8 1m');
 
     document.getElementById('stat-total').textContent =
-      (datasets.dinf1m.count / 1e6).toFixed(1) + 'M';
+      datasets.dinf1m.count > 1000000 ? (datasets.dinf1m.count/1e6).toFixed(1)+'M'
+      : datasets.dinf1m.count > 1000 ? (datasets.dinf1m.count/1e3).toFixed(0)+'K'
+      : datasets.dinf1m.count.toLocaleString();
 
     // Load boundary layers
     loadingInfo.textContent = 'Loading boundary layers…';
@@ -387,9 +390,9 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
     requestAnimationFrame(renderLoop);
 
     // Slider
-    slider.value = accumToSlider(5000);
-    sliderVal.textContent = '5,000';
-    currentAccum = 5000;
+    slider.value = accumToSlider(1000);
+    sliderVal.textContent = '1,000';
+    currentAccum = 1000;
     function onSlider() {
       currentAccum = sliderToAccum(parseInt(slider.value));
       sliderVal.textContent = currentAccum.toLocaleString();
@@ -424,7 +427,10 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         b.style.fontWeight = isActive ? '600' : 'normal';
       });
       const c = activeCount();
-      document.getElementById('stat-total').textContent = c > 1000000 ? (c/1e6).toFixed(1)+'M' : (c/1000).toFixed(0)+'K';
+      document.getElementById('stat-total').textContent =
+        c > 1000000 ? (c/1e6).toFixed(1)+'M'
+        : c > 1000 ? (c/1e3).toFixed(0)+'K'
+        : c.toLocaleString();
       needsRender = true;
     });
 

@@ -1,0 +1,398 @@
+"""
+Channel reachability filter: keep only stream cells whose downstream flow
+path reaches a target polygon.
+
+D8 trace follows the single steepest-descent neighbor.
+D∞ trace follows both neighbors (Tarboton 1997) — boolean reachability:
+a cell reaches if any non-zero flow path reaches the target.
+
+Memoization: global cache maps (r,c) → bool. Per-trace-origin visited set
+detects cycles without poisoning the cache for other origins.
+"""
+
+from __future__ import annotations
+
+import time
+from pathlib import Path
+
+import numpy as np
+import rasterio
+from rasterio import features
+import geopandas as gpd
+
+
+# ── D8 encoding (WBT: 1=NE,2=E,4=SE,8=S,16=SW,32=W,64=NW,128=N) ──
+
+# dr, dc for each D8 code
+_D8_DELTA: dict[int, tuple[int, int]] = {
+    1: (-1, 1),     # NE
+    2: (0, 1),      # E
+    4: (1, 1),      # SE
+    8: (1, 0),      # S
+    16: (1, -1),    # SW
+    32: (0, -1),    # W
+    64: (-1, -1),   # NW
+    128: (-1, 0),   # N
+}
+
+
+# ── D∞ encoding (Tarboton 1997, WBT: angle in degrees, 0=east, CCW) ──
+
+# Neighbor (dr, dc) for each of the 8 direction indices, 0=E, 1=NE, 2=N, ...
+_DINF_NEIGHBORS: list[tuple[int, int]] = [
+    (0, 1),    # 0: E
+    (-1, 1),   # 1: NE
+    (-1, 0),   # 2: N
+    (-1, -1),  # 3: NW
+    (0, -1),   # 4: W
+    (1, -1),   # 5: SW
+    (1, 0),    # 6: S
+    (1, 1),    # 7: SE
+]
+
+
+def _dinf_neighbors(angle_deg: float) -> list[tuple[int, int]]:
+    """Return list of (dr, dc) neighbors this D∞ angle flows toward.
+
+    Boolean reachability: return both neighbors unless one gets zero flow
+    (angle exactly aligned with a cardinal/ordinal direction)."""
+    if angle_deg < 0 or angle_deg > 360:
+        return []
+    angle_deg %= 360  # normalize 360.0 and any float drift to [0, 360)
+
+    idx1 = int(angle_deg // 45) % 8
+    frac = (angle_deg - idx1 * 45) / 45.0
+    idx2 = (idx1 + 1) % 8
+
+    neighbors = []
+    if frac < 1 - 1e-6:  # non-zero flow to neighbor idx1
+        neighbors.append(_DINF_NEIGHBORS[idx1])
+    if frac > 1e-6:  # non-zero flow to neighbor idx2
+        neighbors.append(_DINF_NEIGHBORS[idx2])
+    # If exactly 0 or exactly 45 etc., only one neighbor
+    if not neighbors:
+        neighbors = [_DINF_NEIGHBORS[idx1]]
+    return neighbors
+
+
+# ── Target rasterization ──
+
+def _rasterize_target(
+    target_geom,
+    ref_transform,
+    ref_shape: tuple[int, int],
+) -> np.ndarray:
+    """Rasterize target geometry onto the reference raster grid. Returns uint8 mask."""
+    mask = features.rasterize(
+        [(target_geom, 1)],
+        out_shape=ref_shape,
+        transform=ref_transform,
+        dtype="uint8",
+    )
+    return mask
+
+
+# ── D8 reachability ──
+
+def _d8_reachable(
+    streams: np.ndarray,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+) -> np.ndarray:
+    """Return boolean mask of stream cells whose D8 downstream path hits target_mask."""
+    rows, cols = streams.shape
+    cache = np.zeros((rows, cols), dtype=np.uint8)  # 0=unvisited, 1=reach, 2=no
+    result = np.zeros_like(streams, dtype=bool)
+
+    stream_cells = np.argwhere(streams > 0)
+
+    t0 = time.time()
+    n_traced = 0
+    n_cache_hits = 0
+
+    for r, c in stream_cells:
+        reached, traced, cached = _d8_trace(r, c, ptr, target_mask, cache, rows, cols)
+        n_traced += traced
+        n_cache_hits += cached
+        result[r, c] = reached
+
+    elapsed = time.time() - t0
+    n_stream = len(stream_cells)
+    n_reaching = int(result.sum())
+    print(f"  D8 reachable: {n_reaching:,}/{n_stream:,} stream cells "
+          f"({n_reaching/n_stream*100:.1f}%), {n_traced:,} traced, "
+          f"{n_cache_hits:,} cache hits, {elapsed:.1f}s")
+    return result
+
+
+def _d8_trace(
+    r: int, c: int,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+    cache: np.ndarray,
+    rows: int, cols: int,
+) -> tuple[bool, int, int]:
+    """Trace D8 downstream from (r,c). Returns (reaches, cells_traced, cache_hits)."""
+    cached_val = cache[r, c]
+    if cached_val:
+        return cached_val == 1, 0, 1
+
+    visited: set[tuple[int, int]] = set()
+    path: list[tuple[int, int]] = [(r, c)]
+    traced = 0
+    result = False
+
+    while True:
+        key = (r, c)
+        cached_val = cache[r, c]
+
+        if cached_val:
+            result = cached_val == 1
+            break
+
+        if target_mask[r, c]:
+            result = True
+            break
+
+        if key in visited:
+            result = False  # cycle
+            break
+
+        visited.add(key)
+        traced += 1
+
+        code = int(ptr[r, c])
+        if code == 0 or code not in _D8_DELTA:
+            result = False
+            break
+
+        dr, dc = _D8_DELTA[code]
+        r, c = r + dr, c + dc
+
+        if r < 0 or r >= rows or c < 0 or c >= cols:
+            result = False
+            break
+
+        path.append((r, c))
+
+    # Cache all cells on this path
+    val = 1 if result else 2
+    for pr, pc in path:
+        cache[pr, pc] = val
+    return result, traced, 0
+
+
+# ── D∞ reachability ──
+
+def _dinf_reachable(
+    streams: np.ndarray,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+) -> np.ndarray:
+    """Return boolean mask of stream cells whose D∞ downstream flow reaches target_mask.
+
+    Boolean reachability: follows all non-zero-flow branches."""
+    rows, cols = streams.shape
+    cache = np.zeros((rows, cols), dtype=np.uint8)  # 0=unvisited, 1=reach, 2=no
+    result = np.zeros_like(streams, dtype=bool)
+
+    stream_cells = np.argwhere(streams > 0)
+
+    t0 = time.time()
+    n_traced = 0
+    n_cache_hits = 0
+
+    for r, c in stream_cells:
+        reached, traced, cached = _dinf_trace(r, c, ptr, target_mask, cache, rows, cols)
+        n_traced += traced
+        n_cache_hits += cached
+        result[r, c] = reached
+
+    elapsed = time.time() - t0
+    n_stream = len(stream_cells)
+    n_reaching = int(result.sum())
+    print(f"  D∞ reachable: {n_reaching:,}/{n_stream:,} stream cells "
+          f"({n_reaching/n_stream*100:.1f}%), {n_traced:,} traced, "
+          f"{n_cache_hits:,} cache hits, {elapsed:.1f}s")
+    return result
+
+
+def _dinf_trace(
+    start_r: int, start_c: int,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+    cache: np.ndarray,
+    rows: int, cols: int,
+) -> tuple[bool, int, int]:
+    """Iterative post-order DFS. Returns True if any non-zero D∞ branch
+    from (start_r, start_c) eventually reaches a target cell.
+
+    cache persists across calls (global memo).  Per-trace visited set
+    catches cycles within a single origin trace."""
+    cached_val = cache[start_r, start_c]
+    if cached_val:
+        return cached_val == 1, 0, 1
+
+    visited: set[tuple[int, int]] = set()  # cycle detection, this trace only
+    stack: list[tuple[int, int, bool]] = [(start_r, start_c, False)]
+    traced = 0
+
+    while stack:
+        r, c, resolved = stack.pop()
+
+        if resolved:
+            # All children have been processed and are in cache.
+            if target_mask[r, c]:
+                cache[r, c] = 1
+                continue
+
+            angle = float(ptr[r, c])
+            neighbor_deltas = _dinf_neighbors(angle)
+            valid_neighbors = []
+            for dr, dc in neighbor_deltas:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols:
+                    valid_neighbors.append((nr, nc))
+            if not valid_neighbors:
+                cache[r, c] = 2  # pit or all off-edge
+                continue
+
+            cache[r, c] = 1 if any(cache[nr, nc] == 1
+                                   for nr, nc in valid_neighbors) else 2
+            continue
+
+        # First visit
+        if cache[r, c]:
+            continue
+        if (r, c) in visited:
+            cache[r, c] = 2  # cycle → non-reaching
+            continue
+        visited.add((r, c))
+        traced += 1
+
+        # Target cells short-circuit; no need to explore downstream.
+        if target_mask[r, c]:
+            cache[r, c] = 1
+            continue
+
+        angle = float(ptr[r, c])
+        neighbor_deltas = _dinf_neighbors(angle)
+        valid_neighbors = []
+        for dr, dc in neighbor_deltas:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < rows and 0 <= nc < cols:
+                valid_neighbors.append((nr, nc))
+
+        if not valid_neighbors:
+            cache[r, c] = 2  # pit or all off-edge
+            continue
+
+        # Post-order: re-push self as resolved, then push children.
+        stack.append((r, c, True))
+        for nr, nc in valid_neighbors:
+            if not cache[nr, nc]:
+                stack.append((nr, nc, False))
+
+    return cache[start_r, start_c] == 1, traced, 0
+
+
+# ── Public API ──
+
+def filter_reachable(
+    streams: Path,
+    pointer: Path,
+    target_geom_path: Path,
+    output: Path | None = None,
+    *,
+    pointer_type: str = "d8",
+    buffer_m: float = 3.0,
+) -> Path:
+    """Filter stream raster to cells whose flow reaches the target geometry.
+
+    Parameters
+    ----------
+    streams : Path
+        Binary stream raster (uint8, 0/1).
+    pointer : Path
+        Flow direction pointer raster. D8: int16 (WBT encoding). D∞: float32 (degrees).
+    target_geom_path : Path
+        GeoJSON path to target polygon (e.g., parcel boundary).
+    output : Path or None
+        Output path for filtered stream raster. Default: streams with '_reachable' suffix.
+    pointer_type : str
+        'd8' or 'dinf'.
+    buffer_m : float
+        Buffer distance in meters around target geometry (registration tolerance).
+
+    Returns
+    -------
+    Path to filtered stream raster.
+    """
+    streams = Path(streams).resolve()
+    pointer = Path(pointer).resolve()
+    target_geom_path = Path(target_geom_path).resolve()
+
+    if output is None:
+        output = streams.parent / f"{streams.stem}_reachable.tif"
+    output = Path(output).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load raster metadata
+    with rasterio.open(streams) as src_s:
+        sdata = src_s.read(1)
+        s_profile = src_s.profile.copy()
+        s_crs = src_s.crs
+        s_transform = src_s.transform
+        s_shape = src_s.shape
+
+    with rasterio.open(pointer) as src_p:
+        pdata = src_p.read(1)
+        p_crs = src_p.crs
+        p_transform = src_p.transform
+        p_shape = src_p.shape
+
+    # Alignment assertions
+    assert s_crs == p_crs, f"CRS mismatch: streams={s_crs}, pointer={p_crs}"
+    assert s_transform == p_transform, "Transform mismatch"
+    assert s_shape == p_shape, f"Shape mismatch: streams={s_shape}, pointer={p_shape}"
+
+    # Load and reproject target
+    target_gdf = gpd.read_file(target_geom_path)
+    if target_gdf.crs is None:
+        raise ValueError(f"Target geometry has no CRS: {target_geom_path}")
+    target_gdf = target_gdf.to_crs(s_crs)
+
+    # Buffer target in CRS units (EPSG:5070 = meters)
+    target_geom = target_gdf.geometry.iloc[0]
+    if buffer_m > 0:
+        target_geom = target_geom.buffer(buffer_m)
+
+    # Rasterize target
+    target_mask = _rasterize_target(target_geom, s_transform, s_shape)
+    n_target = int(target_mask.sum())
+    if n_target == 0:
+        raise ValueError(
+            f"Target geometry rasterized to 0 cells. "
+            f"Check CRS alignment: target in {target_gdf.crs}, rasters in {s_crs}"
+        )
+    print(f"  Target: {n_target:,} cells (buffer={buffer_m}m)")
+
+    # Filter
+    if pointer_type == "d8":
+        reachable = _d8_reachable(sdata, pdata, target_mask)
+    elif pointer_type == "dinf":
+        reachable = _dinf_reachable(sdata, pdata, target_mask)
+    else:
+        raise ValueError(f"Unknown pointer_type: {pointer_type}")
+
+    # Write filtered streams
+    filtered = np.where(reachable, sdata, 0).astype("uint8")
+    s_profile.update(compress="lzw")
+    with rasterio.open(output, "w", **s_profile) as dst:
+        dst.write(filtered, 1)
+
+    n_before = int((sdata > 0).sum())
+    n_after = int((filtered > 0).sum())
+    print(f"  Filtered: {n_before:,} → {n_after:,} cells "
+          f"({n_after/n_before*100:.1f}% kept) → {output}")
+    return output

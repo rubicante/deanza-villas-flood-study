@@ -23,6 +23,20 @@ import rasterio
 from whitebox.whitebox_tools import WhiteboxTools
 
 
+# WBT → pyflwdir D8 encoding translation (powers-of-2 LUT)
+# WBT:     1=NE, 2=E, 4=SE, 8=S, 16=SW, 32=W, 64=NW, 128=N  (clockwise from NE)
+# pyflwdir: 1=E, 2=SE, 4=S, 8=SW, 16=W, 32=NW, 64=N, 128=NE (clockwise from E)
+_WBT_TO_PYFLWDIR = np.zeros(256, dtype="uint8")
+_WBT_TO_PYFLWDIR[1] = 128   # NE → NE
+_WBT_TO_PYFLWDIR[2] = 1     # E  → E
+_WBT_TO_PYFLWDIR[4] = 2     # SE → SE
+_WBT_TO_PYFLWDIR[8] = 4     # S  → S
+_WBT_TO_PYFLWDIR[16] = 8    # SW → SW
+_WBT_TO_PYFLWDIR[32] = 16   # W  → W
+_WBT_TO_PYFLWDIR[64] = 32   # NW → NW
+_WBT_TO_PYFLWDIR[128] = 64  # N  → N
+
+
 def compute_d8_pointer(
     dem: Path,
     output: Path = Path("d8_pointer.tif"),
@@ -49,6 +63,7 @@ def compute_d8_accum(
     output: Path = Path("d8_flow_accum.tif"),
     pointer: Path | None = None,
     backend: str = "auto",
+    watershed_geom: Path | None = None,
 ) -> Path:
     """
     D8 flow accumulation. Returns output Path.
@@ -58,6 +73,11 @@ def compute_d8_accum(
         'pyflwdir' — pyflwdir from_dem
         'wbt_ptr_pyflwdir' — WBT pointer + pyflwdir accumulation (no refill)
         'auto' — try wbt, fall back to wbt_ptr_pyflwdir
+
+    watershed_geom : Path or None
+        GeoJSON polygon to mask accumulation to. Required for >100M-cell grids
+        where pyflwdir full-graph arrays would OOM. Only used with
+        wbt_ptr_pyflwdir backend. Non-watershed cells get accum=0.
     """
     dem = Path(dem).resolve()
     output = Path(output).resolve()
@@ -144,7 +164,27 @@ def compute_d8_accum(
         # Load pointer, mask nodata → 0
         with rasterio.open(ptr) as src:
             ptr_data = src.read(1).astype('uint8')
+            ptr_profile = src.profile.copy()
         ptr_data[~valid_mask] = 0
+
+        # If watershed_geom provided, mask pointer to watershed
+        if watershed_geom is not None:
+            import geopandas as gpd
+            ws_gdf = gpd.read_file(watershed_geom)
+            ws_gdf = ws_gdf.to_crs(ptr_profile["crs"])
+            ws_mask = rasterio.features.rasterize(
+                [(ws_gdf.geometry.iloc[0], 1)],
+                out_shape=ptr_data.shape,
+                transform=ptr_profile["transform"],
+                dtype="uint8",
+            )
+            ptr_data[ws_mask == 0] = 0
+            # Update valid_mask to match
+            valid_mask = valid_mask & (ws_mask > 0)
+            del ws_gdf, ws_mask
+
+        # Translate WBT D8 encoding → pyflwdir D8 encoding
+        ptr_data = _WBT_TO_PYFLWDIR[ptr_data]
 
         # pyflwdir from pre-computed pointer (no refill)
         import pyflwdir
