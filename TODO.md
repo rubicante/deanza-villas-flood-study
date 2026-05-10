@@ -1,38 +1,102 @@
-# TODO.md
+# TODO.md — Parcel-Centered Pipeline Cleanup
 
-Use this file as the queued-pending work list for the current effort.
+Clean up the partial consolidation and restore a consistent parcel-centered pipeline.
 
-Suggested format:
-- Keep items short and ordered by priority.
-- Use checkboxes or a simple backlog list.
-- Mark items `in_progress` while working on them. When done, remove them — DEVLOG.md records the outcome.
-- Add or reconcile items when the same request comes up again.
+## Background
 
-Recommended relationship to other repo logs:
-- `DEVLOG.md` = what actually happened, with short timestamped notes
-- `TODO.md` = what is queued or pending (not an archive of completed work)
+The consolidation plan (`outputs/reports/parcel_consolidation_plan.md`) was partially executed
+by a prior session then partially walked back. The code is in a hybrid state: some functions
+use CONTRIBUTING_AREA, some use HENDERSON, old Henderson Canyon naming persists in file paths.
 
-## Backlog (existing)
+**Goal:** consistent parcel-centered pipeline. Everything drains from the parcel, nothing
+references Henderson Canyon by name.
 
-### Tier 2 — remaining
+**Key rule for this work:** do NOT encode computation results (area numbers, cell counts,
+percentages, file sizes, timing) in skill, memory, or TODO.md. These change when input changes.
+Describe what to do, not what the answer should be.
 
-- [ ] [MANUAL DOWNLOAD REQUIRED] Download full California NFHL state file geodatabase from FEMA MSC (https://msc.fema.gov/portal/advanceSearch → California → "NFHL Data-State"). This contains the complete unfiltered NFHL including Zone D, Zone X minimal hazard, and all ancillary layers not in the reduced set. FEMA updates state extracts every two weeks. The MSC portal has TLS cipher-suite restrictions that block automated download from this server — must be done in a browser. Extract the Borrego panels (DFIRM 06073C) and save as `data/raw/fema/nfhl_ca_full_borrego.gpkg` (or similar). This is additive to the reduced-set fetch above; not blocking.
+## Task 1: Rename away from Henderson ✅ (completed 2026-05-09)
 
-### Tier 3 — Additional diagnostic terrain metrics
+- Rename `data/derived/henderson/` → `data/derived/watershed/`
+- Rename `deliverable/_henderson.py` → `deliverable/_pipeline.py`
+- Find and update ALL references to these paths across the repo:
+  - `_henderson` → `_pipeline` in imports, CLI invocations, config, documentation
+  - `data/derived/henderson` → `data/derived/watershed` in all files
+- Update `.gitignore` to match new path
+- Commit: "refactor: rename Henderson paths to watershed"
 
-Tier 3 complete. Profile curvature/TPI, HAND relative-position metrics, and DRI active-fan roughness comparison have been run and synthesized; completion details are recorded in `DEVLOG.md`.
+## Task 2: Revert _pipeline.py to clean parcel-centered state ✅ (completed 2026-05-09)
 
-### Tier 4 — Dependency hygiene
+Current state of `_pipeline.py` (formerly `_henderson.py`):
+- Has both HENDERSON and CONTRIBUTING_AREA constants (hybrid)
+- Some build functions use HENDERSON for DEM fetch, some use CONTRIBUTING_AREA
+- Missing imports from Task 3 removals were partially re-added
+- D8/D∞ tolerance widened to 0.50
 
-- [ ] py3dep 0.19.0 retained (not removed). The Eastern SD 2017 QL2 lidar tiles don't cover the parcel; py3dep WCS mosaic is the correct DEM source. The known 0.19.0 non-square pixel regression (GitHub #77) is worked around by reprojecting py3dep output to exactly 1m square pixels in EPSG:5070 via rasterio. Option: pin py3dep once a fixed version is released.
+Target state:
+- Single boundary constant: `CONTRIBUTING_AREA` (parcel contributing area)
+- Remove `HENDERSON` constant entirely
+- All build functions fetch and mask to CONTRIBUTING_AREA
+- Keep reachability filter (`filter_reachable`) as a generic self-consistency step
+  — it answers the question "do extracted streams actually reach the parcel?"
+- Keep `_mask_to_boundary` helper (already present from prior Task 3)
+- Remove `build_watershed_boundary()` if still present
+- Remove `delineate_watershed` import if still present
+- Keep widened D8/D∞ tolerance (0.50) — fan divergence is real
+- Remove "watershed" command from `__main__` block
+- Update docstrings to remove Henderson references
 
-## Plan 2 — Reproducibility in Code
+## Task 3: Update stream explorer ✅ (completed 2026-05-09)
 
-Implementation order: documentation first, then fetch scripts, then regenerate.py.
+File: `outputs/maps/stream_explorer.html`
+- Remove Henderson watershed boundary layer (source, layer, legend toggle, fetch, toggle binding)
+- Remove any remaining pour-point / community bbox references if present
+- Verify no `beforeId` dependencies break when removing Henderson layer
+- Update legend label for contributing area to just say "Parcel contributing area"
+  (drop the area number from the label — it's a computation result)
 
-- [x] `data/raw/manual/PROVENANCE.md` — document one-off artifact origins (DRI digitization, SanGIS parcels, FEMA fetch, HUC-12, reference PDFs, community bbox, AOI buffers)
-- [x] `scripts/fetch_fema.py` — ArcGIS REST query for DFIRM 06073C → `data/raw/fema/nfhl_borrego_valley.geojson`
-- [x] `scripts/fetch_huc12.py` — USGS NLDI API call for HUC-12 181002030302 → `data/derived/vectors/borrego_palm_canyon_huc12.geojson`
-- [x] `scripts/build_aois.py` — parcel buffer → derived AOIs (2km, 8km) → `data/derived/vectors/`
-- [ ] `scripts/regenerate.py` — smoke test: regenerates all canonical artifacts from raw sources and diffs against committed versions
-- [x] Satellite validation regeneration — now working. `scripts/init_env.py` loads `.env` → `earthaccess.login(strategy="environment")`. Auth confirmed (token expires 07/02/2026). Full STAC search + 688 downloads + water classification + render completed.
+## Task 4: Full pipeline regeneration ✅ (completed 2026-05-09)
+
+Clear old outputs and regenerate everything on the parcel contributing area extent:
+
+```bash
+# Clear old 1m rasters
+rm -f data/derived/watershed/dem_1m_*.tif
+rm -f data/derived/watershed/d8_*.tif
+rm -f data/derived/watershed/dinf_*.tif
+rm -f data/derived/watershed/streams_*.tif
+
+# Regenerate
+.venv/bin/python -m deliverable._pipeline dinf1m
+.venv/bin/python -m deliverable._pipeline d81m
+.venv/bin/python -m deliverable._pipeline dinf10m
+.venv/bin/python -m deliverable._pipeline d810m
+```
+
+Verify after regeneration:
+- D8 accumulation monotonic (0 violations on random sample)
+- Binary files have correct format (header + N×12 bytes)
+- Both 1m and 10m binaries exist
+- Stream explorer loads and renders cells
+
+## Task 5: Clean up stale files ✅ (completed 2026-05-09)
+
+Remove files from the old community-bbox / Henderson era:
+- `outputs/maps/deanza_community_bbox.geojson`
+- `outputs/maps/henderson_watershed_boundary.geojson`
+- `data/derived/vectors/henderson_watershed_boundary.geojson`
+- `data/derived/vectors/henderson_watershed_boundary_5070.geojson`
+- Any other files referencing Henderson or community_bbox in outputs/maps/
+
+Commit each task separately.
+
+## Guidance
+
+- **Regeneration requires approval.** Never run `_pipeline` commands without user go-ahead.
+- **Don't encode results.** The plan describes what to do and how to verify, not what
+  numbers to expect. The computation speaks for itself.
+- **Trust the computation.** If the contributing area is smaller than intuition suggests,
+  verify with diagnostics (downstream transect, raw DEM comparison, multi-resolution check)
+  but accept the answer.
+- **Reachability filter is generic.** It's not "this parcel needs it." It's a self-consistency
+  check for any pipeline run — answers whether extracted streams route to the target.

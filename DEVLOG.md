@@ -2,6 +2,64 @@
 
 Use this file as the rolling project work log for ongoing changes, status updates, and verification notes.
 
+- 2026-05-09 ~03:30 UTC: deliverable/upstream.py — numba rewrite for D∞ upstream trace.
+
+- 2026-05-09 ~18:50 UTC: Tasks 1–2 complete — Henderson renamed to watershed, pipeline cleaned to parcel-centered.
+  Task 1: `deliverable/_henderson.py` → `_pipeline.py`, `data/derived/henderson/` → `data/derived/watershed/`.
+  Updated: .gitignore, stream.py, watershed.py, regenerate.py, PROVENANCE.md.
+  Task 2: Removed HENDERSON constant. All four build functions now use CONTRIBUTING_AREA for fetch + mask.
+  Replaced inline watershed rasterization with _mask_to_boundary helper. Removed watershed_geom from compute_d8_accum.
+  Kept reachability filter, _mask_to_boundary, widened D8/D∞ tolerance (0.50).
+
+- 2026-05-09 ~18:55 UTC: Task 3 complete — removed Henderson watershed layer from stream_explorer.html.
+  Removed: legend toggle (tog-henderson), HENDERSON_URL constant, fetch, map source, henderson-line layer,
+  toggle binding. Updated watershed legend to "Parcel contributing area" (dropped area number).
+  No beforeId dependencies broken.
+
+- 2026-05-09 ~19:00 UTC: Task 4 complete — full pipeline regeneration on parcel contributing area.
+  Cleared old 1m/10m rasters. Regenerated dinf1m → d81m → dinf10m → d810m (~25s total).
+  dinf1m: 29,148 reachable stream cells (90.2% of 32,305). d81m: 3,502 reachable (13.5% of 25,975).
+  dinf10m: 194 cells. d810m: 261 cells. Verification: 4/4 binary format OK, D8 monotonicity 0/10K violations.
+  Fixed 10m build functions to fetch_dem (dem_10m_wide.tif was missing after rename).
+
+- 2026-05-09 ~19:05 UTC: Task 5 complete — removed stale Henderson and community_bbox files.
+  Deleted: outputs/maps/{henderson_watershed_boundary,deanza_community_bbox}.geojson,
+  data/derived/vectors/{henderson_watershed_boundary,henderson_watershed_boundary_5070,deanza_community_bbox}.geojson,
+  deliverable/__pycache__/_henderson.cpython-313.pyc.
+  Updated regenerate.py: dropped stale cp commands and DIFF_MAP entries.
+  **Motivation:** Original pure-Python BFS OOM-killed 3× on 164.8M-cell pointer
+  (deque of tuples + per-cell list allocations → 6.3 GB peak on 7.6 GB no-swap system).
+  **Rewrite:** @njit on _neighbors_flowing_into + _bfs_upstream_trace; preallocated
+  int32 packed-index queue (10M default, 40 MB); seeds packed via np.where outside
+  JIT (avoids O(rows×cols) JIT seed scan); overflow returns status flag (avoids
+  numba message loss on raise); mask written before polygonization; split
+  polygonize_mask() as independently callable function.
+  **Encoding fixes:** angle validation rejects < 0 or >= 360 or NaN (no modulo;
+  this differs from earlier modulo-to-0 handling that treated 360.0 as due-east,
+  producing ~1% more cells — recorded as breadcrumb comment in source).
+  **Result:** 0.8s BFS, 0.43 km² contributing area (down from 0.44 km²; difference
+  is the 360° rejection). Correctness validated: synthetic converging flow, D∞
+  neighbor encoding, NaN rejection, queue overflow. End-to-end test passes.
+  **1m pointer recovery:** Files were backed up to /tmp/flood-study-backup-20260509/
+  (timestamp 00:20 UTC) then deleted from working dir — someone ran Task 5 Steps
+  1–2 (backup + rm) during a prior session. .gitignore excludes data/derived/henderson/
+  so git never tracked them. Restored dinf_pointer_1m.tif (629 MB) from backup.
+
+  **Key finding: 0.43 km² is correct, not a bug.** Downstream traces from points
+  north of parcel show flow bypasses the parcel at ≥100m distance. Only ~50m
+  immediate radius drains to it. The parcel sits in a localized depression on
+  the alluvial fan — Henderson Canyon flow passes within 100m but routes around.
+  This vindicates the reachability filter: 0.5% of stream cells actually reach
+  the parcel. The plan's premise (contributing area = watershed, reachability
+  is redundant) is invalid for this parcel. Consolidation plan shelved pending
+  DEM artifact investigation.
+
+  **Performance:** 0.8s confirms both numba speed AND the genuinely small
+  contributing area. If a DEM fix changes the result meaningfully (km² instead
+  of sub-km²), runtime will scale linearly (O(visited cells)) — expect 30–60s
+  for a 25 km² area. That slowdown would itself be a signal of a meaningful
+  result change.
+
 - 2026-05-07 ~22:00 UTC: Stream explorer major update — replaced static layers with toggleable checkboxes (native label[for] + change events). Added DRI 2015 fan zones, 2km AOI buffer, and parcel complex boundary as context layers. Relabeled community bbox → watershed pour-point zone. Changed defaults: only watershed boundary ON; FEMA, HUC-12, parcel boundary now OFF. Removed parcel lots (36) layer. Merged Always on/Off by default sections into flat legend. Committed with 3 new context GeoJSONs in outputs/maps/ (copies of canonical sources for relative-URL loading).
 
 - 2026-05-07 ~22:30 UTC: Parcel correction + downstream regeneration complete.
@@ -170,3 +228,5 @@ Format: `YYYY-MM-DD HH:MM UTC: <brief status update>` — what changed, why, and
 - 2026-05-09 ~00:15 UTC: D∞ reachability completed. Result: 31,629/6,572,709 reachable (0.5%), 94.7M cells traced, 4.0M cache hits, 486s, 2.4 GB peak RSS → `streams_all.bin` (380 KB). D∞ terminal rate: 30.66% (2,015,512/6,572,709) — very high vs D8's 0.13%. This is a legitimate terrain signal, not a bug: D∞ captures divergent flow across the alluvial fan, producing many dead-end stream segments where flow dissipates below threshold. D8 is channelized and better connected to the main channel reaching the parcel. D8/D∞ reachable overlap: only 2,677 cells — most reachable cells are unique to one network (D8: 45,923 unique, D∞: 28,952 unique). This reflects fundamentally different stream network topology, not trace errors.
 
 - 2026-05-09 ~00:30 UTC: Stream explorer updated for reachability-filtered binaries. Changes: (1) "Total stream cells" → "Reachable cells" with dynamic K/M formatting + sub-1000 raw count; (2) default threshold 5,000 → 1,000; (3) removed stale loading labels (79/85 MB); (4) added amber "⇢ De Anza Villas only" indicator in stats bar; (5) dataset-switch formatter handles sub-1000 counts.
+
+- 2026-05-09 ~03:00 UTC: Parcel-centered pipeline consolidation plan written, reviewed, committed (`outputs/reports/parcel_consolidation_plan.md`). Replaces community-bbox → watershed with parcel → D∞ upstream trace → contributing area. Reachability filter becomes redundant (verified no-op at <0.1% threshold). Bootstrap freeze: boundary is a convention artifact from the old 1m pointer, not recomputed. Guardrails: 360° angle edge case, wrong-basin subset check, _mask_to_boundary helper, backup retention. Not yet executed — plan is the deliverable at this stage.
