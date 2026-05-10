@@ -6,8 +6,23 @@ D8 trace follows the single steepest-descent neighbor.
 D∞ trace follows both neighbors (Tarboton 1997) — boolean reachability:
 a cell reaches if any non-zero flow path reaches the target.
 
+Boolean (not flow-weighted): marks a cell as reaching even if only a
+small fraction of its flow goes toward the target.  This answers the
+connectivity-topology question ("does water from this cell ever arrive?")
+rather than the mass-balance question ("what fraction arrives?").  For
+most parcel-scale analyses, the topology question is the right one.
+
 Memoization: global cache maps (r,c) → bool. Per-trace-origin visited set
 detects cycles without poisoning the cache for other origins.
+
+Cycle-determined results: cells in a cycle (or the immediate back-edge
+origin) are stored in cycle_detected (not the main cache).  This is
+conservative-safe — cycle cells are re-resolved on every encounter
+rather than cached as False.  This trades a small amount of performance
+for correctness on grids with pre-cycle terrain feeding into a common
+cyclic basin.  The alternative (caching cycle cells when the cycle is
+the whole story and no alternate path exists) is tighter but has more
+edge cases.
 """
 
 from __future__ import annotations
