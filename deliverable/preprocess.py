@@ -50,9 +50,27 @@ def preprocess_dem(
 
     if strategy in ("breach_only", "breach_then_fill"):
         breached = work_dir / f"_{output.stem}_breached.tif"
+        # Snapshot pre-breach for diagnostics
+        with rasterio.open(current) as src:
+            pre_data = src.read(1)
+            pre_profile = src.profile
         wbt.breach_depressions(str(current), str(breached), max_length=breach_max_length)
         if not breached.exists():
             raise RuntimeError(f"WBT breach_depressions failed: {breached} not found")
+        # Log breach diagnostics
+        with rasterio.open(breached) as src:
+            post_data = src.read(1)
+        valid = (pre_data != pre_profile.get("nodata", -32768)) & (post_data != pre_profile.get("nodata", -32768))
+        n_changed = int(np.sum(valid & (pre_data != post_data)))
+        if n_changed > 0:
+            diff = pre_data[valid] - post_data[valid]
+            max_cut = float(np.max(diff))
+            total_volume = float(np.sum(diff))
+            print(f"  Breached: {n_changed:,} cells modified, "
+                  f"max cut {max_cut:.2f}m, "
+                  f"{total_volume/1e6:.2f}M m³ removed")
+        else:
+            print(f"  Breached: 0 cells modified (no depressions)")
         current = breached
 
     if strategy in ("fill_only", "breach_then_fill"):

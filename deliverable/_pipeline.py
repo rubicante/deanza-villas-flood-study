@@ -106,17 +106,18 @@ def _export_binary(
         for i in range(n_cells):
             f.write(struct.pack("fff", float(accums[i]), float(lons[i]),
                                 float(lats[i])))
-    # Sanity: top-10 cells within boundary polygon (not just bbox)
+    # Sanity: top-10 cells within boundary polygon (buffered 10m — outlet
+    # cells may sit right on the polygon edge).
     if boundary:
         ws = gpd.read_file(boundary)
-        ws_geom = ws.to_crs(target_crs).geometry.iloc[0]
+        ws_geom = ws.to_crs(target_crs).geometry.iloc[0].buffer(10)
         k = min(10, n_cells)
         for i in range(k):
             pt = gpd.points_from_xy([lons[i]], [lats[i]], crs=target_crs)[0]
             if not ws_geom.contains(pt):
                 raise AssertionError(
                     f"Cell {i} ({lons[i]:.6f}, {lats[i]:.6f}) "
-                    f"outside boundary polygon")
+                    f"outside buffered boundary polygon")
 
     print(f"  Binary: {n_cells:,} cells, {output.stat().st_size/1e6:.1f}MB → {output}")
     return output
@@ -129,6 +130,7 @@ def build(
     algorithm: str,
     *,
     stream_threshold: int = 250,
+    threshold_frac: float | None = None,
     parcel_buffer_m: float = 3.0,
     hydro_strategy: str = "breach_then_fill",
 ) -> None:
@@ -143,6 +145,10 @@ def build(
         'd8' or 'dinf'.
     stream_threshold : int
         Accumulation cell count for WBT extract_streams.
+    threshold_frac : float or None
+        If provided, overrides stream_threshold.  Fraction of masked
+        contributing area cells (e.g. 0.0001 = 0.01%).  Converts to
+        absolute cell count from the masked accumulation raster.
     parcel_buffer_m : float
         Buffer distance in meters around the parcel for reachability
         filtering (registration tolerance between parcel boundary and DEM).
@@ -192,6 +198,12 @@ def build(
     verify_monotonicity_along_paths(accum_masked, ptr,
                                     pointer_type=algorithm)
 
+    # Convert threshold_frac to absolute cell count if provided
+    if threshold_frac is not None:
+        with rasterio.open(accum_masked) as src:
+            n_contrib = int((src.read(1) > 0).sum())
+        stream_threshold = max(1, int(n_contrib * threshold_frac))
+
     # --- Stream extraction + reachability + export ---
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
@@ -215,6 +227,10 @@ if __name__ == "__main__":
         "--threshold", type=int, default=250,
         help="Stream extraction accumulation threshold in cells (default: 250).")
     parser.add_argument(
+        "--threshold-frac", type=float, default=None,
+        help="Stream extraction threshold as fraction of contributing area cells "
+             "(e.g. 0.0001 for 0.01%%). Overrides --threshold.")
+    parser.add_argument(
         "--buffer", type=float, default=3.0,
         help="Parcel buffer in meters for reachability filtering (default: 3.0).")
     parser.add_argument(
@@ -230,6 +246,7 @@ if __name__ == "__main__":
     def run(resolution, algorithm):
         build(resolution, algorithm,
               stream_threshold=args.threshold,
+              threshold_frac=args.threshold_frac,
               parcel_buffer_m=args.buffer,
               hydro_strategy=args.hydro)
 
