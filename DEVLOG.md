@@ -5,6 +5,12 @@ Use this file as the rolling project work log for ongoing changes, status update
 - 2026-05-09 ~03:30 UTC: deliverable/upstream.py — numba rewrite for D∞ upstream trace.
 
 - 2026-05-09 ~20:15 UTC: Phase 1 complete — fixed D∞ reachability cycle-detected cache poisoning.
+
+- 2026-05-09 ~20:30 UTC: Phase 2 complete — strategy-pattern refactor + parameterization.
+  Replaced four build_* functions with single build(resolution, algorithm, **params).
+  Added CLI flags: --threshold (cells), --buffer (m), --hydro (breach_then_fill|fill_only|breach_only).
+  D∞ pointer validity check now tolerates <1% edge violations on small grids.
+  All four artifacts regenerate identically with default params.
   Bug: visited-set cycle detection wrote cache[cell]=2, poisoning shared memo for multi-branch D∞ traces.
   Fix: separate cycle_detected set + parent_of tracking for back-edge origin identification.
   Three constructed test grids: cycle-no-exit, cycle+alternate, upstream-of-cycle. All green.
