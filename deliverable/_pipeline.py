@@ -100,16 +100,23 @@ def _export_binary(
     assert np.sum(np.isnan(accums)) == 0, "nan in export"
 
     with open(output, "wb") as f:
+        f.write(struct.pack("I", 0x48465342))  # magic: "HFSB"
+        f.write(struct.pack("B", 1))            # version
         f.write(struct.pack("I", n_cells))
         for i in range(n_cells):
             f.write(struct.pack("fff", float(accums[i]), float(lons[i]),
                                 float(lats[i])))
-
+    # Sanity: top-10 cells within boundary polygon (not just bbox)
     if boundary:
         ws = gpd.read_file(boundary)
-        ws_bounds = ws.to_crs(target_crs).total_bounds
-        assert ws_bounds[0] <= lons[0] <= ws_bounds[2], "lon outside boundary"
-        assert ws_bounds[1] <= lats[0] <= ws_bounds[3], "lat outside boundary"
+        ws_geom = ws.to_crs(target_crs).geometry.iloc[0]
+        k = min(10, n_cells)
+        for i in range(k):
+            pt = gpd.points_from_xy([lons[i]], [lats[i]], crs=target_crs)[0]
+            if not ws_geom.contains(pt):
+                raise AssertionError(
+                    f"Cell {i} ({lons[i]:.6f}, {lats[i]:.6f}) "
+                    f"outside boundary polygon")
 
     print(f"  Binary: {n_cells:,} cells, {output.stat().st_size/1e6:.1f}MB → {output}")
     return output

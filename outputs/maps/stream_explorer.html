@@ -121,10 +121,10 @@ function accumToSlider(a) { return Math.round(((Math.log(a)-LOG_MIN)/LOG_RANGE)*
 
 // Dataset storage (stride-3 Float32Array: [accum, lon, lat], sorted descending)
 const datasets = {
-  dinf1m:  { data: null, count: 0, color: 'dinf' },
-  dinf10m: { data: null, count: 0, color: 'dinf' },
-  d810m:   { data: null, count: 0, color: 'd8' },
-  d81m:    { data: null, count: 0, color: 'd8' },
+  dinf1m:  { data: null, count: 0, color: 'dinf', resolution: 1 },
+  dinf10m: { data: null, count: 0, color: 'dinf', resolution: 10 },
+  d810m:   { data: null, count: 0, color: 'd8',   resolution: 10 },
+  d81m:    { data: null, count: 0, color: 'd8',   resolution: 1 },
 };
 let activeDs = 'dinf1m';
 
@@ -189,8 +189,14 @@ function renderCells() {
   if (cutoff < 0) { document.getElementById('stat-cells').textContent = '0'; return; }
 
   const zoom = map.getZoom();
-  const zoomBump = (activeDs === 'dinf10m' || activeDs === 'd810m') ? 3 : 0;
-  const cellSize = Math.max(1, Math.round(Math.pow(2, (zoom + zoomBump) - 15)));
+  // Resolution-aware cell sizing: render cells at their true ground
+  // footprint.  Web Mercator meters-per-pixel at latitude φ and zoom z:
+  //   mpp = 156543.03392 * cos(φ) / 2^z
+  // Cell size in screen pixels = resolution_m / mpp, minimum 1px.
+  const latRad = map.getCenter().lat * Math.PI / 180;
+  const mpp = 156543.03392 * Math.cos(latRad) / Math.pow(2, zoom);
+  const res = datasets[activeDs].resolution;
+  const cellSize = Math.max(1, Math.round(res / mpp));
 
   const bounds = map.getBounds();
   const vpW = bounds.getWest(), vpS = bounds.getSouth();
@@ -243,9 +249,18 @@ async function loadBinary(url, dsKey, label) {
   loadingInfo.textContent = `Loading ${label}…`;
   const resp = await fetch(url);
   const buf = await resp.arrayBuffer();
-  const header = new Uint32Array(buf, 0, 1);
+  // Validate v1 format: 4-byte magic "HFSB" + 1-byte version + uint32 count
+  const magic = new Uint32Array(buf, 0, 1)[0];
+  if (magic !== 0x48465342) {
+    throw new Error(`${label}: bad magic 0x${magic.toString(16)}, expected 0x48465342`);
+  }
+  const version = new Uint8Array(buf, 4, 1)[0];
+  if (version !== 1) {
+    throw new Error(`${label}: unsupported version ${version}`);
+  }
+  const header = new Uint32Array(buf, 5, 1);
   const count = header[0];
-  const data = new Float32Array(buf, 4);
+  const data = new Float32Array(buf, 9);
   datasets[dsKey].data = data;
   datasets[dsKey].count = count;
   const dMin = data[(count-1)*3];
