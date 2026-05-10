@@ -101,7 +101,7 @@ def _export_binary(
 
     with open(output, "wb") as f:
         f.write(struct.pack("I", 0x48465342))  # magic: "HFSB"
-        f.write(struct.pack("B", 1))            # version
+        f.write(struct.pack("I", 1))            # version
         f.write(struct.pack("I", n_cells))
         for i in range(n_cells):
             f.write(struct.pack("fff", float(accums[i]), float(lons[i]),
