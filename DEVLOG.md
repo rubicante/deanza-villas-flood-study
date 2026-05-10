@@ -4,6 +4,12 @@ Use this file as the rolling project work log for ongoing changes, status update
 
 - 2026-05-09 ~03:30 UTC: deliverable/upstream.py — numba rewrite for D∞ upstream trace.
 
+- 2026-05-09 ~20:15 UTC: Phase 1 complete — fixed D∞ reachability cycle-detected cache poisoning.
+  Bug: visited-set cycle detection wrote cache[cell]=2, poisoning shared memo for multi-branch D∞ traces.
+  Fix: separate cycle_detected set + parent_of tracking for back-edge origin identification.
+  Three constructed test grids: cycle-no-exit, cycle+alternate, upstream-of-cycle. All green.
+  Pipeline rerun: D∞ 1m 29,535/32,305 reachable (91.4%, +1.2% from fix).
+
 - 2026-05-09 ~18:50 UTC: Tasks 1–2 complete — Henderson renamed to watershed, pipeline cleaned to parcel-centered.
   Task 1: `deliverable/_henderson.py` → `_pipeline.py`, `data/derived/henderson/` → `data/derived/watershed/`.
   Updated: .gitignore, stream.py, watershed.py, regenerate.py, PROVENANCE.md.
