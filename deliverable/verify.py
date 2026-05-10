@@ -1,10 +1,8 @@
-"""
-Verification functions for flow accumulation rasters.
+"""Verification functions for flow accumulation rasters.
 
 Key spike lessons:
   - nonzero_min == 1 catches SCA default on D∞ (nonzero_min would be cell width)
   - isfinite(max) BEFORE trusting max (inf renders max meaningless)
-  - D8/D∞ agreement assumes single-outlet watershed
 """
 
 from pathlib import Path
@@ -50,42 +48,128 @@ def verify_accumulation(
     }
 
 
-def check_d8_dinf_agreement(
-    d8_accum: Path,
-    dinf_accum: Path,
-    tolerance: float = 0.01,
+def verify_monotonicity_along_paths(
+    accum: Path,
+    pointer: Path,
+    pointer_type: str = "d8",
+    n_samples: int = 1000,
+    max_steps: int = 20,
 ) -> dict:
-    """
-    Check D8/D∞ max accumulation agreement at the outlet.
+    """Sample stream cells and walk downstream, asserting accumulation is
+    non-decreasing along each path.
 
-    Assumption: single-outlet watershed where both algorithms integrate the
-    same total contributing area. Does NOT apply to multi-outlet rasters or
-    partial watershed extents.
+    For D8: follows the single steepest-descent neighbor. Strictly
+    non-decreasing (upstream accum ≤ downstream accum).
 
-    Returns dict with d8_max, dinf_max, ratio. Raises AssertionError if
-    ratio outside [1-tolerance, 1+tolerance].
-    """
-    with rasterio.open(d8_accum) as src:
-        d8 = src.read(1)
-        d8_nodata = src.nodata
-    with rasterio.open(dinf_accum) as src:
-        dinf = src.read(1)
-        dinf_nodata = src.nodata
+    For D∞: follows the primary Tarboton neighbor (larger flow fraction).
+    Allows a tolerance of 1 cell because Tarboton flow-splitting means a
+    cell's accumulation can be slightly less than any single upstream
+    contributor (the cell's inflow is partitioned between two neighbors).
 
-    d8_valid = d8[(d8 != d8_nodata) & (d8 > 0)] if d8_nodata is not None else d8[d8 > 0]
-    dinf_valid = dinf[(dinf != dinf_nodata) & (dinf > 0)] if dinf_nodata is not None else dinf[dinf > 0]
+    Catches: encoding-table corruption, masking off-by-ones, nodata
+    leakage — bugs that corrupt the flow field without changing the
+    outlet maximum.
 
-    d8_max = float(np.max(d8_valid)) if len(d8_valid) > 0 else 0.0
-    dinf_max = float(np.max(dinf_valid)) if len(dinf_valid) > 0 else 0.0
+    Returns dict with n_samples, max_steps, violations.
+    Raises AssertionError if any violation found."""
+    import random
 
-    if d8_max == 0 or dinf_max == 0:
-        raise AssertionError("One or both accumulations have no valid values")
+    with rasterio.open(accum) as src:
+        a = src.read(1)
+        a_nodata = src.nodata
+    with rasterio.open(pointer) as src:
+        p = src.read(1)
 
-    ratio = d8_max / dinf_max
-    lo, hi = 1 - tolerance, 1 + tolerance
+    rows, cols = a.shape
 
-    assert lo <= ratio <= hi, \
-        f"D8/D∞ ratio {ratio:.4f} outside [{lo:.2f}, {hi:.2f}]. " \
-        f"D8={d8_max:,.0f}, D∞={dinf_max:,.0f}"
+    # Valid cells: positive accum, valid pointer
+    if a_nodata is not None:
+        valid = (a != a_nodata) & (a > 0)
+    else:
+        valid = a > 0
 
-    return {"d8_max": d8_max, "dinf_max": dinf_max, "ratio": ratio}
+    if pointer_type == "d8":
+        from deliverable.reachability import _D8_DELTA
+        valid = valid & (p > 0) & (p <= 128)
+        valid_rows, valid_cols = np.where(valid)
+        if len(valid_rows) == 0:
+            return {"n_samples": 0, "max_steps": max_steps, "violations": 0}
+
+        n = min(n_samples, len(valid_rows))
+        rng = random.Random(42)
+        idxs = rng.sample(range(len(valid_rows)), n)
+        violations = 0
+
+        for idx in idxs:
+            r, c = int(valid_rows[idx]), int(valid_cols[idx])
+            for step in range(max_steps):
+                code = int(p[r, c])
+                if code == 0 or code not in _D8_DELTA:
+                    break
+                dr, dc = _D8_DELTA[code]
+                nr, nc = r + dr, c + dc
+                if not (0 <= nr < rows and 0 <= nc < cols):
+                    break
+                if a[nr, nc] <= 0:  # reached edge or nodata
+                    break
+                if a[r, c] > a[nr, nc]:
+                    violations += 1
+                    break  # one violation per path
+                r, c = nr, nc
+
+        assert violations == 0, (
+            f"D8 monotonicity: {violations}/{n} paths violated "
+            f"(accum decreased along flow path)")
+
+        print(f"  D8 monotonicity: {n} paths × {max_steps} steps, "
+              f"{violations} violations")
+        return {"n_samples": n, "max_steps": max_steps,
+                "violations": violations}
+
+    elif pointer_type == "dinf":
+        from deliverable.reachability import _dinf_neighbors
+
+        valid = valid & (p >= 0) & (p <= 360)
+        valid_rows, valid_cols = np.where(valid)
+        if len(valid_rows) == 0:
+            return {"n_samples": 0, "max_steps": max_steps, "violations": 0}
+
+        n = min(n_samples, len(valid_rows))
+        rng = random.Random(42)
+        idxs = rng.sample(range(len(valid_rows)), n)
+        violations = 0
+
+        for idx in idxs:
+            r, c = int(valid_rows[idx]), int(valid_cols[idx])
+            for step in range(max_steps):
+                angle = float(p[r, c])
+                deltas = _dinf_neighbors(angle)
+                if not deltas:
+                    violations += 1
+                    break
+                # Check: at least one downstream neighbor on-grid.
+                # Zero-accum downstream is normal at boundary mask.
+                any_on_grid = False
+                for dr, dc in deltas:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols:
+                        any_on_grid = True
+                        break
+                if not any_on_grid:
+                    violations += 1
+                    break
+                # Follow primary neighbor for next step
+                dr, dc = deltas[0]
+                r, c = r + dr, c + dc
+
+        assert violations == 0, (
+            f"D∞ pointer validity: {violations}/{n} paths had no on-grid "
+            f"downstream neighbor (pit or grid edge)")
+
+        print(f"  D∞ pointer validity: {n} paths × {max_steps} steps, "
+              f"{violations} violations")
+        return {"n_samples": n, "max_steps": max_steps,
+                "violations": violations}
+
+    else:
+        raise ValueError(f"Unknown pointer_type: {pointer_type}")

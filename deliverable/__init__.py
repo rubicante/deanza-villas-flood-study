@@ -18,7 +18,7 @@ from deliverable.preprocess import preprocess_dem
 from deliverable.d8 import compute_d8_pointer, compute_d8_accum
 from deliverable.dinf import compute_dinf
 from deliverable.streams import extract_streams, export_geojson
-from deliverable.verify import verify_accumulation, check_d8_dinf_agreement
+from deliverable.verify import verify_accumulation, verify_monotonicity_along_paths
 
 __all__ = [
     "fetch_dem", "preprocess_dem",

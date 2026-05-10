@@ -16,7 +16,7 @@ from deliverable import (
     compute_d8_pointer, compute_d8_accum,
     compute_dinf,
     extract_streams,
-    verify_accumulation, check_d8_dinf_agreement,
+    verify_accumulation, verify_monotonicity_along_paths,
 )
 from deliverable.reachability import filter_reachable
 
@@ -122,6 +122,7 @@ def build_dinf_1m():
     compute_dinf(dem, output=accum, pointer=dinf_ptr)
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
+    verify_monotonicity_along_paths(accum_masked, dinf_ptr, pointer_type="dinf")
     extract_streams(accum_masked, threshold=250, output=streams)
     streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
     _export_binary(streams, accum_masked, MAPS / "streams_all.bin",
@@ -146,6 +147,7 @@ def build_dinf_10m():
     compute_dinf(dem, output=accum, pointer=dinf_ptr)
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
+    verify_monotonicity_along_paths(accum_masked, dinf_ptr, pointer_type="dinf")
     extract_streams(accum_masked, threshold=250, output=streams)
     streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_dinf.bin",
@@ -172,10 +174,7 @@ def build_d8_1m():
 
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
-
-    dinf = DERIVED / "dinf_flow_accum_1m.tif"
-    if dinf.exists():
-        check_d8_dinf_agreement(accum, dinf, tolerance=0.50)  # fan divergence is wide
+    verify_monotonicity_along_paths(accum_masked, ptr, pointer_type="d8")
 
     extract_streams(accum_masked, threshold=250, output=streams)
     streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
@@ -204,6 +203,7 @@ def build_d8_10m():
 
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
+    verify_monotonicity_along_paths(accum_masked, ptr, pointer_type="d8")
     extract_streams(accum_masked, threshold=250, output=streams)
     streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_d8.bin",
