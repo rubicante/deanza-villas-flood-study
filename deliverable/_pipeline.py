@@ -147,6 +147,7 @@ def build_dinf_10m():
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
     extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_dinf.bin",
                    boundary=CONTRIBUTING_AREA)
 
@@ -204,6 +205,7 @@ def build_d8_10m():
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
     extract_streams(accum_masked, threshold=250, output=streams)
+    streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
     _export_binary(streams, accum_masked, MAPS / "streams_wide_d8.bin",
                    boundary=CONTRIBUTING_AREA)
 
