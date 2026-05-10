@@ -228,12 +228,24 @@ def _dinf_trace(
     from (start_r, start_c) eventually reaches a target cell.
 
     cache persists across calls (global memo).  Per-trace visited set
-    catches cycles within a single origin trace."""
+    catches cycles within a single origin trace.
+
+    cycle_detected tracks cells whose False result was determined by
+    hitting the visited set (cycle short-circuit) or by being the
+    back-edge origin that flows directly into a cycle cell.  These are
+    NOT written to the main cache because a different upstream cell
+    might enter them via a non-cyclic path.
+
+    Cells upstream of the cycle (whose only downstream path enters the
+    cycle but are not themselves part of it) are resolved cleanly and
+    cached normally."""
     cached_val = cache[start_r, start_c]
     if cached_val:
         return cached_val == 1, 0, 1
 
     visited: set[tuple[int, int]] = set()  # cycle detection, this trace only
+    cycle_detected: set[tuple[int, int]] = set()  # cells in cycle — don't cache
+    parent_of: dict[tuple[int, int], tuple[int, int]] = {}  # child → parent
     stack: list[tuple[int, int, bool]] = [(start_r, start_c, False)]
     traced = 0
 
@@ -241,7 +253,7 @@ def _dinf_trace(
         r, c, resolved = stack.pop()
 
         if resolved:
-            # All children have been processed and are in cache.
+            # All children have been processed.
             if target_mask[r, c]:
                 cache[r, c] = 1
                 continue
@@ -257,15 +269,45 @@ def _dinf_trace(
                 cache[r, c] = 2  # pit or all off-edge
                 continue
 
-            cache[r, c] = 1 if any(cache[nr, nc] == 1
-                                   for nr, nc in valid_neighbors) else 2
+            # Check children: does any reach the target?  Are all
+            # non-reaching children clean (not cycle-determined)?
+            # A cycle-detected child only propagates if the current
+            # cell directly pushed it (parent_of[child] == self).
+            # Otherwise the current cell is upstream of the cycle
+            # and resolves cleanly.
+            reaches = False
+            all_clean = True
+            for nr, nc in valid_neighbors:
+                if cache[nr, nc] == 1:
+                    reaches = True
+                    break
+                elif cache[nr, nc] == 2:
+                    pass  # clean False
+                elif ((nr, nc) in cycle_detected
+                      and parent_of.get((nr, nc)) == (r, c)):
+                    all_clean = False  # back-edge origin — propagates
+                # child in cycle_detected but parent != self:
+                #   upstream of cycle, treat as clean False
+                # else: child not yet resolved (shouldn't happen in
+                # post-order)
+
+            if reaches:
+                cache[r, c] = 1
+            elif all_clean:
+                cache[r, c] = 2
+            else:
+                cycle_detected.add((r, c))
             continue
 
         # First visit
-        if cache[r, c]:
+        if cache[r, c] or (r, c) in cycle_detected:
             continue
         if (r, c) in visited:
-            cache[r, c] = 2  # cycle → non-reaching
+            cycle_detected.add((r, c))  # cycle cell — NOT in main cache
+            # The cell that pushed this one is the back-edge origin.
+            parent = parent_of.get((r, c))
+            if parent is not None:
+                cycle_detected.add(parent)  # back-edge origin — also not cached
             continue
         visited.add((r, c))
         traced += 1
@@ -290,7 +332,8 @@ def _dinf_trace(
         # Post-order: re-push self as resolved, then push children.
         stack.append((r, c, True))
         for nr, nc in valid_neighbors:
-            if not cache[nr, nc]:
+            if not cache[nr, nc] and (nr, nc) not in cycle_detected:
+                parent_of[(nr, nc)] = (r, c)  # track back-edge origin
                 stack.append((nr, nc, False))
 
     return cache[start_r, start_c] == 1, traced, 0
