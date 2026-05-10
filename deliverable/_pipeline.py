@@ -71,8 +71,13 @@ def _export_binary(
     source_crs: str = TARGET_CRS,
     target_crs: str = "EPSG:4326",
     boundary: Path | None = None,
+    fraction_raster: Path | None = None,
 ) -> Path:
-    """Export sorted binary for explorer: uint32 header + stride-3 float32."""
+    """Export sorted binary for explorer: uint32 header + stride-3 float32.
+
+    If fraction_raster is provided, its values replace accumulation as the
+    sort key (for flow-weighted reachability where values are 0.0–1.0
+    fractions rather than raw accumulation counts)."""
     output.parent.mkdir(parents=True, exist_ok=True)
 
     with rasterio.open(streams) as src:
@@ -90,21 +95,28 @@ def _export_binary(
     lons = np.asarray(lons, dtype="float64")
     lats = np.asarray(lats, dtype="float64")
 
-    accums = accum_data[rows, cols]
-    order = np.argsort(accums)[::-1]
-    accums = accums[order]
+    # Use fraction raster as sort key if provided
+    if fraction_raster is not None:
+        with rasterio.open(fraction_raster) as src_frac:
+            frac_data = src_frac.read(1)
+        sort_values = frac_data[rows, cols]
+    else:
+        sort_values = accum_data[rows, cols]
+
+    order = np.argsort(sort_values)[::-1]
+    sort_values = sort_values[order]
     lons = lons[order]
     lats = lats[order]
 
-    assert np.sum(np.isinf(accums)) == 0, "inf in export"
-    assert np.sum(np.isnan(accums)) == 0, "nan in export"
+    assert np.sum(np.isinf(sort_values)) == 0, "inf in export"
+    assert np.sum(np.isnan(sort_values)) == 0, "nan in export"
 
     with open(output, "wb") as f:
         f.write(struct.pack("I", 0x48465342))  # magic: "HFSB"
         f.write(struct.pack("I", 1))            # version
         f.write(struct.pack("I", n_cells))
         for i in range(n_cells):
-            f.write(struct.pack("fff", float(accums[i]), float(lons[i]),
+            f.write(struct.pack("fff", float(sort_values[i]), float(lons[i]),
                                 float(lats[i])))
     # Sanity: top-10 cells within boundary polygon (buffered 10m — outlet
     # cells may sit right on the polygon edge).
@@ -133,6 +145,7 @@ def build(
     threshold_frac: float | None = None,
     parcel_buffer_m: float = 3.0,
     hydro_strategy: str = "breach_then_fill",
+    reachability_mode: str = "boolean",
 ) -> None:
     """Build one pipeline artifact: DEM → pointer → accum → mask → verify
     → extract streams → filter reachable → binary export.
@@ -157,6 +170,9 @@ def build(
         'fill_only', or 'breach_only'.
     """
     assert algorithm in ("d8", "dinf"), f"Unknown algorithm: {algorithm}"
+    if reachability_mode == "flow_weighted" and algorithm == "d8":
+        print("  Note: flow-weighted reachability with D8 is equivalent to "
+              "boolean (single-path fractions are always 0 or 1)")
     res_tag = f"{int(resolution)}m"
     is_1m = resolution == 1.0
 
@@ -175,6 +191,8 @@ def build(
     streams = DERIVED / f"streams_{algorithm}_{res_tag}_{stream_threshold}.tif"
 
     binary_name = _BINARY_NAMES[(resolution, algorithm)]
+    if reachability_mode == "flow_weighted":
+        binary_name = binary_name.replace(".bin", "_frac.bin")
     binary = MAPS / binary_name
 
     # --- DEM fetch + preprocess ---
@@ -207,11 +225,14 @@ def build(
     # --- Stream extraction + reachability + export ---
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
-    streams = filter_reachable(streams, ptr, PARCEL,
-                               pointer_type=algorithm,
-                               buffer_m=parcel_buffer_m)
+    result = filter_reachable(streams, ptr, PARCEL,
+                              pointer_type=algorithm,
+                              buffer_m=parcel_buffer_m,
+                              reachability_mode=reachability_mode)
+    streams = result.streams
     _export_binary(streams, accum_masked, binary,
-                   boundary=CONTRIBUTING_AREA)
+                   boundary=CONTRIBUTING_AREA,
+                   fraction_raster=result.fractions)
 
 
 # -- CLI --
@@ -237,6 +258,10 @@ if __name__ == "__main__":
         "--hydro", choices=["breach_then_fill", "fill_only", "breach_only"],
         default="breach_then_fill",
         help="DEM preprocessing strategy (default: breach_then_fill).")
+    parser.add_argument(
+        "--reachability", choices=["boolean", "flow_weighted"],
+        default="boolean",
+        help="Reachability mode: boolean (default) or flow_weighted (D∞ only).")
     args = parser.parse_args()
 
     if args.command is None:
@@ -248,7 +273,8 @@ if __name__ == "__main__":
               stream_threshold=args.threshold,
               threshold_frac=args.threshold_frac,
               parcel_buffer_m=args.buffer,
-              hydro_strategy=args.hydro)
+              hydro_strategy=args.hydro,
+              reachability_mode=args.reachability)
 
     COMMANDS = {
         "dinf1m":  lambda: run(1.0, "dinf"),

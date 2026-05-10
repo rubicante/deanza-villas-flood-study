@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 import rasterio
@@ -66,8 +67,15 @@ _DINF_NEIGHBORS: list[tuple[int, int]] = [
 ]
 
 
-def _dinf_neighbors(angle_deg: float) -> list[tuple[int, int]]:
-    """Return list of (dr, dc) neighbors this D∞ angle flows toward.
+def _dinf_neighbors(angle_deg: float,
+                    with_proportions: bool = False,
+                    ) -> list[tuple]:
+    """Return list of (dr, dc) [and optionally proportion] this D∞ angle flows toward.
+
+    If with_proportions=True, returns list of (dr, dc, proportion) where
+    proportions sum to 1.0.  Neighbor 1 gets (1-frac), neighbor 2 gets frac.
+    Cardinal/ordinal angles (exact multiples of 45°) have only one neighbor
+    with proportion 1.0.
 
     Boolean reachability: return both neighbors unless one gets zero flow
     (angle exactly aligned with a cardinal/ordinal direction)."""
@@ -81,12 +89,15 @@ def _dinf_neighbors(angle_deg: float) -> list[tuple[int, int]]:
 
     neighbors = []
     if frac < 1 - 1e-6:  # non-zero flow to neighbor idx1
-        neighbors.append(_DINF_NEIGHBORS[idx1])
+        item = _DINF_NEIGHBORS[idx1]
+        neighbors.append((*item, 1.0 - frac) if with_proportions else item)
     if frac > 1e-6:  # non-zero flow to neighbor idx2
-        neighbors.append(_DINF_NEIGHBORS[idx2])
+        item = _DINF_NEIGHBORS[idx2]
+        neighbors.append((*item, frac) if with_proportions else item)
     # If exactly 0 or exactly 45 etc., only one neighbor
     if not neighbors:
-        neighbors = [_DINF_NEIGHBORS[idx1]]
+        item = _DINF_NEIGHBORS[idx1]
+        neighbors.append((*item, 1.0) if with_proportions else item)
     return neighbors
 
 
@@ -354,6 +365,158 @@ def _dinf_trace(
     return cache[start_r, start_c] == 1, traced, 0
 
 
+# ── Flow-weighted D∞ reachability ──
+
+
+class ReachabilityResult(NamedTuple):
+    streams: Path       # filtered stream raster
+    fractions: Path | None  # fraction raster (None for boolean mode)
+
+
+def _dinf_reachable_weighted(
+    streams: np.ndarray,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+) -> tuple[np.ndarray, int]:
+    """Return (fractions, n_cycle_truncated) for stream cells.
+
+    fractions: float64 array, same shape as streams.  Unvisited cells = -1,
+    visited cells = reachability fraction (0.0 to 1.0).
+    n_cycle_truncated: number of stream cells that had cycle-truncated
+    branches (fractions may be understated).
+
+    Uses a separate visited bitmap (uint8) alongside the fraction array
+    to distinguish "unvisited" (visited=0) from "resolved as 0.0" (visited=1)."""
+    rows, cols = streams.shape
+    visited = np.zeros((rows, cols), dtype=np.uint8)
+    fractions = np.full((rows, cols), -1.0, dtype=np.float64)
+
+    stream_cells = np.argwhere(streams > 0)
+    n_cycle_truncated = 0
+
+    t0 = time.time()
+    n_traced = 0
+    n_cache_hits = 0
+
+    for r, c in stream_cells:
+        frac, traced, cached, n_cycle = _dinf_weighted_trace(
+            int(r), int(c), ptr, target_mask, fractions, visited, rows, cols)
+        n_traced += traced
+        n_cache_hits += cached
+        n_cycle_truncated += n_cycle
+
+    elapsed = time.time() - t0
+    n_stream = len(stream_cells)
+    mean_frac = float(np.mean([fractions[ri, ci] for ri, ci in stream_cells
+                                if visited[ri, ci]]))
+    if n_cycle_truncated > 0:
+        print(f"  D∞ flow-weighted: {n_traced:,} traced, "
+              f"{n_cache_hits:,} cache hits, "
+              f"mean fraction {mean_frac:.3f}, "
+              f"{n_cycle_truncated} cells with cycle-truncated branches "
+              f"(fractions may be understated), {elapsed:.1f}s")
+    else:
+        print(f"  D∞ flow-weighted: {n_traced:,} traced, "
+              f"{n_cache_hits:,} cache hits, "
+              f"mean fraction {mean_frac:.3f}, {elapsed:.1f}s")
+    return fractions, n_cycle_truncated
+
+
+def _dinf_weighted_trace(
+    start_r: int, start_c: int,
+    ptr: np.ndarray,
+    target_mask: np.ndarray,
+    fractions: np.ndarray,
+    visited: np.ndarray,
+    rows: int, cols: int,
+) -> tuple[float, int, int, int]:
+    """Iterative post-order DFS. Returns (fraction, traced, cache_hits, n_cycle).
+
+    fraction: reachability fraction for (start_r, start_c), 0.0 to 1.0.
+    n_cycle: 1 if this cell had a cycle-truncated branch, 0 otherwise.
+
+    visited[i,j] == 1 means fractions[i,j] holds a resolved value.
+    Unvisited cells have visited[i,j] == 0 and fractions[i,j] == -1.0."""
+    if visited[start_r, start_c]:
+        return float(fractions[start_r, start_c]), 0, 1, 0
+
+    # Per-trace state
+    trace_visited: set[tuple[int, int]] = set()
+    cycle_detected: set[tuple[int, int]] = set()
+    parent_of: dict[tuple[int, int], tuple[int, int]] = {}
+    stack: list[tuple[int, int, bool]] = [(start_r, start_c, False)]
+    traced = 0
+    n_cycle = 0
+
+    while stack:
+        r, c, resolved = stack.pop()
+
+        if resolved:
+            # All children processed.
+            if target_mask[r, c]:
+                fractions[r, c] = 1.0
+                visited[r, c] = 1
+                continue
+
+            angle = float(ptr[r, c])
+            deltas = _dinf_neighbors(angle, with_proportions=True)
+            if not deltas:
+                fractions[r, c] = 0.0  # pit
+                visited[r, c] = 1
+                continue
+
+            cell_frac = 0.0
+            for dr, dc, prop in deltas:
+                nr, nc = r + dr, c + dc
+                if not (0 <= nr < rows and 0 <= nc < cols):
+                    continue  # off-grid → contributes 0
+                if (nr, nc) in cycle_detected:
+                    n_cycle = 1  # cycle branch → contributes 0
+                    continue
+                if visited[nr, nc]:
+                    cell_frac += prop * float(fractions[nr, nc])
+
+            fractions[r, c] = cell_frac
+            visited[r, c] = 1
+            continue
+
+        # First visit
+        if visited[r, c] or (r, c) in cycle_detected:
+            continue
+        if (r, c) in trace_visited:
+            cycle_detected.add((r, c))
+            parent = parent_of.get((r, c))
+            if parent is not None:
+                cycle_detected.add(parent)
+            continue
+        trace_visited.add((r, c))
+        traced += 1
+
+        # Target cells short-circuit
+        if target_mask[r, c]:
+            fractions[r, c] = 1.0
+            visited[r, c] = 1
+            continue
+
+        angle = float(ptr[r, c])
+        deltas = _dinf_neighbors(angle, with_proportions=True)
+        if not deltas:
+            fractions[r, c] = 0.0  # pit
+            visited[r, c] = 1
+            continue
+
+        stack.append((r, c, True))
+        for dr, dc, prop in deltas:
+            nr, nc = r + dr, c + dc
+            if not (0 <= nr < rows and 0 <= nc < cols):
+                continue
+            if not visited[nr, nc] and (nr, nc) not in cycle_detected:
+                parent_of[(nr, nc)] = (r, c)
+                stack.append((nr, nc, False))
+
+    return float(fractions[start_r, start_c]), traced, 0, n_cycle
+
+
 # ── Public API ──
 
 def filter_reachable(
@@ -364,7 +527,8 @@ def filter_reachable(
     *,
     pointer_type: str = "d8",
     buffer_m: float = 3.0,
-) -> Path:
+    reachability_mode: str = "boolean",
+) -> ReachabilityResult:
     """Filter stream raster to cells whose flow reaches the target geometry.
 
     Parameters
@@ -381,11 +545,14 @@ def filter_reachable(
         'd8' or 'dinf'.
     buffer_m : float
         Buffer distance in meters around target geometry (registration tolerance).
+    reachability_mode : str
+        'boolean' (default) or 'flow_weighted'.  Flow-weighted computes the
+        fraction of each cell's flow that reaches the target (D∞ only; D8
+        falls back to boolean since single-path fractions are always 0 or 1).
 
     Returns
     -------
-    Path to filtered stream raster.
-    """
+    ReachabilityResult with .streams (Path) and .fractions (Path | None)."""
     streams = Path(streams).resolve()
     pointer = Path(pointer).resolve()
     target_geom_path = Path(target_geom_path).resolve()
@@ -436,7 +603,22 @@ def filter_reachable(
     print(f"  Target: {n_target:,} cells (buffer={buffer_m}m)")
 
     # Filter
-    if pointer_type == "d8":
+    fraction_raster = None
+    if reachability_mode == "flow_weighted" and pointer_type == "dinf":
+        fractions, n_cycle = _dinf_reachable_weighted(sdata, pdata, target_mask)
+        # Derive boolean reachable from fractions
+        reachable = np.zeros_like(sdata, dtype=bool)
+        for r, c in np.argwhere(sdata > 0):
+            reachable[r, c] = (fractions[r, c] > 0.0)
+        # Write fraction raster
+        frac_path = output.parent / f"{output.stem}_fractions.tif"
+        frac_data = np.where(reachable, fractions, 0.0).astype("float32")
+        frac_profile = s_profile.copy()
+        frac_profile.update(dtype="float32", compress="lzw", nodata=0.0)
+        with rasterio.open(frac_path, "w", **frac_profile) as dst:
+            dst.write(frac_data, 1)
+        fraction_raster = frac_path
+    elif pointer_type == "d8":
         reachable = _d8_reachable(sdata, pdata, target_mask)
     elif pointer_type == "dinf":
         reachable = _dinf_reachable(sdata, pdata, target_mask)
@@ -453,4 +635,4 @@ def filter_reachable(
     n_after = int((filtered > 0).sum())
     print(f"  Filtered: {n_before:,} → {n_after:,} cells "
           f"({n_after/n_before*100:.1f}% kept) → {output}")
-    return output
+    return ReachabilityResult(streams=output, fractions=fraction_raster)
