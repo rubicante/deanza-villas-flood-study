@@ -4,8 +4,11 @@ for the threshold morph explorer. Thin CLI over the deliverable library.
 
 Owns the binary export format and CRS conversion that the explorer needs.
 """
-from pathlib import Path
+
+import argparse
 import struct, time, sys
+from pathlib import Path
+
 import numpy as np
 import geopandas as gpd
 import rasterio
@@ -30,9 +33,18 @@ CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
 PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
 
-# Input DEMs (fetched, unfilled)
-DEM_1M = ROOT / "data" / "derived" / "watershed" / "dem_1m_5070.tif"
 
+# -- Binary output name mapping (hardcoded: explorer expects these names) --
+
+_BINARY_NAMES: dict[tuple[float, str], str] = {
+    (1.0, "dinf"): "streams_all.bin",
+    (10.0, "dinf"): "streams_wide_dinf.bin",
+    (1.0, "d8"): "streams_d8_1m.bin",
+    (10.0, "d8"): "streams_wide_d8.bin",
+}
+
+
+# -- Helpers --
 
 def _mask_to_boundary(raster_path: Path, boundary: Path,
                       output_path: Path) -> Path:
@@ -66,7 +78,6 @@ def _export_binary(
     with rasterio.open(streams) as src:
         sdata = src.read(1)
         transform_s = src.transform
-        src_crs_str = src.crs
     with rasterio.open(accum) as src_acc:
         accum_data = src_acc.read(1)
 
@@ -94,7 +105,6 @@ def _export_binary(
             f.write(struct.pack("fff", float(accums[i]), float(lons[i]),
                                 float(lats[i])))
 
-    # Sanity: first cell in boundary bbox
     if boundary:
         ws = gpd.read_file(boundary)
         ws_bounds = ws.to_crs(target_crs).total_bounds
@@ -105,130 +115,126 @@ def _export_binary(
     return output
 
 
-def build_dinf_1m():
-    """D∞ 1m for parcel contributing area."""
+# -- Build --
+
+def build(
+    resolution: float,
+    algorithm: str,
+    *,
+    stream_threshold: int = 250,
+    parcel_buffer_m: float = 3.0,
+    hydro_strategy: str = "breach_then_fill",
+) -> None:
+    """Build one pipeline artifact: DEM → pointer → accum → mask → verify
+    → extract streams → filter reachable → binary export.
+
+    Parameters
+    ----------
+    resolution : float
+        DEM resolution in meters (1.0 or 10.0).
+    algorithm : str
+        'd8' or 'dinf'.
+    stream_threshold : int
+        Accumulation cell count for WBT extract_streams.
+    parcel_buffer_m : float
+        Buffer distance in meters around the parcel for reachability
+        filtering (registration tolerance between parcel boundary and DEM).
+    hydro_strategy : str
+        DEM preprocessing strategy: 'breach_then_fill' (default),
+        'fill_only', or 'breach_only'.
+    """
+    assert algorithm in ("d8", "dinf"), f"Unknown algorithm: {algorithm}"
+    res_tag = f"{int(resolution)}m"
+    is_1m = resolution == 1.0
+
     DERIVED.mkdir(parents=True, exist_ok=True)
-    dem = DERIVED / "dem_1m_filled_f32.tif"
-    accum = DERIVED / "dinf_flow_accum_1m.tif"
-    accum_masked = DERIVED / "dinf_flow_accum_1m_masked.tif"
-    dinf_ptr = DERIVED / "dinf_pointer_1m.tif"
-    streams = DERIVED / "streams_dinf_1m_250.tif"
 
-    if not dem.exists():
-        raw = fetch_dem(CONTRIBUTING_AREA, resolution=1.0, crs=TARGET_CRS, buffer_m=200,
-                        output=DERIVED / "dem_1m_clipped.tif")
-        dem = preprocess_dem(raw, output=dem)
+    # --- File paths ---
+    suffix = "_f32" if is_1m else ""
+    dem_filled = DERIVED / f"dem_{res_tag}_filled{suffix}.tif"
+    dem_raw = DERIVED / f"dem_{res_tag}_clipped.tif"
 
-    compute_dinf(dem, output=accum, pointer=dinf_ptr)
+    ptr_name = "dinf_pointer" if algorithm == "dinf" else "d8_pointer"
+    accum_name = "dinf_flow_accum" if algorithm == "dinf" else "d8_flow_accum"
+    ptr = DERIVED / f"{ptr_name}_{res_tag}.tif"
+    accum = DERIVED / f"{accum_name}_{res_tag}.tif"
+    accum_masked = DERIVED / f"{accum_name}_{res_tag}_masked.tif"
+    streams = DERIVED / f"streams_{algorithm}_{res_tag}_{stream_threshold}.tif"
+
+    binary_name = _BINARY_NAMES[(resolution, algorithm)]
+    binary = MAPS / binary_name
+
+    # --- DEM fetch + preprocess ---
+    if not dem_filled.exists():
+        raw = fetch_dem(CONTRIBUTING_AREA, resolution=resolution,
+                        crs=TARGET_CRS, buffer_m=200, output=dem_raw)
+        dem_filled = preprocess_dem(raw, output=dem_filled,
+                                    strategy=hydro_strategy)
+
+    # --- Flow direction + accumulation ---
+    if algorithm == "dinf":
+        compute_dinf(dem_filled, output=accum, pointer=ptr)
+    else:
+        compute_d8_pointer(dem_filled, output=ptr)
+        compute_d8_accum(dem_filled, output=accum, pointer=ptr,
+                         backend="wbt_ptr_pyflwdir")
+
+    # --- Mask + verify ---
     accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
     verify_accumulation(accum_masked)
-    verify_monotonicity_along_paths(accum_masked, dinf_ptr, pointer_type="dinf")
-    extract_streams(accum_masked, threshold=250, output=streams)
-    streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
-    _export_binary(streams, accum_masked, MAPS / "streams_all.bin",
+    verify_monotonicity_along_paths(accum_masked, ptr,
+                                    pointer_type=algorithm)
+
+    # --- Stream extraction + reachability + export ---
+    extract_streams(accum_masked, threshold=stream_threshold,
+                    output=streams)
+    streams = filter_reachable(streams, ptr, PARCEL,
+                               pointer_type=algorithm,
+                               buffer_m=parcel_buffer_m)
+    _export_binary(streams, accum_masked, binary,
                    boundary=CONTRIBUTING_AREA)
 
 
-def build_dinf_10m():
-    """D∞ 10m for parcel contributing area."""
-    DERIVED.mkdir(parents=True, exist_ok=True)
-    dem_10m_raw = DERIVED / "dem_10m_clipped.tif"
-    dem = DERIVED / "dem_10m_filled.tif"
-    accum = DERIVED / "dinf_flow_accum_10m.tif"
-    dinf_ptr = DERIVED / "dinf_pointer_10m.tif"
-    accum_masked = DERIVED / "dinf_flow_accum_10m_masked.tif"
-    streams = DERIVED / "streams_dinf_10m_250.tif"
-
-    if not dem.exists():
-        raw = fetch_dem(CONTRIBUTING_AREA, resolution=10.0, crs=TARGET_CRS,
-                        buffer_m=200, output=dem_10m_raw)
-        dem = preprocess_dem(raw, output=dem, strategy="breach_then_fill")
-
-    compute_dinf(dem, output=accum, pointer=dinf_ptr)
-    accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
-    verify_accumulation(accum_masked)
-    verify_monotonicity_along_paths(accum_masked, dinf_ptr, pointer_type="dinf")
-    extract_streams(accum_masked, threshold=250, output=streams)
-    streams = filter_reachable(streams, dinf_ptr, PARCEL, pointer_type="dinf")
-    _export_binary(streams, accum_masked, MAPS / "streams_wide_dinf.bin",
-                   boundary=CONTRIBUTING_AREA)
-
-
-def build_d8_1m():
-    """D8 1m for parcel contributing area."""
-    DERIVED.mkdir(parents=True, exist_ok=True)
-    dem = DERIVED / "dem_1m_filled_f32.tif"
-    ptr = DERIVED / "d8_pointer_1m.tif"
-    accum = DERIVED / "d8_flow_accum_1m.tif"
-    accum_masked = DERIVED / "d8_flow_accum_1m_masked.tif"
-    streams = DERIVED / "streams_d8_1m_250.tif"
-
-    if not dem.exists():
-        raw = fetch_dem(CONTRIBUTING_AREA, resolution=1.0, crs=TARGET_CRS,
-                        buffer_m=200, output=DERIVED / "dem_1m_clipped.tif")
-        dem = preprocess_dem(raw, output=dem)
-
-    compute_d8_pointer(dem, output=ptr)
-    compute_d8_accum(dem, output=accum, pointer=ptr,
-                     backend="wbt_ptr_pyflwdir")
-
-    accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
-    verify_accumulation(accum_masked)
-    verify_monotonicity_along_paths(accum_masked, ptr, pointer_type="d8")
-
-    extract_streams(accum_masked, threshold=250, output=streams)
-    streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
-    _export_binary(streams, accum_masked, MAPS / "streams_d8_1m.bin",
-                   boundary=CONTRIBUTING_AREA)
-
-
-def build_d8_10m():
-    """D8 10m for parcel contributing area."""
-    DERIVED.mkdir(parents=True, exist_ok=True)
-    dem_10m_raw = DERIVED / "dem_10m_clipped.tif"
-    dem = DERIVED / "dem_10m_filled.tif"
-    ptr = DERIVED / "d8_pointer_10m.tif"
-    accum = DERIVED / "d8_flow_accum_10m.tif"
-    accum_masked = DERIVED / "d8_flow_accum_10m_masked.tif"
-    streams = DERIVED / "streams_d8_10m_250.tif"
-
-    if not dem.exists():
-        raw = fetch_dem(CONTRIBUTING_AREA, resolution=10.0, crs=TARGET_CRS,
-                        buffer_m=200, output=dem_10m_raw)
-        dem = preprocess_dem(raw, output=dem, strategy="breach_then_fill")
-
-    compute_d8_pointer(dem, output=ptr)
-    compute_d8_accum(dem, output=accum, pointer=ptr,
-                     backend="wbt_ptr_pyflwdir")
-
-    accum_masked = _mask_to_boundary(accum, CONTRIBUTING_AREA, accum_masked)
-    verify_accumulation(accum_masked)
-    verify_monotonicity_along_paths(accum_masked, ptr, pointer_type="d8")
-    extract_streams(accum_masked, threshold=250, output=streams)
-    streams = filter_reachable(streams, ptr, PARCEL, pointer_type="d8")
-    _export_binary(streams, accum_masked, MAPS / "streams_wide_d8.bin",
-                   boundary=CONTRIBUTING_AREA)
-
+# -- CLI --
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python _pipeline.py [dinf1m|dinf10m|d81m|d810m|all]")
+    parser = argparse.ArgumentParser(
+        description="Build parcel-centered stream morphology artifacts.")
+    parser.add_argument(
+        "command", nargs="?",
+        choices=["dinf1m", "dinf10m", "d81m", "d810m", "all"],
+        help="Which artifact to build.")
+    parser.add_argument(
+        "--threshold", type=int, default=250,
+        help="Stream extraction accumulation threshold in cells (default: 250).")
+    parser.add_argument(
+        "--buffer", type=float, default=3.0,
+        help="Parcel buffer in meters for reachability filtering (default: 3.0).")
+    parser.add_argument(
+        "--hydro", choices=["breach_then_fill", "fill_only", "breach_only"],
+        default="breach_then_fill",
+        help="DEM preprocessing strategy (default: breach_then_fill).")
+    args = parser.parse_args()
+
+    if args.command is None:
+        parser.print_usage()
         sys.exit(1)
 
-    cmd = sys.argv[1]
-    if cmd == "dinf1m":
-        build_dinf_1m()
-    elif cmd == "dinf10m":
-        build_dinf_10m()
-    elif cmd == "d81m":
-        build_d8_1m()
-    elif cmd == "d810m":
-        build_d8_10m()
-    elif cmd == "all":
-        build_dinf_1m()
-        build_dinf_10m()
-        build_d8_1m()
-        build_d8_10m()
+    def run(resolution, algorithm):
+        build(resolution, algorithm,
+              stream_threshold=args.threshold,
+              parcel_buffer_m=args.buffer,
+              hydro_strategy=args.hydro)
+
+    COMMANDS = {
+        "dinf1m":  lambda: run(1.0, "dinf"),
+        "dinf10m": lambda: run(10.0, "dinf"),
+        "d81m":    lambda: run(1.0, "d8"),
+        "d810m":   lambda: run(10.0, "d8"),
+    }
+
+    if args.command == "all":
+        for fn in COMMANDS.values():
+            fn()
     else:
-        print(f"Unknown: {cmd}")
-        sys.exit(1)
+        COMMANDS[args.command]()
