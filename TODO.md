@@ -18,3 +18,5 @@ Recommended relationship to other repo logs:
 - Graceful failure on empty/nodata/ridge contributing area (pipeline crashes mid-flow-accumulation rather than reporting a clean error)
 - Test pipeline on substantially different terrain (Appalachians, karst, glacial) — Jacksonville coastal plain is benign
 - Consider `BreachDepressionsLeastCost` with max breach length as middle-ground hydro strategy (between aggressive breach_then_fill and conservative fill_only)
+- Flow-weighted cycle propagation mask: track all cells affected by cycle-truncated branches (currently only logs origination count)
+- Explorer slider adaptation for flow-weighted binaries: read value-space flag from header, adjust slider labels and scale accordingly
