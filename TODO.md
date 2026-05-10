@@ -15,4 +15,6 @@ Recommended relationship to other repo logs:
 
 ## Backlog
 
-(no items queued)
+- Graceful failure on empty/nodata/ridge contributing area (pipeline crashes mid-flow-accumulation rather than reporting a clean error)
+- Test pipeline on substantially different terrain (Appalachians, karst, glacial) — Jacksonville coastal plain is benign
+- Consider `BreachDepressionsLeastCost` with max breach length as middle-ground hydro strategy (between aggressive breach_then_fill and conservative fill_only)
