@@ -407,18 +407,24 @@ def _dinf_reachable_weighted(
 
     elapsed = time.time() - t0
     n_stream = len(stream_cells)
-    mean_frac = float(np.mean([fractions[ri, ci] for ri, ci in stream_cells
-                                if visited[ri, ci]]))
+    fracs = np.array([fractions[ri, ci] for ri, ci in stream_cells
+                       if visited[ri, ci] and fractions[ri, ci] > 0])
+    n_frac_gt_001 = int(np.sum(fracs > 0.001))
+    n_frac_gt_01 = int(np.sum(fracs > 0.1))
+    n_frac_gt_05 = int(np.sum(fracs > 0.5))
     if n_cycle_truncated > 0:
         print(f"  D∞ flow-weighted: {n_traced:,} traced, "
               f"{n_cache_hits:,} cache hits, "
-              f"mean fraction {mean_frac:.3f}, "
+              f"{n_frac_gt_001:,} cells >0.001, "
+              f"{n_frac_gt_01:,} >0.1, {n_frac_gt_05:,} >0.5, "
               f"{n_cycle_truncated} cells with cycle-truncated branches "
               f"(fractions may be understated), {elapsed:.1f}s")
     else:
         print(f"  D∞ flow-weighted: {n_traced:,} traced, "
               f"{n_cache_hits:,} cache hits, "
-              f"mean fraction {mean_frac:.3f}, {elapsed:.1f}s")
+              f"{n_frac_gt_001:,} cells >0.001, "
+              f"{n_frac_gt_01:,} >0.1, {n_frac_gt_05:,} >0.5, "
+              f"{elapsed:.1f}s")
     return fractions, n_cycle_truncated
 
 
