@@ -31,7 +31,6 @@ TARGET_CRS = "EPSG:5070"
 
 CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
-PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
 
 
 # -- Binary output name mapping (hardcoded: explorer expects these names) --
@@ -225,7 +224,7 @@ def build(
     # --- Stream extraction + reachability + export ---
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
-    result = filter_reachable(streams, ptr, PARCEL,
+    result = filter_reachable(streams, ptr, CONTRIBUTING_AREA,
                               pointer_type=algorithm,
                               buffer_m=parcel_buffer_m,
                               reachability_mode=reachability_mode)
