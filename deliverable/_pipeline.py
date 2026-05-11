@@ -224,7 +224,9 @@ def build(
     # --- Stream extraction + reachability + export ---
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
+    reachable = DERIVED / f"reachable_{algorithm}_{res_tag}.tif"
     result = filter_reachable(streams, ptr, CONTRIBUTING_AREA,
+                              output=reachable,
                               pointer_type=algorithm,
                               buffer_m=parcel_buffer_m,
                               reachability_mode=reachability_mode)
