@@ -17,7 +17,7 @@ outputs/report_spike/*_files/
 outputs/report_spike/.quarto/
 report.html
 report_files/
-data/derived/watershed/
+data/derived/rasters/
 data/derived/2km_aoi/channels/
 data/derived/2km_aoi/fan_synthesis/
 data/derived/2km_aoi/parcels/

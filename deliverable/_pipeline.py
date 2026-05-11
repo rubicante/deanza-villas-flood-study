@@ -26,7 +26,7 @@ from deliverable.reachability import filter_reachable
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "derived" / "vectors"
 MAPS = ROOT / "outputs" / "maps"
-DERIVED = ROOT / "data" / "derived" / "watershed"
+DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
 CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
