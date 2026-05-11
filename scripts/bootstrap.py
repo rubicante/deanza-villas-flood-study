@@ -37,35 +37,41 @@ def main() -> None:
 
     parcel = gpd.read_file(PARCEL)
 
+    dem_raw    = BOOTSTRAP / "dem_10m.tif"
+    dem_filled = BOOTSTRAP / "dem_10m_filled.tif"
+    ptr        = BOOTSTRAP / "dinf_pointer_10m.tif"
+
     print("=== Step 1: fetch 10m DEM ===")
-    dem_raw = fetch_dem(
-        parcel,
-        resolution=BOOTSTRAP_RES_M,
-        buffer_m=BOOTSTRAP_BUFFER_M,
-        output=BOOTSTRAP / "dem_10m.tif",
-    )
+    if dem_raw.exists():
+        print(f"  cached: {dem_raw}")
+    else:
+        fetch_dem(
+            parcel,
+            resolution=BOOTSTRAP_RES_M,
+            buffer_m=BOOTSTRAP_BUFFER_M,
+            output=dem_raw,
+        )
 
     print("\n=== Step 2: preprocess ===")
-    dem_filled = preprocess_dem(
-        dem_raw,
-        output=BOOTSTRAP / "dem_10m_filled.tif",
-        strategy="breach_then_fill",
-    )
+    if dem_filled.exists():
+        print(f"  cached: {dem_filled}")
+    else:
+        preprocess_dem(dem_raw, output=dem_filled, strategy="breach_then_fill")
 
     print("\n=== Step 3: D∞ pointer ===")
-    compute_dinf(
-        dem_filled,
-        output=BOOTSTRAP / "dinf_accum_10m.tif",
-        pointer=BOOTSTRAP / "dinf_pointer_10m.tif",
-    )
+    if ptr.exists():
+        print(f"  cached: {ptr}")
+    else:
+        compute_dinf(
+            dem_filled,
+            output=BOOTSTRAP / "dinf_accum_10m.tif",
+            pointer=ptr,
+        )
 
     print("\n=== Step 4: upstream BFS ===")
-    parcel_seeded = parcel.copy()
-    parcel_seeded.geometry = parcel.geometry.buffer(3.0)
-
     gdf_4326 = contributing_area(
         BOOTSTRAP / "dinf_pointer_10m.tif",
-        parcel_seeded,
+        parcel,
         output_mask=BOOTSTRAP / "contributing_area_mask.tif",
     )
 
