@@ -1,3 +1,4 @@
+.DS_Store
 .env
 .venv/
 __pycache__/
@@ -5,6 +6,8 @@ __pycache__/
 .ipynb_checkpoints/
 cache/
 data/raw/opera_test/
+data/raw/dem/
+data/derived/bootstrap/
 data/**/_tmp*
 outputs/**/_tmp*
 outputs/report_spike/*.html
