@@ -31,6 +31,7 @@ TARGET_CRS = "EPSG:5070"
 
 CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
+REACHABILITY_TARGET = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
 
 
 # -- Binary output name mapping (hardcoded: explorer expects these names) --
@@ -142,7 +143,6 @@ def build(
     *,
     stream_threshold: int = 250,
     threshold_frac: float | None = None,
-    parcel_buffer_m: float = 3.0,
     hydro_strategy: str = "breach_then_fill",
     reachability_mode: str = "boolean",
 ) -> None:
@@ -161,9 +161,6 @@ def build(
         If provided, overrides stream_threshold.  Fraction of masked
         contributing area cells (e.g. 0.0001 = 0.01%).  Converts to
         absolute cell count from the masked accumulation raster.
-    parcel_buffer_m : float
-        Buffer distance in meters around the parcel for reachability
-        filtering (registration tolerance between parcel boundary and DEM).
     hydro_strategy : str
         DEM preprocessing strategy: 'breach_then_fill' (default),
         'fill_only', or 'breach_only'.
@@ -225,10 +222,9 @@ def build(
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
     reachable = DERIVED / f"reachable_{algorithm}_{res_tag}.tif"
-    result = filter_reachable(streams, ptr, CONTRIBUTING_AREA,
+    result = filter_reachable(streams, ptr, REACHABILITY_TARGET,
                               output=reachable,
                               pointer_type=algorithm,
-                              buffer_m=parcel_buffer_m,
                               reachability_mode=reachability_mode)
     streams = result.streams
     _export_binary(streams, accum_masked, binary,
@@ -253,9 +249,6 @@ if __name__ == "__main__":
         help="Stream extraction threshold as fraction of contributing area cells "
              "(e.g. 0.0001 for 0.01%%). Overrides --threshold.")
     parser.add_argument(
-        "--buffer", type=float, default=3.0,
-        help="Parcel buffer in meters for reachability filtering (default: 3.0).")
-    parser.add_argument(
         "--hydro", choices=["breach_then_fill", "fill_only", "breach_only"],
         default="breach_then_fill",
         help="DEM preprocessing strategy (default: breach_then_fill).")
@@ -273,7 +266,6 @@ if __name__ == "__main__":
         build(resolution, algorithm,
               stream_threshold=args.threshold,
               threshold_frac=args.threshold_frac,
-              parcel_buffer_m=args.buffer,
               hydro_strategy=args.hydro,
               reachability_mode=args.reachability)
 
