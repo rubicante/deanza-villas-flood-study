@@ -1,1 +1,1 @@
-See [AGENTS.md](AGENTS.md) for project layout, pipeline commands, conventions, and known invariants.
+Read [AGENTS.md](AGENTS.md) before doing any work in this repo.
