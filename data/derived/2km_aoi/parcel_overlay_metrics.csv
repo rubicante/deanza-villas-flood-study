@@ -1,2 +1,0 @@
-layer_name,total_length_m,inside_parcel_m,inside_hazard_m,inside_parcel_and_hazard_m,outside_parcel_m,parcel_share,hazard_share,hazard_share_within_parcel,segments,segments_touching_parcel,segments_touching_hazard,segments_touching_both
-selected_stream_network,24724.206332605325,770.6061172698014,17720.896627681366,737.9986054045382,23953.600215335522,0.031168083088416714,0.7167427900127065,0.957685890191491,237,15,164,15
