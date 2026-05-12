@@ -6,6 +6,7 @@ Owns the binary export format and CRS conversion that the explorer needs.
 """
 
 import argparse
+import shutil
 import struct
 import sys
 from pathlib import Path
@@ -23,6 +24,7 @@ from deliverable import (
     verify_accumulation, verify_monotonicity_along_paths,
 )
 from deliverable.reachability import filter_reachable
+from deliverable.upstream import contributing_area
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "derived" / "vectors"
@@ -30,9 +32,12 @@ MAPS = ROOT / "outputs" / "maps"
 DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
+PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
 CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
 REACHABILITY_TARGET = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
+_BOOTSTRAP_BUFFER_M = 25_000.0
+_BOOTSTRAP_DIR = ROOT / "data" / "derived" / "bootstrap"
 
 
 # -- Binary output name mapping (hardcoded: explorer expects these names) --
@@ -136,6 +141,54 @@ def _export_binary(
     return output
 
 
+# -- Prepare (contributing area) --
+
+def prepare() -> None:
+    """Fetch 10m DEM superset, compute contributing area, save GeoJSONs, clean up."""
+    if CONTRIBUTING_AREA.exists():
+        print(f"Contributing area exists — delete to rerun:\n  {CONTRIBUTING_AREA}")
+        return
+
+    DATA.mkdir(parents=True, exist_ok=True)
+    MAPS.mkdir(parents=True, exist_ok=True)
+    _BOOTSTRAP_DIR.mkdir(parents=True, exist_ok=True)
+
+    parcel = gpd.read_file(PARCEL)
+    parcel_buffered = gpd.GeoDataFrame(
+        geometry=parcel.to_crs(TARGET_CRS).buffer(_BOOTSTRAP_BUFFER_M),
+        crs=TARGET_CRS,
+    )
+
+    dem_raw    = _BOOTSTRAP_DIR / "dem_10m.tif"
+    dem_filled = _BOOTSTRAP_DIR / "dem_10m_filled.tif"
+    ptr        = _BOOTSTRAP_DIR / "dinf_pointer_10m.tif"
+
+    print("=== prepare: fetch 10m DEM ===")
+    if not dem_raw.exists():
+        fetch_dem_10m(parcel_buffered, output=dem_raw)
+
+    print("\n=== prepare: preprocess ===")
+    if not dem_filled.exists():
+        preprocess_dem(dem_raw, output=dem_filled, strategy="breach_then_fill")
+
+    print("\n=== prepare: D∞ pointer ===")
+    if not ptr.exists():
+        compute_dinf(dem_filled, output=_BOOTSTRAP_DIR / "dinf_accum_10m.tif", pointer=ptr)
+
+    print("\n=== prepare: contributing area BFS ===")
+    gdf_4326 = contributing_area(ptr, parcel, output_mask=_BOOTSTRAP_DIR / "ca_mask.tif")
+
+    gdf_5070 = gdf_4326.to_crs(TARGET_CRS)
+    gdf_5070.geometry = gdf_5070.geometry.buffer(10.0)  # absorb 10m cell quantization
+    gdf_5070.to_file(CONTRIBUTING_AREA_5070, driver="GeoJSON")
+    gdf_5070.to_crs("EPSG:4326").to_file(CONTRIBUTING_AREA, driver="GeoJSON")
+    shutil.copy(CONTRIBUTING_AREA, MAPS / CONTRIBUTING_AREA.name)
+    print(f"  Contributing area: {gdf_5070.iloc[0].get('area_km2', '?')} km²")
+
+    shutil.rmtree(_BOOTSTRAP_DIR)
+    print("  Temporary superset removed.")
+
+
 # -- Build --
 
 def build(
@@ -192,6 +245,10 @@ def build(
         binary_name = binary_name.replace(".bin", "_frac.bin")
     binary = MAPS / binary_name
 
+    if binary.exists():
+        print(f"  cached: {binary}")
+        return
+
     # --- DEM fetch + preprocess ---
     if not dem_filled.exists():
         fetch_fn = fetch_dem_1m if resolution == 1.0 else fetch_dem_10m
@@ -240,8 +297,8 @@ if __name__ == "__main__":
         description="Build parcel-centered stream morphology artifacts.")
     parser.add_argument(
         "command", nargs="?",
-        choices=["dinf1m", "dinf10m", "d81m", "d810m", "all"],
-        help="Which artifact to build.")
+        choices=["prepare", "dinf1m", "dinf10m", "d81m", "d810m", "all"],
+        help="Which step to run.")
     parser.add_argument(
         "--threshold", type=int, default=250,
         help="Stream extraction accumulation threshold in cells (default: 250).")
@@ -271,6 +328,7 @@ if __name__ == "__main__":
               reachability_mode=args.reachability)
 
     COMMANDS = {
+        "prepare": prepare,
         "dinf1m":  lambda: run(1.0, "dinf"),
         "dinf10m": lambda: run(10.0, "dinf"),
         "d81m":    lambda: run(1.0, "d8"),
@@ -278,7 +336,9 @@ if __name__ == "__main__":
     }
 
     if args.command == "all":
-        for fn in COMMANDS.values():
-            fn()
+        prepare()
+        for name, fn in COMMANDS.items():
+            if name != "prepare":
+                fn()
     else:
         COMMANDS[args.command]()
