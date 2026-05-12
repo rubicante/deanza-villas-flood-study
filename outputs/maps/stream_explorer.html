@@ -248,6 +248,7 @@ async function loadBinary(url, dsKey, label) {
   if (!url) { console.log(`${label}: not available`); return; }
   loadingInfo.textContent = `Loading ${label}…`;
   const resp = await fetch(url);
+  if (!resp.ok) { console.warn(`${label}: ${resp.status} — skipping`); return; }
   const buf = await resp.arrayBuffer();
   // Validate v1 format: 4-byte magic "HFSB" + uint32 version + uint32 count
   const magic = new Uint32Array(buf, 0, 1)[0];
@@ -283,15 +284,19 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
 // Initialize
 (async function init() {
   try {
-    await loadBinary(DINF_1M_URL, 'dinf1m', 'D∞ 1m');
-    await loadBinary(DINF_10M_URL, 'dinf10m', 'D∞ 10m');
-    await loadBinary(D8_10M_URL, 'd810m', 'D8 10m');
-    await loadBinary(D8_1M_URL, 'd81m', 'D8 1m');
+    for (const [url, key, label] of [
+      [DINF_1M_URL, 'dinf1m', 'D∞ 1m'], [DINF_10M_URL, 'dinf10m', 'D∞ 10m'],
+      [D8_10M_URL, 'd810m', 'D8 10m'], [D8_1M_URL, 'd81m', 'D8 1m'],
+    ]) {
+      try { await loadBinary(url, key, label); }
+      catch(e) { console.warn(`${label}:`, e); }
+    }
 
+    const primaryCount = datasets.dinf1m.count || datasets.dinf10m.count || 0;
     document.getElementById('stat-total').textContent =
-      datasets.dinf1m.count > 1000000 ? (datasets.dinf1m.count/1e6).toFixed(1)+'M'
-      : datasets.dinf1m.count > 1000 ? (datasets.dinf1m.count/1e3).toFixed(0)+'K'
-      : datasets.dinf1m.count.toLocaleString();
+      primaryCount > 1000000 ? (primaryCount/1e6).toFixed(1)+'M'
+      : primaryCount > 1000 ? (primaryCount/1e3).toFixed(0)+'K'
+      : primaryCount.toLocaleString();
 
     // Load boundary layers
     loadingInfo.textContent = 'Loading boundary layers…';
