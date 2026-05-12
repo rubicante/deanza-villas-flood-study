@@ -32,10 +32,10 @@ MAPS = ROOT / "outputs" / "maps"
 DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
-PARCEL = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
+PARCEL = DATA / "deanza_villas_complex_boundary.geojson"
 CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
-REACHABILITY_TARGET = ROOT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
+REACHABILITY_TARGET = DATA / "deanza_villas_complex_boundary.geojson"
 _BOOTSTRAP_BUFFER_M = 25_000.0
 _BOOTSTRAP_DIR = ROOT / "data" / "derived" / "bootstrap"
 
@@ -298,11 +298,14 @@ def build(
 
 def clean() -> None:
     """Delete computed artifacts so they will be regenerated on next run.
-    Does not touch cached DEM tiles or tracked outputs/maps files."""
-    for d in [DERIVED, DATA]:
-        if d.exists():
-            shutil.rmtree(d)
-            print(f"  removed {d}")
+    Does not touch cached DEM tiles, the parcel boundary, or tracked outputs/maps files."""
+    if DERIVED.exists():
+        shutil.rmtree(DERIVED)
+        print(f"  removed {DERIVED}")
+    # Delete contributing area files but preserve the parcel boundary (fetch_parcel_deanza_villas.py)
+    for f in DATA.glob("deanza_parcel_contributing_area*.geojson"):
+        f.unlink()
+        print(f"  removed {f}")
     for f in MAPS.glob("*.bin"):
         f.unlink()
         print(f"  removed {f}")
