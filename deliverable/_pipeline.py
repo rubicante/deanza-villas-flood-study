@@ -45,10 +45,10 @@ _BOOTSTRAP_DIR = ROOT / "data" / "derived" / "bootstrap"
 # -- Binary output name mapping (hardcoded: explorer expects these names) --
 
 _BINARY_NAMES: dict[tuple[float, str], str] = {
-    (1.0, "dinf"): "streams_all.bin",
-    (10.0, "dinf"): "streams_wide_dinf.bin",
-    (1.0, "d8"): "streams_d8_1m.bin",
-    (10.0, "d8"): "streams_wide_d8.bin",
+    (1.0, "dinf"): "dinf_1m.bin",
+    (10.0, "dinf"): "dinf_10m.bin",
+    (1.0, "d8"): "d8_1m.bin",
+    (10.0, "d8"): "d8_10m.bin",
 }
 
 
