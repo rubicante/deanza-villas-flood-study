@@ -290,6 +290,27 @@ def build(
                    fraction_raster=result.fractions)
 
 
+# -- Clean --
+
+def clean() -> None:
+    """Delete computed artifacts so they will be regenerated on next run.
+    Does not touch cached DEM tiles."""
+    targets = [DERIVED, DATA, MAPS]
+    for d in targets:
+        if d.exists():
+            shutil.rmtree(d)
+            print(f"  removed {d}")
+
+
+def clean_all() -> None:
+    """Delete all derived data including cached DEM tiles."""
+    clean()
+    tile_cache = ROOT / "data" / "raw" / "dem" / "tiles"
+    if tile_cache.exists():
+        shutil.rmtree(tile_cache)
+        print(f"  removed {tile_cache}")
+
+
 # -- CLI --
 
 if __name__ == "__main__":
@@ -297,7 +318,7 @@ if __name__ == "__main__":
         description="Build parcel-centered stream morphology artifacts.")
     parser.add_argument(
         "command", nargs="?",
-        choices=["prepare", "dinf1m", "dinf10m", "d81m", "d810m", "all"],
+        choices=["prepare", "dinf1m", "dinf10m", "d81m", "d810m", "all", "clean", "clean-all"],
         help="Which step to run.")
     parser.add_argument(
         "--threshold", type=int, default=250,
@@ -328,17 +349,19 @@ if __name__ == "__main__":
               reachability_mode=args.reachability)
 
     COMMANDS = {
-        "prepare": prepare,
-        "dinf1m":  lambda: run(1.0, "dinf"),
-        "dinf10m": lambda: run(10.0, "dinf"),
-        "d81m":    lambda: run(1.0, "d8"),
-        "d810m":   lambda: run(10.0, "d8"),
+        "prepare":   prepare,
+        "dinf1m":    lambda: run(1.0, "dinf"),
+        "dinf10m":   lambda: run(10.0, "dinf"),
+        "d81m":      lambda: run(1.0, "d8"),
+        "d810m":     lambda: run(10.0, "d8"),
+        "clean":     clean,
+        "clean-all": clean_all,
     }
 
     if args.command == "all":
         prepare()
         for name, fn in COMMANDS.items():
-            if name != "prepare":
+            if name not in ("prepare", "clean", "clean-all"):
                 fn()
     else:
         COMMANDS[args.command]()
