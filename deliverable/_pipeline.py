@@ -294,15 +294,18 @@ def build(
     # --- Stream extraction + reachability + export ---
     extract_streams(accum_masked, threshold=stream_threshold,
                     output=streams)
-    reachable = DERIVED / f"reachable_{algorithm}_{res_tag}.tif"
-    result = filter_reachable(streams, ptr, REACHABILITY_TARGET,
-                              output=reachable,
-                              pointer_type=algorithm,
-                              reachability_mode=reachability_mode)
-    streams = result.streams
-    _export_binary(streams, accum_masked, binary,
-                   boundary=CONTRIBUTING_AREA,
-                   fraction_raster=result.fractions)
+    if reachability_mode == "none":
+        _export_binary(streams, accum_masked, binary,
+                       boundary=CONTRIBUTING_AREA)
+    else:
+        reachable = DERIVED / f"reachable_{algorithm}_{res_tag}.tif"
+        result = filter_reachable(streams, ptr, REACHABILITY_TARGET,
+                                  output=reachable,
+                                  pointer_type=algorithm,
+                                  reachability_mode=reachability_mode)
+        _export_binary(result.streams, accum_masked, binary,
+                       boundary=CONTRIBUTING_AREA,
+                       fraction_raster=result.fractions)
 
 
 # -- Clean --
@@ -349,9 +352,9 @@ if __name__ == "__main__":
         default="breach_then_fill",
         help="DEM preprocessing strategy (default: breach_then_fill).")
     parser.add_argument(
-        "--reachability", choices=["boolean", "flow_weighted"],
-        default="boolean",
-        help="Reachability mode: boolean (default) or flow_weighted (D∞ only).")
+        "--reachability", choices=["none", "boolean", "flow_weighted"],
+        default="none",
+        help="Reachability mode: none (default, all CA streams), boolean, or flow_weighted (D∞ only).")
     args = parser.parse_args()
 
     if args.command is None:
