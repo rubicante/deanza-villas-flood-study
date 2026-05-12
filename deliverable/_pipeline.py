@@ -33,8 +33,8 @@ DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
 PARCEL = ROOT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
-CONTRIBUTING_AREA = DATA / "deanza_parcel_contributing_area.geojson"
-CONTRIBUTING_AREA_5070 = DATA / "deanza_parcel_contributing_area_5070.geojson"
+CONTRIBUTING_AREA = DATA / "parcel_contributing_area.geojson"
+CONTRIBUTING_AREA_5070 = DATA / "parcel_contributing_area_5070.geojson"
 REACHABILITY_TARGET = ROOT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
 _BOOTSTRAP_BUFFER_M = 25_000.0
 _BOOTSTRAP_DIR = ROOT / "data" / "derived" / "bootstrap"
