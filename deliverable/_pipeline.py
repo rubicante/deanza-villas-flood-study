@@ -294,12 +294,14 @@ def build(
 
 def clean() -> None:
     """Delete computed artifacts so they will be regenerated on next run.
-    Does not touch cached DEM tiles."""
-    targets = [DERIVED, DATA, MAPS]
-    for d in targets:
+    Does not touch cached DEM tiles or tracked outputs/maps files."""
+    for d in [DERIVED, DATA]:
         if d.exists():
             shutil.rmtree(d)
             print(f"  removed {d}")
+    for f in MAPS.glob("*.bin"):
+        f.unlink()
+        print(f"  removed {f}")
 
 
 def clean_all() -> None:
