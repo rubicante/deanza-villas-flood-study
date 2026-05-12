@@ -7,5 +7,3 @@ __pycache__/
 
 data/
 
-outputs/maps/*.bin
-outputs/maps/*.geojson
