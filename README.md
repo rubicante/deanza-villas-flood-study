@@ -1,7 +1,8 @@
 # Alluvial Fan Flood Study
 
+**[→ Live explorer](https://rubicante.github.io/deanza-villas-flood-study/)**
+
 An interactive stream morphology explorer for alluvial fan flood risk analysis.
-Open `docs/index.html` in a browser — no server required.
 
 ---
 
