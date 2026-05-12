@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import geopandas as gpd
-from shapely.geometry import mapping
+from shapely.geometry import Polygon, mapping
 
 _PROJECT = Path(__file__).resolve().parents[1]
 _RAW_VECTORS = _PROJECT / "data" / "raw" / "vectors"
@@ -135,3 +135,75 @@ def _fetch_sandag(dest: Path, timeout: int = 30) -> None:
     with open(dest, "w") as f:
         json.dump(data, f)
     print(f"  Cached: {dest}")
+
+
+# -- OSM / Overpass --
+
+_OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+_DEANZA_CC_WAY_ID = 44500984
+
+
+def generate_deanza_country_club(
+    output: Path = _RAW_VECTORS / "deanza_country_club_boundary.geojson",
+) -> Path:
+    """Fetch the De Anza Country Club polygon from OpenStreetMap (Overpass API).
+
+    Source: OSM way 44500984. Cache-first — delete output to force re-fetch.
+    """
+    output = Path(output)
+    if output.exists():
+        print(f"Using cached boundary: {output}")
+        return output
+
+    coords = _fetch_osm_way(_DEANZA_CC_WAY_ID)
+    polygon = Polygon(coords)
+    area_m2 = (
+        gpd.GeoDataFrame(geometry=[polygon], crs="EPSG:4326")
+        .to_crs("EPSG:5070")
+        .geometry.iloc[0]
+        .area
+    )
+    print(f"Boundary: {area_m2:.0f} m² ({area_m2 / 10000:.2f} ha), {len(coords)} nodes")
+
+    feature = {
+        "type": "Feature",
+        "properties": {
+            "name": "De Anza Country Club",
+            "source": f"OpenStreetMap way {_DEANZA_CC_WAY_ID}",
+        },
+        "geometry": mapping(polygon),
+    }
+    geojson = {
+        "type": "FeatureCollection",
+        "name": output.stem,
+        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
+        "features": [feature],
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with open(output, "w") as f:
+        json.dump(geojson, f, indent=2)
+    print(f"Boundary: {output}")
+    return output
+
+
+def _fetch_osm_way(way_id: int, timeout: int = 30) -> list[tuple[float, float]]:
+    """Fetch an OSM way polygon from Overpass. Returns (lon, lat) coordinate list."""
+    query = f"[out:json];way({way_id});out geom;"
+    req = urllib.request.Request(
+        _OVERPASS_URL,
+        data=query.encode(),
+        headers={"User-Agent": "borrego-flood-study/1.0", "Content-Type": "text/plain"},
+    )
+    print(f"Querying Overpass for OSM way {way_id}...")
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = json.load(resp)
+
+    elements = data.get("elements", [])
+    if not elements:
+        raise RuntimeError(f"Overpass returned no elements for way {way_id}")
+
+    nodes = elements[0].get("geometry", [])
+    if not nodes:
+        raise RuntimeError(f"Way {way_id} has no geometry — try 'out geom' query")
+
+    return [(n["lon"], n["lat"]) for n in nodes]
