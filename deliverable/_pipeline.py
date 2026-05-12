@@ -253,8 +253,12 @@ def build(
     if not dem_filled.exists():
         fetch_fn = fetch_dem_1m if resolution == 1.0 else fetch_dem_10m
         raw = fetch_fn(CONTRIBUTING_AREA, output=dem_raw, crs=TARGET_CRS)
-        dem_filled = preprocess_dem(raw, output=dem_filled,
-                                    strategy=hydro_strategy)
+        try:
+            dem_filled = preprocess_dem(raw, output=dem_filled,
+                                        strategy=hydro_strategy)
+        except RuntimeError as e:
+            print(f"  WARNING: preprocess failed for {res_tag} {algorithm} — skipping: {e}")
+            return
 
     # --- Flow direction + accumulation ---
     if algorithm == "dinf":
