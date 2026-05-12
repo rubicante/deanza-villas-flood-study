@@ -48,6 +48,20 @@ python -m deliverable._pipeline clean          # delete derived artifacts
 python -m deliverable._pipeline clean-all      # also delete DEM tile cache
 ```
 
+## Planning workflow
+
+- `TODO.md` — queued or pending work for the current effort
+- `DEVLOG.md` — what actually happened, with short timestamped notes
+
+Operating rules:
+- Put requested future work into `TODO.md` as a checklist or ordered backlog.
+- Re-read `TODO.md` before starting a new round of work so queued items stay in view.
+- When the user asks for the same work again, use `TODO.md` to reconcile what is already queued instead of duplicating tasks.
+- Mark items `in_progress` while working on them. When done, remove them from `TODO.md` entirely — `DEVLOG.md` is the record of what was completed and when.
+- Treat one-off migration or cleanup plans as temporary; retire them when the work is done.
+- If the active work changes something material, append a short timestamped note to `DEVLOG.md`.
+- Before forming a hypothesis about why an external tool is producing wrong output, stratify the observed disagreements by relevant terrain/data covariates and check whether the failure pattern is uniform (suggesting your code) or clustered (suggesting a real edge case).
+
 ## Key conventions
 
 - Active parcel: set `PARCEL` path and `parcel_fn` default in `_pipeline.py`
