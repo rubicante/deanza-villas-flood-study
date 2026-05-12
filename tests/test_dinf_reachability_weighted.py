@@ -62,9 +62,9 @@ def run_weighted(ptr, streams, target_mask):
 
 def test_case1_simple_split():
     ptr = make_ptr(3, 2, {
-        (0, 0): 292.5,  # A splits 50/50 to S and SE
-        (1, 0): 270.0,  # S neighbor → target (south)
-        (1, 1): 270.0,  # SE neighbor → pit (south, off-target)
+        (0, 0): 157.5,  # A splits 50/50 to S and SE
+        (1, 0): 180.0,  # S neighbor → target (south)
+        (1, 1): 180.0,  # SE neighbor → pit (south, off-target)
     })
     streams = make_streams(3, 2, [(0, 0), (1, 0), (1, 1)])
     target = make_target(3, 2, [(2, 0)])  # only (2,0) is target
@@ -101,10 +101,10 @@ def test_case1_simple_split():
 
 def test_case2_split_rejoin():
     ptr = make_ptr(4, 2, {
-        (0, 0): 292.5,  # A splits to S(1,0) and SE(1,1)
-        (1, 0): 270.0,  # S → D (south)
+        (0, 0): 157.5,  # A splits to S(1,0) and SE(1,1)
+        (1, 0): 180.0,  # S → D (south)
         (1, 1): 225.0,  # SE → D (southwest, exactly 225°)
-        (2, 0): 270.0,  # D → target (south)
+        (2, 0): 180.0,  # D → target (south)
     })
     streams = make_streams(4, 2, [(0, 0), (1, 0), (1, 1), (2, 0)])
     target = make_target(4, 2, [(3, 0)])
@@ -140,10 +140,10 @@ def test_case2_split_rejoin():
 
 def test_case3_cycle_alternate():
     ptr = make_ptr(3, 2, {
-        (0, 0): 292.5,  # A splits to S(B) and SE(C)
-        (1, 0): 270.0,  # B → D (south)
-        (2, 0): 90.0,   # D → B (north) — back-edge, cycle!
-        (1, 1): 270.0,  # C → target (south)
+        (0, 0): 157.5,  # A splits to S(B) and SE(C)
+        (1, 0): 180.0,  # B → D (south)
+        (2, 0): 0.0,    # D → B (north) — back-edge, cycle!
+        (1, 1): 180.0,  # C → target (south)
     })
     streams = make_streams(3, 2, [(0, 0), (1, 0), (1, 1), (2, 0)])
     target = make_target(3, 2, [(2, 1)])

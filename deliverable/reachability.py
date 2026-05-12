@@ -52,18 +52,18 @@ _D8_DELTA: dict[int, tuple[int, int]] = {
 }
 
 
-# ── D∞ encoding (Tarboton 1997, WBT: angle in degrees, 0=east, CCW) ──
+# ── D∞ encoding (WBT: angle in degrees, 0=North, clockwise) ──
 
-# Neighbor (dr, dc) for each of the 8 direction indices, 0=E, 1=NE, 2=N, ...
+# Neighbor (dr, dc) for each of the 8 direction indices, 0=N, 1=NE, 2=E, ...
 _DINF_NEIGHBORS: list[tuple[int, int]] = [
-    (0, 1),    # 0: E
+    (-1, 0),   # 0: N
     (-1, 1),   # 1: NE
-    (-1, 0),   # 2: N
-    (-1, -1),  # 3: NW
-    (0, -1),   # 4: W
+    (0, 1),    # 2: E
+    (1, 1),    # 3: SE
+    (1, 0),    # 4: S
     (1, -1),   # 5: SW
-    (1, 0),    # 6: S
-    (1, 1),    # 7: SE
+    (0, -1),   # 6: W
+    (-1, -1),  # 7: NW
 ]
 
 

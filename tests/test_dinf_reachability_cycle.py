@@ -60,11 +60,11 @@ def trace_all(ptr, streams, target_mask):
 # ═══════════════════════════════════════════════════════════════════
 
 def test_case1_cycle_no_exit():
-    # D∞ angles: 270° = S, 90° = N
+    # D∞ angles (CW-from-N): 180° = S, 0° = N
     ptr = make_ptr(3, 1, {
-        (0, 0): 270.0,  # A → B (S)
-        (1, 0): 270.0,  # B → C (S)
-        (2, 0): 90.0,   # C → B (N) — back-edge
+        (0, 0): 180.0,  # A → B (S)
+        (1, 0): 180.0,  # B → C (S)
+        (2, 0): 0.0,    # C → B (N) — back-edge
     })
     streams = make_streams(3, 1, [(0, 0), (1, 0), (2, 0)])
     target = make_target(3, 1, [])  # no target
@@ -88,7 +88,7 @@ def test_case1_cycle_no_exit():
 
 # ═══════════════════════════════════════════════════════════════════
 # Case 2: Cycle plus alternate path
-#   A(0,0) → B(1,0), C(1,1)  (D∞ split: angle 292.5°)
+#   A(0,0) → B(1,0), C(1,1)  (D∞ split: angle 157.5°)
 #   B(1,0) → D(2,0)
 #   D(2,0) → B(1,0)  (cycle B↔D)
 #   C(1,1) → T(2,1)  (target)
@@ -99,10 +99,10 @@ def test_case1_cycle_no_exit():
 
 def test_case2_cycle_plus_alternate():
     ptr = make_ptr(3, 2, {
-        (0, 0): 292.5,  # A splits to B(S, 270°) and C(SE, 315°)
-        (1, 0): 270.0,  # B → D (S)
-        (2, 0): 90.0,   # D → B (N) — back-edge
-        (1, 1): 270.0,  # C → T (S)
+        (0, 0): 157.5,  # A splits to B(S, 180°) and C(SE, 135°)
+        (1, 0): 180.0,  # B → D (S)
+        (2, 0): 0.0,    # D → B (N) — back-edge
+        (1, 1): 180.0,  # C → T (S)
     })
     streams = make_streams(3, 2, [(0, 0), (1, 0), (1, 1), (2, 0)])
     target = make_target(3, 2, [(2, 1)])
@@ -141,10 +141,10 @@ def test_case2_cycle_plus_alternate():
 
 def test_case3_upstream_of_cycle():
     ptr = make_ptr(4, 1, {
-        (0, 0): 270.0,  # A → B (S)
-        (1, 0): 270.0,  # B → C (S)
-        (2, 0): 270.0,  # C → D (S)
-        (3, 0): 90.0,   # D → C (N) — back-edge
+        (0, 0): 180.0,  # A → B (S)
+        (1, 0): 180.0,  # B → C (S)
+        (2, 0): 180.0,  # C → D (S)
+        (3, 0): 0.0,    # D → C (N) — back-edge
     })
     streams = make_streams(4, 1, [(0, 0), (1, 0), (2, 0), (3, 0)])
     target = make_target(4, 1, [])  # no target

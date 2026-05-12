@@ -12,20 +12,19 @@ from shapely.ops import unary_union
 import geopandas as gpd
 
 
-# D∞ neighbor lookup: index → (row_delta, col_delta)
-# 0=E, 1=NE, 2=N, 3=NW, 4=W, 5=SW, 6=S, 7=SE
+# WBT D∞ pointer: degrees, 0=North, clockwise.
+# Index → (row_delta, col_delta): 0=N, 1=NE, 2=E, 3=SE, 4=S, 5=SW, 6=W, 7=NW
 _DINF_NEIGHBORS = [
-    (0, 1), (-1, 1), (-1, 0), (-1, -1),
-    (0, -1), (1, -1), (1, 0), (1, 1),
+    (-1, 0), (-1, 1), (0, 1), (1, 1),
+    (1, 0), (1, -1), (0, -1), (-1, -1),
 ]
 
 
 def _neighbors_flowing_into(r, c, ptr, rows, cols):
     """Return (nr, nc) cells whose D∞ angle points toward (r, c).
 
-    WBT D∞ pointer encoding: degrees, 0=east, counter-clockwise.
-    A cell at neighbor direction out_idx from (r,c) flows into (r,c)
-    when its angle includes the reverse direction (out_idx+4)%8.
+    A neighbor at direction out_idx from (r, c) flows into (r, c) when
+    its angle spans the reverse direction (out_idx + 4) % 8.
     """
     result = []
     for out_idx, (dr, dc) in enumerate(_DINF_NEIGHBORS):
@@ -33,9 +32,9 @@ def _neighbors_flowing_into(r, c, ptr, rows, cols):
         if nr < 0 or nr >= rows or nc < 0 or nc >= cols:
             continue
         angle = float(ptr[nr, nc])
-        if angle < 0 or angle >= 360:
+        if angle < 0 or angle > 360:
             continue
-        angle %= 360
+        angle %= 360  # 360.0 → 0.0 (North)
         rev_dir = (out_idx + 4) % 8
         idx1 = int(angle // 45) % 8
         frac = (angle - idx1 * 45) / 45.0
