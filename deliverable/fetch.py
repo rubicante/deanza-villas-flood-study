@@ -121,6 +121,18 @@ def _fetch_dem(
         w4, s4, e4, n4 = bbox_4326
         xs, ys = tr.transform([w4, e4], [s4, n4])
         tile_bounds = (min(xs), min(ys), max(xs), max(ys))
+
+        if target_res_m == 1.0:
+            native_res = datasets[0].res[0]
+            w, s, e, n = tile_bounds
+            expected_cells = ((e - w) / native_res) * ((n - s) / native_res)
+            expected_gb = expected_cells * 4 / 1e9
+            if expected_gb > 1.0:
+                raise RuntimeError(
+                    f"1m mosaic would be {expected_gb:.1f} GB ({expected_cells/1e6:.0f}M cells) "
+                    f"— CA extent too large for 1m fetch (limit: 1 GB / ~250M cells). "
+                    f"Reduce CA extent or raise the limit in fetch.py."
+                )
         mosaic, mosaic_transform = rio_merge(
             datasets, bounds=tile_bounds, nodata=NODATA, method="first",
         )
