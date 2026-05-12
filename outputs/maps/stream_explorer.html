@@ -109,7 +109,6 @@ const HUC12_URL = 'borrego_palm_canyon_huc12.geojson';
 const FEMA_URL = 'nfhl_borrego_valley.geojson';
 const PARCEL_URL = 'deanza_villas_complex_boundary.geojson';
 const DRI_URL = 'dri_2015_fan_zones.geojson';
-const UNRESOLVED_FLATS_URL = 'dinf_unresolved_flats.geojson';
 
 const COMM_CENTER = [-116.3908, 33.2899];
 
@@ -308,8 +307,6 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
     try { femaData = await fetch(FEMA_URL).then(r => r.json()); } catch(e) { console.warn('FEMA:', e); }
     try { parcelData = await fetch(PARCEL_URL).then(r => r.json()); } catch(e) { console.warn('Parcel:', e); }
     try { driData = await fetch(DRI_URL).then(r => r.json()); } catch(e) { console.warn('DRI:', e); }
-    let unresolvedFlatsData = null;
-    try { unresolvedFlatsData = await fetch(UNRESOLVED_FLATS_URL).then(r => r.json()); } catch(e) { console.warn('Unresolved flats:', e); }
 
     // Init MapLibre
     map = new maplibregl.Map({
@@ -359,14 +356,6 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
       if (parcelData) {
         map.addSource('parcel', { type: 'geojson', data: parcelData });
         map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'none' } }, 'fema-fill');
-      }
-
-      // D∞ unresolved flat cells (diagnostic overlay)
-      if (unresolvedFlatsData) {
-        map.addSource('unresolved-flats', { type: 'geojson', data: unresolvedFlatsData });
-        map.addLayer({ id: 'unresolved-flats-dots', type: 'circle', source: 'unresolved-flats',
-          paint: { 'circle-radius': 4, 'circle-color': '#39ff14', 'circle-opacity': 0.9 },
-          layout: { visibility: 'visible' } });
       }
 
       // Wire up layer toggles
