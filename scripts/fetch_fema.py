@@ -69,7 +69,7 @@ ENDPOINT = (
 )
 
 PROJECT = Path(__file__).resolve().parents[1]
-PARCEL = PROJECT / "data" / "raw" / "sangis" / "deanza_villas_complex_boundary.geojson"
+PARCEL = PROJECT / "data" / "raw" / "vectors" / "deanza_country_club_boundary.geojson"
 OUTPUT = PROJECT / "data" / "raw" / "fema" / "nfhl_borrego_valley.geojson"
 REQUEST_TIMEOUT = 30
 MAX_REDIRECTS = 3
