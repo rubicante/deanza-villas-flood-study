@@ -3,8 +3,8 @@
 Cache-first: skips the network fetch if raw parcels already exist locally.
 To force a re-fetch, delete data/raw/sangis/deanza_villas_parcel_polygons.geojson.
 
-Raw fetch cached at: data/raw/sangis/deanza_villas_parcel_polygons.geojson
-Final boundary at:   data/derived/vectors/deanza_villas_complex_boundary.geojson
+Raw fetch cached at: data/raw/vectors/deanza_villas_parcel_polygons.geojson
+Final boundary at:   data/raw/vectors/deanza_villas_boundary.geojson
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ ENDPOINT = (
     "Parcels_East/FeatureServer/0/query"
 )
 
-RAW_PARCELS = PROJECT / "data" / "raw" / "sangis" / "deanza_villas_parcel_polygons.geojson"
-BOUNDARY_OUT = PROJECT / "data" / "derived" / "vectors" / "deanza_villas_complex_boundary.geojson"
+RAW_PARCELS = PROJECT / "data" / "raw" / "vectors" / "deanza_villas_parcel_polygons.geojson"
+BOUNDARY_OUT = PROJECT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
 
 QUERY_WHERE = "subname LIKE 'DE ANZA VILLAS%'"
 QUERY_FIELDS = (
