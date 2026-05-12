@@ -2,51 +2,13 @@
 
 Fast entry point for agents working in this repository.
 
-## What this repo is
+See [README.md](README.md) for project overview, layout, quickstart, and parcel list.
 
-Geospatial flood study pipeline. Terrain-driven, centered on an arbitrary
-parcel polygon, a contributing area derived from it, and a stream morphology
-explorer. The active parcel is set in `deliverable/_pipeline.py`.
+## Adding a new parcel
 
-## Project layout
-
-```
-deliverable/          Portable DEM/hydrology library + project pipeline
-  _pipeline.py        Project CLI — fetch, preprocess, flow, streams, export
-  parcels.py          Parcel boundary generators (project-specific)
-  fetch.py            USGS TNM DEM fetch (1m + 10m)
-  preprocess.py       DEM conditioning (breach + fill)
-  d8.py / dinf.py     Flow direction + accumulation
-  streams.py          Stream extraction + export
-  reachability.py     Optional reachability filter
-  verify.py           Accumulation sanity checks
-
-scripts/              One-off data fetch scripts (run with python -m scripts.<name>)
-  fetch_parcel_deanza_villas.py
-  fetch_parcel_deanza_country_club.py
-  fetch_fema.py
-  fetch_huc12.py
-
-data/raw/vectors/     Source vector data — fetched on demand, not committed
-data/raw/dem/tiles/   Cached DEM tiles — not committed
-data/derived/rasters/ Computed rasters — cleaned by pipeline clean
-data/derived/vectors/ Computed vectors — cleaned by pipeline clean
-outputs/maps/         Stream explorer (index.html) + GeoJSON/binary assets
-```
-
-## Running the pipeline
-
-```bash
-# From project root, with .venv activated:
-python -m deliverable._pipeline prepare        # fetch parcel + contributing area
-python -m deliverable._pipeline dinf1m         # D∞ 1m streams
-python -m deliverable._pipeline dinf10m
-python -m deliverable._pipeline d81m
-python -m deliverable._pipeline d810m
-python -m deliverable._pipeline all            # prepare + all four
-python -m deliverable._pipeline clean          # delete derived artifacts
-python -m deliverable._pipeline clean-all      # also delete DEM tile cache
-```
+Implement a generator in `deliverable/parcels.py` with signature
+`(output: Path) -> Path`, add an entry to `_PARCELS` in `_pipeline.py`, then
+run `clean` and `all --parcel <key>`.
 
 ## Planning workflow
 
@@ -64,7 +26,7 @@ Operating rules:
 
 ## Key conventions
 
-- Active parcel: set `PARCEL` path and `parcel_fn` default in `_pipeline.py`
+- Active parcel: select with `--parcel <key>`; registry is `_PARCELS` in `_pipeline.py`
 - CRS: EPSG:5070 (Albers Equal Area) throughout; EPSG:4326 for GeoJSON output
 - DEM tiles are cached in `data/raw/dem/tiles/` — never deleted by `clean`
 - Raw vector inputs live in `data/raw/vectors/` — never deleted by `clean`

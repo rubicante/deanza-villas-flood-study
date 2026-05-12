@@ -39,6 +39,10 @@ python -m deliverable._pipeline dinf10m        # D∞ 10m streams
 python -m deliverable._pipeline d81m           # D8 1m streams
 python -m deliverable._pipeline d810m          # D8 10m streams
 
+# Switch parcels without touching code
+python -m deliverable._pipeline all --parcel deanza_villas
+python -m deliverable._pipeline all --parcel country_club   # default
+
 # Housekeeping
 python -m deliverable._pipeline clean          # delete derived artifacts
 python -m deliverable._pipeline clean-all      # also delete DEM tile cache
@@ -50,15 +54,17 @@ Open `outputs/maps/index.html` in a browser to explore results.
 
 ## Active parcel
 
-The active parcel is configured in `deliverable/_pipeline.py` via the `PARCEL` constant
-and the `parcel_fn` default passed to `prepare()`. Parcel generators live in
-`deliverable/parcels.py`. Currently available:
+Select the parcel at runtime with `--parcel`. Parcel generators live in
+`deliverable/parcels.py`; the registry mapping names to generators is in
+`_pipeline.py`. Currently available:
 
-- `generate_deanza_villas()` — De Anza Villas residential complex (SANDAG parcels)
-- `generate_deanza_country_club()` — De Anza Country Club (OSM way 44500984)
+| Key | Description |
+|---|---|
+| `country_club` | De Anza Country Club (OSM way 44500984) — **default** |
+| `deanza_villas` | De Anza Villas residential complex (SANDAG parcels) |
 
-To switch parcels, update `PARCEL` and the `parcel_fn` in `_pipeline.py`, then run
-`clean` and `all`.
+To add a new parcel: implement a generator in `parcels.py` and add an entry to
+`_PARCELS` in `_pipeline.py`. Then `clean` and re-run with `--parcel <key>`.
 
 ---
 

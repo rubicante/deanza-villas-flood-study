@@ -37,7 +37,12 @@ TARGET_CRS = "EPSG:5070"
 PARCEL = ROOT / "data" / "raw" / "vectors" / "deanza_country_club_boundary.geojson"
 CONTRIBUTING_AREA = DATA / "parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "parcel_contributing_area_5070.geojson"
-REACHABILITY_TARGET = ROOT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
+REACHABILITY_TARGET = PARCEL
+
+_PARCELS: dict[str, tuple] = {
+    "country_club": (generate_deanza_country_club, "deanza_country_club_boundary.geojson"),
+    "deanza_villas": (generate_deanza_villas, "deanza_villas_boundary.geojson"),
+}
 _BOOTSTRAP_BUFFER_M = 25_000.0
 _BOOTSTRAP_DIR = ROOT / "data" / "derived" / "bootstrap"
 
@@ -355,11 +360,19 @@ if __name__ == "__main__":
         "--reachability", choices=["none", "boolean", "flow_weighted"],
         default="none",
         help="Reachability mode: none (default, all CA streams), boolean, or flow_weighted (D∞ only).")
+    parser.add_argument(
+        "--parcel", choices=list(_PARCELS), default="country_club",
+        help="Parcel to analyse (default: country_club).")
     args = parser.parse_args()
 
     if args.command is None:
         parser.print_usage()
         sys.exit(1)
+
+    # Set parcel globals before any command runs
+    parcel_fn, parcel_file = _PARCELS[args.parcel]
+    PARCEL = ROOT / "data" / "raw" / "vectors" / parcel_file
+    REACHABILITY_TARGET = PARCEL
 
     def run(resolution, algorithm):
         build(resolution, algorithm,
@@ -369,7 +382,7 @@ if __name__ == "__main__":
               reachability_mode=args.reachability)
 
     COMMANDS = {
-        "prepare":   lambda: prepare(parcel_fn=generate_deanza_country_club),
+        "prepare":   lambda: prepare(parcel_fn=parcel_fn),
         "dinf1m":    lambda: run(1.0, "dinf"),
         "dinf10m":   lambda: run(10.0, "dinf"),
         "d81m":      lambda: run(1.0, "d8"),

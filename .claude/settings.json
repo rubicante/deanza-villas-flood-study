@@ -12,7 +12,11 @@
       "Bash(.venv/bin/python tests/test_dinf_reachability_weighted.py)",
       "Bash(.venv/bin/python tests/test_dinf_reachability_cycle.py)",
       "Bash(git stash *)",
-      "Bash(.venv/bin/python -m deliverable._pipeline dinf1m)"
+      "Bash(.venv/bin/python -m deliverable._pipeline dinf1m)",
+      "Bash(/Users/agp/workspace/deanza-villas-flood-study/.venv/bin/python -)",
+      "Bash(git add *)",
+      "Bash(.venv/bin/python -m deliverable._pipeline all)",
+      "Bash(.venv/bin/python -m deliverable._pipeline clean)"
     ]
   }
 }
