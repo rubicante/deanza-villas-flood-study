@@ -406,7 +406,7 @@ def _dinf_reachable_weighted(
         n_cycle_truncated += n_cycle
 
     elapsed = time.time() - t0
-    n_stream = len(stream_cells)
+    len(stream_cells)
     fracs = np.array([fractions[ri, ci] for ri, ci in stream_cells
                        if visited[ri, ci] and fractions[ri, ci] > 0])
     n_frac_gt_001 = int(np.sum(fracs > 0.001))

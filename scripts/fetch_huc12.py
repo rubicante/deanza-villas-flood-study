@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 import sys
-import tempfile
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -70,7 +69,7 @@ def _extract_huc12(wbd_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 def main() -> int:
     print(f"HUC-12: {HUC12} (Borrego Palm Canyon)")
-    print(f"Source: USGS WBD Region 18 shapefile")
+    print("Source: USGS WBD Region 18 shapefile")
 
     # Check cache first
     CACHE_DIR.mkdir(parents=True, exist_ok=True)

@@ -167,10 +167,10 @@ def test_case3_cycle_alternate():
         f"A should be 0.5, got {fractions[0,0]}")
 
     # B and D should be VISITED (not unvisited) — they resolved as 0.0
-    assert visited[1, 0] == 1, f"B should be visited"
-    assert visited[2, 0] == 1, f"D should be visited"
+    assert visited[1, 0] == 1, "B should be visited"
+    assert visited[2, 0] == 1, "D should be visited"
 
-    print(f"  Case 3 PASS: cycle + alternate — A=0.5, C=1.0, B/D≈0")
+    print("  Case 3 PASS: cycle + alternate — A=0.5, C=1.0, B/D≈0")
 
 
 # ═══════════════════════════════════════════════════════════

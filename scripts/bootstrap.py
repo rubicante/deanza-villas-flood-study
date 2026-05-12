@@ -19,8 +19,8 @@ import geopandas as gpd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from deliverable import fetch_dem, preprocess_dem, compute_dinf
-from deliverable.upstream import contributing_area
+from deliverable import fetch_dem, preprocess_dem, compute_dinf  # noqa: E402
+from deliverable.upstream import contributing_area  # noqa: E402
 
 PARCEL     = ROOT / "data/raw/sangis/deanza_villas_complex_boundary.geojson"
 BOOTSTRAP  = ROOT / "data/derived/bootstrap"
@@ -97,7 +97,7 @@ def main() -> None:
 
     area_km2 = gdf_5070.iloc[0].get("area_km2", "?")
     print(f"\nDone. Contributing area: {area_km2} km²")
-    print(f"Next: .venv/bin/python -m deliverable._pipeline all")
+    print("Next: .venv/bin/python -m deliverable._pipeline all")
 
 
 if __name__ == "__main__":

@@ -59,7 +59,7 @@ def main() -> int:
     }
     url = ENDPOINT + "?" + urllib.parse.urlencode(params)
 
-    print(f"Querying SANDAG Parcels_East...")
+    print("Querying SANDAG Parcels_East...")
     try:
         req = urllib.request.Request(
             url, headers={"User-Agent": "borrego-flood-study/1.0"}

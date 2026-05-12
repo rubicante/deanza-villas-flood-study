@@ -25,5 +25,5 @@ __all__ = [
     "compute_d8_pointer", "compute_d8_accum",
     "compute_dinf",
     "extract_streams", "export_geojson",
-    "verify_accumulation", "check_d8_dinf_agreement",
+    "verify_accumulation", "verify_monotonicity_along_paths",
 ]

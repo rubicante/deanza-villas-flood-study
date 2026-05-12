@@ -70,7 +70,7 @@ def preprocess_dem(
                   f"max cut {max_cut:.2f}m, "
                   f"{total_volume/1e6:.2f}M m³ removed")
         else:
-            print(f"  Breached: 0 cells modified (no depressions)")
+            print("  Breached: 0 cells modified (no depressions)")
         current = breached
 
     if strategy in ("fill_only", "breach_then_fill"):

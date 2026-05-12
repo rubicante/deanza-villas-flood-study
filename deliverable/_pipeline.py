@@ -6,7 +6,8 @@ Owns the binary export format and CRS conversion that the explorer needs.
 """
 
 import argparse
-import struct, time, sys
+import struct
+import sys
 from pathlib import Path
 
 import numpy as np

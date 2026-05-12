@@ -7,11 +7,10 @@ Key spike lessons:
 """
 
 from pathlib import Path
-import time, json
+import time
+import json
 import numpy as np
 import rasterio
-import geopandas as gpd
-from shapely.geometry import Point
 from whitebox.whitebox_tools import WhiteboxTools
 
 

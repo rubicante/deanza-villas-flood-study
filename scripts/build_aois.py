@@ -21,7 +21,6 @@ import sys
 from pathlib import Path
 
 import geopandas as gpd
-from shapely.geometry import mapping
 
 PROJECT = Path(__file__).resolve().parents[1]
 

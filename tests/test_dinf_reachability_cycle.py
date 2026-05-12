@@ -11,7 +11,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from deliverable.reachability import _dinf_trace, _dinf_reachable
+from deliverable.reachability import _dinf_trace  # noqa: E402
 
 
 def make_ptr(rows: int, cols: int, flows: dict[tuple[int, int], float]) -> np.ndarray:
@@ -71,9 +71,9 @@ def test_case1_cycle_no_exit():
 
     results, cache, traced, hits = trace_all(ptr, streams, target)
 
-    assert results[(0, 0)] == False, f"A should be False, got {results[(0,0)]}"
-    assert results[(1, 0)] == False, f"B should be False, got {results[(1,0)]}"
-    assert results[(2, 0)] == False, f"C should be False, got {results[(2,0)]}"
+    assert not results[(0, 0)], f"A should be False, got {results[(0,0)]}"
+    assert not results[(1, 0)], f"B should be False, got {results[(1,0)]}"
+    assert not results[(2, 0)], f"C should be False, got {results[(2,0)]}"
 
     # All three are safe to cache — cycle IS the whole story.
     # A (upstream) MUST be cached; B and C (in cycle) may or may not
@@ -109,10 +109,10 @@ def test_case2_cycle_plus_alternate():
 
     results, cache, traced, hits = trace_all(ptr, streams, target)
 
-    assert results[(0, 0)] == True, f"A should be True, got {results[(0,0)]}"
-    assert results[(1, 0)] == False, f"B should be False, got {results[(1,0)]}"
-    assert results[(1, 1)] == True, f"C should be True, got {results[(1,1)]}"
-    assert results[(2, 0)] == False, f"D should be False, got {results[(2,0)]}"
+    assert results[(0, 0)], f"A should be True, got {results[(0,0)]}"
+    assert not results[(1, 0)], f"B should be False, got {results[(1,0)]}"
+    assert results[(1, 1)], f"C should be True, got {results[(1,1)]}"
+    assert not results[(2, 0)], f"D should be False, got {results[(2,0)]}"
 
     # A and C should be cached (clean results)
     assert cache[0, 0] == 1, f"A should be cached as 1, got {cache[0,0]}"
@@ -151,10 +151,10 @@ def test_case3_upstream_of_cycle():
 
     results, cache, traced, hits = trace_all(ptr, streams, target)
 
-    assert results[(0, 0)] == False, f"A should be False, got {results[(0,0)]}"
-    assert results[(1, 0)] == False, f"B should be False, got {results[(1,0)]}"
-    assert results[(2, 0)] == False, f"C should be False, got {results[(2,0)]}"
-    assert results[(3, 0)] == False, f"D should be False, got {results[(3,0)]}"
+    assert not results[(0, 0)], f"A should be False, got {results[(0,0)]}"
+    assert not results[(1, 0)], f"B should be False, got {results[(1,0)]}"
+    assert not results[(2, 0)], f"C should be False, got {results[(2,0)]}"
+    assert not results[(3, 0)], f"D should be False, got {results[(3,0)]}"
 
     # A and B should be cached (clean False — only path is into the cycle)
     assert cache[0, 0] == 2, f"A should be cached as 2, got {cache[0,0]}"

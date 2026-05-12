@@ -397,7 +397,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(f"Center: {lon:.6f}, {lat:.6f}")
-    print(f"Querying ArcGIS REST ...")
+    print("Querying ArcGIS REST ...")
 
     try:
         data = _query_dfirm(lon, lat)

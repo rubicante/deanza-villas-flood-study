@@ -17,7 +17,6 @@ Key spike lessons:
 
 from pathlib import Path
 import time
-import signal
 import numpy as np
 import rasterio
 from whitebox.whitebox_tools import WhiteboxTools
