@@ -1,7 +1,7 @@
 # Alluvial Fan Flood Study
 
 An interactive stream morphology explorer for alluvial fan flood risk analysis.
-Open `outputs/maps/index.html` in a browser — no server required.
+Open `docs/index.html` in a browser — no server required.
 
 ---
 
@@ -77,7 +77,7 @@ entry to `_PARCELS` in `_pipeline.py`.
 
 ```
 deliverable/          Hydrology library + pipeline CLI
-outputs/maps/         Explorer (index.html) + binary stream data + GeoJSON layers
+docs/                 Explorer (index.html) + binary stream data + GeoJSON layers
 scripts/              One-off data fetch scripts
 data/raw/vectors/     Parcel boundaries (fetched on demand, not committed)
 data/raw/dem/tiles/   Cached DEM tiles (not committed)

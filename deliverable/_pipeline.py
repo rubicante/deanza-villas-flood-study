@@ -30,7 +30,7 @@ from deliverable.upstream import contributing_area
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "derived" / "vectors"
-MAPS = ROOT / "outputs" / "maps"
+MAPS = ROOT / "docs"
 DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
@@ -317,7 +317,7 @@ def build(
 
 def clean() -> None:
     """Delete computed artifacts so they will be regenerated on next run.
-    Does not touch cached DEM tiles, raw vectors, or tracked outputs/maps files."""
+    Does not touch cached DEM tiles, raw vectors, or tracked docs/ files."""
     for d in [DERIVED, DATA]:
         if d.exists():
             shutil.rmtree(d)
