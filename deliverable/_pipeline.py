@@ -24,7 +24,7 @@ from deliverable import (
     extract_streams,
     verify_accumulation, verify_monotonicity_along_paths,
 )
-from deliverable.parcels import generate_deanza_villas
+from deliverable.parcels import generate_deanza_villas, generate_deanza_country_club
 from deliverable.reachability import filter_reachable
 from deliverable.upstream import contributing_area
 
@@ -34,7 +34,7 @@ MAPS = ROOT / "outputs" / "maps"
 DERIVED = ROOT / "data" / "derived" / "rasters"
 TARGET_CRS = "EPSG:5070"
 
-PARCEL = ROOT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
+PARCEL = ROOT / "data" / "raw" / "vectors" / "deanza_country_club_boundary.geojson"
 CONTRIBUTING_AREA = DATA / "parcel_contributing_area.geojson"
 CONTRIBUTING_AREA_5070 = DATA / "parcel_contributing_area_5070.geojson"
 REACHABILITY_TARGET = ROOT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
@@ -159,9 +159,9 @@ def prepare(parcel_fn: Callable[[], Path] | None = None) -> None:
         if parcel_fn is None:
             raise RuntimeError(
                 f"Parcel boundary not found: {PARCEL}\n"
-                "Pass a parcel_fn to prepare() or run fetch_parcel_deanza_villas.py."
+                "Pass a parcel_fn to prepare() or run the appropriate fetch script."
             )
-        parcel_fn()
+        parcel_fn(PARCEL)
 
     parcel = gpd.read_file(PARCEL)
     parcel_buffered = gpd.GeoDataFrame(
@@ -365,7 +365,7 @@ if __name__ == "__main__":
               reachability_mode=args.reachability)
 
     COMMANDS = {
-        "prepare":   lambda: prepare(parcel_fn=generate_deanza_villas),
+        "prepare":   lambda: prepare(parcel_fn=generate_deanza_country_club),
         "dinf1m":    lambda: run(1.0, "dinf"),
         "dinf10m":   lambda: run(10.0, "dinf"),
         "d81m":      lambda: run(1.0, "d8"),
