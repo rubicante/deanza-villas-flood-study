@@ -23,9 +23,10 @@ NODATA = -32768.0
 
 
 def _query_tnm(bbox: tuple[float, float, float, float], dataset: str) -> list[dict]:
-    """Return deduplicated tiles covering bbox (w,s,e,n in EPSG:4326).
+    """Return all tiles covering bbox (w,s,e,n in EPSG:4326), sorted newest-first.
 
-    When multiple surveys cover the same grid position, the newest is kept.
+    All surveys per grid position are returned so rio_merge (method='first') can
+    use the newest where it has data and fall back to older surveys to fill gaps.
     Raises RuntimeError if no tiles are found.
     """
     w, s, e, n = bbox
@@ -45,15 +46,7 @@ def _query_tnm(bbox: tuple[float, float, float, float], dataset: str) -> list[di
             "Verify coverage at https://apps.nationalmap.gov/downloader/"
         )
     items.sort(key=lambda x: x.get("publicationDate", ""), reverse=True)
-    seen: set[str] = set()
-    result = []
-    for item in items:
-        m = re.search(r"x\d+y\d+", item.get("title", ""))
-        pos = m.group() if m else item.get("title", "")
-        if pos not in seen:
-            seen.add(pos)
-            result.append(item)
-    return result
+    return items
 
 
 def _download_tile(url: str, cache_dir: Path) -> Path:
