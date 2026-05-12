@@ -16,7 +16,7 @@ import rasterio
 from rasterio.warp import transform as rio_transform
 
 from deliverable import (
-    fetch_dem, preprocess_dem,
+    fetch_dem_1m, fetch_dem_10m, preprocess_dem,
     compute_d8_pointer, compute_d8_accum,
     compute_dinf,
     extract_streams,
@@ -194,8 +194,8 @@ def build(
 
     # --- DEM fetch + preprocess ---
     if not dem_filled.exists():
-        raw = fetch_dem(CONTRIBUTING_AREA, resolution=resolution,
-                        crs=TARGET_CRS, buffer_m=200, output=dem_raw)
+        fetch_fn = fetch_dem_1m if resolution == 1.0 else fetch_dem_10m
+        raw = fetch_fn(CONTRIBUTING_AREA, output=dem_raw, crs=TARGET_CRS)
         dem_filled = preprocess_dem(raw, output=dem_filled,
                                     strategy=hydro_strategy)
 

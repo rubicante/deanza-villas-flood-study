@@ -19,7 +19,7 @@ import geopandas as gpd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from deliverable import fetch_dem, preprocess_dem, compute_dinf  # noqa: E402
+from deliverable import fetch_dem_10m, preprocess_dem, compute_dinf  # noqa: E402
 from deliverable.upstream import contributing_area  # noqa: E402
 
 PARCEL     = ROOT / "data/raw/sangis/deanza_villas_complex_boundary.geojson"
@@ -27,7 +27,6 @@ BOOTSTRAP  = ROOT / "data/derived/bootstrap"
 VECTORS    = ROOT / "data/derived/vectors"
 MAPS       = ROOT / "outputs/maps"
 
-BOOTSTRAP_RES_M    = 10.0
 BOOTSTRAP_BUFFER_M = 25_000.0
 
 
@@ -36,6 +35,10 @@ def main() -> None:
     VECTORS.mkdir(parents=True, exist_ok=True)
 
     parcel = gpd.read_file(PARCEL)
+    parcel_buffered = gpd.GeoDataFrame(
+        geometry=parcel.to_crs("EPSG:5070").buffer(BOOTSTRAP_BUFFER_M),
+        crs="EPSG:5070",
+    )
 
     dem_raw    = BOOTSTRAP / "dem_10m.tif"
     dem_filled = BOOTSTRAP / "dem_10m_filled.tif"
@@ -45,12 +48,7 @@ def main() -> None:
     if dem_raw.exists():
         print(f"  cached: {dem_raw}")
     else:
-        fetch_dem(
-            parcel,
-            resolution=BOOTSTRAP_RES_M,
-            buffer_m=BOOTSTRAP_BUFFER_M,
-            output=dem_raw,
-        )
+        fetch_dem_10m(parcel_buffered, output=dem_raw)
 
     print("\n=== Step 2: preprocess ===")
     if dem_filled.exists():

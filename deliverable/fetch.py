@@ -17,31 +17,20 @@ from rasterio.warp import reproject as rio_reproject
 from shapely.ops import unary_union
 
 TNM_API = "https://tnmaccess.nationalmap.gov/api/v1/products"
-_DATASET_1M = "Digital Elevation Model (DEM) 1 meter"
+_DATASET_1M  = "Digital Elevation Model (DEM) 1 meter"
+_DATASET_10M = "National Elevation Dataset (NED) 1/3 arc-second"
 NODATA = -32768.0
 
 
-def _geometry_to_polygon(geometry):
-    """Accept GeoJSON path, shapely geometry, or GeoDataFrame."""
-    if isinstance(geometry, (str, Path)):
-        import geopandas as gpd
-        geometry = gpd.read_file(geometry)
-    if hasattr(geometry, "geometry"):
-        geometry = unary_union(geometry.geometry.values)
-    from shapely.geometry.base import BaseGeometry
-    assert isinstance(geometry, BaseGeometry)
-    return geometry
-
-
-def _query_tnm(bbox: tuple[float, float, float, float]) -> list[dict]:
-    """Return deduplicated 1m DEM tiles covering bbox (w,s,e,n in EPSG:4326).
+def _query_tnm(bbox: tuple[float, float, float, float], dataset: str) -> list[dict]:
+    """Return deduplicated tiles covering bbox (w,s,e,n in EPSG:4326).
 
     When multiple surveys cover the same grid position, the newest is kept.
     Raises RuntimeError if no tiles are found.
     """
     w, s, e, n = bbox
     params = {
-        "datasets": _DATASET_1M,
+        "datasets": dataset,
         "bbox": f"{w},{s},{e},{n}",
         "outputFormat": "JSON",
         "max": 100,
@@ -52,7 +41,7 @@ def _query_tnm(bbox: tuple[float, float, float, float]) -> list[dict]:
     items = data.get("items", [])
     if not items:
         raise RuntimeError(
-            f"TNM returned no 1m DEM tiles for bbox {bbox}. "
+            f"TNM returned no tiles for '{dataset}' and bbox {bbox}. "
             "Verify coverage at https://apps.nationalmap.gov/downloader/"
         )
     items.sort(key=lambda x: x.get("publicationDate", ""), reverse=True)
@@ -82,33 +71,35 @@ def _download_tile(url: str, cache_dir: Path) -> Path:
     return dest
 
 
-def fetch_dem(
+def _fetch_dem(
     boundary,
-    resolution: float = 1.0,
+    dataset: str,
+    target_res_m: float,
+    output: Path,
     crs: str = "EPSG:5070",
-    buffer_m: float = 200.0,
-    output: Path = Path("dem.tif"),
     cache_dir: Path | None = None,
 ) -> Path:
-    """Fetch 1m DEM from USGS TNM, mosaic tiles, reproject to crs, clip to boundary.
-
-    Tiles are cached in data/raw/dem/tiles/ (permanent — TNM tiles never change).
-    """
     import geopandas as gpd
     from pyproj import Transformer
 
-    geom = _geometry_to_polygon(boundary)
-    gdf_proj = gpd.GeoDataFrame(geometry=[geom], crs="EPSG:4326").to_crs(crs)
-    buffered = gdf_proj.geometry.iloc[0].buffer(buffer_m)
+    # Normalize to GeoDataFrame — preserve CRS when available
+    if isinstance(boundary, (str, Path)):
+        gdf = gpd.read_file(boundary)
+    elif isinstance(boundary, gpd.GeoDataFrame):
+        gdf = boundary
+    elif isinstance(boundary, gpd.GeoSeries):
+        gdf = gpd.GeoDataFrame(geometry=boundary)
+    else:
+        # Shapely geometry — assume target CRS
+        gdf = gpd.GeoDataFrame(geometry=[boundary], crs=crs)
 
-    raw_bounds = (
-        gpd.GeoDataFrame(geometry=[buffered], crs=crs)
-        .to_crs("EPSG:4326")
-        .total_bounds
-    )
+    gdf_proj = gdf.to_crs(crs)
+    clip_geom = unary_union(gdf_proj.geometry.values)
+
+    bounds_4326 = gdf.to_crs("EPSG:4326").total_bounds
     bbox_4326: tuple[float, float, float, float] = (
-        float(raw_bounds[0]), float(raw_bounds[1]),
-        float(raw_bounds[2]), float(raw_bounds[3]),
+        float(bounds_4326[0]), float(bounds_4326[1]),
+        float(bounds_4326[2]), float(bounds_4326[3]),
     )
 
     if cache_dir is None:
@@ -117,8 +108,8 @@ def fetch_dem(
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     t0 = time.time()
-    print(f"Fetch: res={resolution}m — querying TNM ...", flush=True)
-    tiles_meta = _query_tnm(bbox_4326)
+    print(f"Fetch: res={target_res_m}m — querying TNM ...", flush=True)
+    tiles_meta = _query_tnm(bbox_4326, dataset)
     print(f"  {len(tiles_meta)} tile(s) needed", flush=True)
     tile_paths = [_download_tile(t["downloadURL"], cache_dir) for t in tiles_meta]
 
@@ -145,7 +136,7 @@ def fetch_dem(
     dst_transform, dst_w, dst_h = calculate_default_transform(
         mosaic_crs, crs, src_w, src_h,
         *rasterio.transform.array_bounds(src_h, src_w, mosaic_transform),
-        resolution=resolution,
+        resolution=target_res_m,
     )
     assert dst_w is not None and dst_h is not None
     dst_data = np.full((dst_h, dst_w), NODATA, dtype="float32")
@@ -167,7 +158,7 @@ def fetch_dem(
             ds.write(dst_data, 1)
         with mem.open() as ds:
             out_image, out_transform = rio_mask(
-                ds, [buffered], crop=True, nodata=NODATA, filled=True)
+                ds, [clip_geom], crop=True, nodata=NODATA, filled=True)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     out_profile = {
@@ -185,3 +176,23 @@ def fetch_dem(
         f"{output.stat().st_size / 1e6:.0f} MB, {time.time() - t0:.0f}s total)"
     )
     return output
+
+
+def fetch_dem_10m(
+    boundary,
+    output: Path = Path("dem_10m.tif"),
+    crs: str = "EPSG:5070",
+    cache_dir: Path | None = None,
+) -> Path:
+    """Fetch 10m NED from USGS TNM, mosaic, reproject to crs, clip to boundary."""
+    return _fetch_dem(boundary, _DATASET_10M, 10.0, Path(output), crs, cache_dir)
+
+
+def fetch_dem_1m(
+    boundary,
+    output: Path = Path("dem_1m.tif"),
+    crs: str = "EPSG:5070",
+    cache_dir: Path | None = None,
+) -> Path:
+    """Fetch 1m DEM from USGS TNM, mosaic, reproject to crs, clip to boundary."""
+    return _fetch_dem(boundary, _DATASET_1M, 1.0, Path(output), crs, cache_dir)
