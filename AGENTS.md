@@ -4,8 +4,8 @@ Fast entry point for agents working in this repository.
 
 ## What this repo is
 
-Borrego Springs / De Anza Villas flood study. Geospatial, terrain-driven.
-Centered on a parcel boundary, a contributing area, and a stream morphology
+Geospatial flood study pipeline. Terrain-driven, centered on an arbitrary
+parcel polygon, a contributing area derived from it, and a stream morphology
 explorer. The active parcel is set in `deliverable/_pipeline.py`.
 
 ## Project layout
@@ -13,7 +13,7 @@ explorer. The active parcel is set in `deliverable/_pipeline.py`.
 ```
 deliverable/          Portable DEM/hydrology library + project pipeline
   _pipeline.py        Project CLI — fetch, preprocess, flow, streams, export
-  parcels.py          Parcel boundary generators (De Anza Villas, Country Club)
+  parcels.py          Parcel boundary generators (project-specific)
   fetch.py            USGS TNM DEM fetch (1m + 10m)
   preprocess.py       DEM conditioning (breach + fill)
   d8.py / dinf.py     Flow direction + accumulation
@@ -95,8 +95,8 @@ WBT silently produces no output for relative paths. Always pass
 `str(Path(p).resolve())`. The library does this internally.
 
 ### Breach then fill, not fill-only, for alluvial fan terrain
-Fill-only creates artificial flats that block D8 routing. On Henderson Canyon,
-fill-only produced 0% FEMA hazard overlap; breach+fill produced 72%.
+Fill-only creates artificial flats that block D8 routing. On steep canyon
+terrain, fill-only produced 0% FEMA hazard overlap; breach+fill produced 72%.
 `preprocess_dem()` defaults to `breach_then_fill`.
 
 ### All overlapping 1m tile surveys must be fetched, not just the newest
