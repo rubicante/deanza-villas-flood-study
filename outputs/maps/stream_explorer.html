@@ -107,10 +107,8 @@ const D8_1M_URL    = 'streams_d8_1m.bin';
 const WATERSHED_URL = 'parcel_contributing_area.geojson';
 const HUC12_URL = 'borrego_palm_canyon_huc12.geojson';
 const FEMA_URL = 'nfhl_borrego_valley.geojson';
-const PARCEL_URL = 'deanza_villas_complex_boundary.geojson';
+const PARCEL_URL = 'parcel_boundary.geojson';
 const DRI_URL = 'dri_2015_fan_zones.geojson';
-
-const COMM_CENTER = [-116.3908, 33.2899];
 
 // Log scale
 const ACCUM_MIN = 250, ACCUM_MAX = 100000;
@@ -328,7 +326,7 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         sources: { 'esri-satellite': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Esri World Imagery' }},
         layers: [{ id: 'satellite', type: 'raster', source: 'esri-satellite', paint: { 'raster-opacity': 0.5 } }]
       },
-      center: COMM_CENTER, zoom: 14, maxZoom: 17, attributionControl: false  // overridden by fitBounds below
+      center: geojsonBounds(wsData).reduce((a,b) => [(a[0]+b[0])/2,(a[1]+b[1])/2]), zoom: 10, maxZoom: 17, attributionControl: false
     });
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 

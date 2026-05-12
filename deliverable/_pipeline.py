@@ -193,6 +193,7 @@ def prepare(parcel_fn: Callable[[], Path] | None = None) -> None:
     gdf_5070.to_file(CONTRIBUTING_AREA_5070, driver="GeoJSON")
     gdf_5070.to_crs("EPSG:4326").to_file(CONTRIBUTING_AREA, driver="GeoJSON")
     shutil.copy(CONTRIBUTING_AREA, MAPS / CONTRIBUTING_AREA.name)
+    shutil.copy(PARCEL, MAPS / "parcel_boundary.geojson")
     print(f"  Contributing area: {gdf_5070.iloc[0].get('area_km2', '?')} km²")
 
     shutil.rmtree(_BOOTSTRAP_DIR)
