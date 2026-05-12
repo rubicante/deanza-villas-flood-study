@@ -44,10 +44,15 @@
     <div id="map-veil"></div>
     <canvas id="overlay"></canvas>
     <div id="legend">
+      <label class="legend-item" for="tog-parcel">
+        <input type="checkbox" id="tog-parcel" checked>
+        <span class="legend-line" style="border-top:2px solid #ff7f0e"></span>
+        <span class="label-text">Parcel</span>
+      </label>
       <label class="legend-item" for="tog-watershed">
         <input type="checkbox" id="tog-watershed">
         <span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span>
-        <span class="label-text">Parcel contributing area</span>
+        <span class="label-text">Contributing area</span>
       </label>
       <label class="legend-item" for="tog-huc12">
         <input type="checkbox" id="tog-huc12">
@@ -58,11 +63,6 @@
         <input type="checkbox" id="tog-fema">
         <span class="legend-line" style="border-top:1px solid #e31a1c"></span>
         <span class="label-text">FEMA flood hazard (AO/A)</span>
-      </label>
-      <label class="legend-item" for="tog-parcel">
-        <input type="checkbox" id="tog-parcel">
-        <span class="legend-line" style="border-top:2px solid #ff7f0e"></span>
-        <span class="label-text">Parcel boundary (De Anza Villas)</span>
       </label>
       <label class="legend-item" for="tog-dri">
         <input type="checkbox" id="tog-dri">
@@ -244,6 +244,18 @@ function sizeCanvas() {
 }
 
 // Load a binary dataset
+function geojsonBounds(geojson) {
+  let minLon=Infinity, minLat=Infinity, maxLon=-Infinity, maxLat=-Infinity;
+  function scan(c) {
+    if (typeof c[0] === 'number') {
+      minLon=Math.min(minLon,c[0]); maxLon=Math.max(maxLon,c[0]);
+      minLat=Math.min(minLat,c[1]); maxLat=Math.max(maxLat,c[1]);
+    } else c.forEach(scan);
+  }
+  geojson.features.forEach(f => scan(f.geometry.coordinates));
+  return [[minLon, minLat], [maxLon, maxLat]];
+}
+
 async function loadBinary(url, dsKey, label) {
   if (!url) { console.log(`${label}: not available`); return; }
   loadingInfo.textContent = `Loading ${label}…`;
@@ -316,7 +328,7 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         sources: { 'esri-satellite': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Esri World Imagery' }},
         layers: [{ id: 'satellite', type: 'raster', source: 'esri-satellite', paint: { 'raster-opacity': 0.5 } }]
       },
-      center: COMM_CENTER, zoom: 14, maxZoom: 17, attributionControl: false
+      center: COMM_CENTER, zoom: 14, maxZoom: 17, attributionControl: false  // overridden by fitBounds below
     });
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
@@ -352,10 +364,10 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } }, 'dri-inactive-fill');
       }
 
-      // Parcel complex boundary — OFF by default
+      // Parcel complex boundary — ON by default
       if (parcelData) {
         map.addSource('parcel', { type: 'geojson', data: parcelData });
-        map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'none' } }, 'fema-fill');
+        map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'visible' } }, 'fema-fill');
       }
 
       // Wire up layer toggles
@@ -364,6 +376,9 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
       bindLayerToggle('tog-fema', ['fema-fill'], map);
       bindLayerToggle('tog-parcel', ['parcel-line'], map);
       bindLayerToggle('tog-dri', ['dri-active-fill', 'dri-inactive-fill'], map);
+
+      // Center on parcel centroid, zoom to fit CA
+      map.fitBounds(geojsonBounds(wsData), { padding: 60, maxZoom: 17, duration: 0 });
 
       sizeCanvas();
       renderCells();
