@@ -143,6 +143,8 @@ def verify_monotonicity_along_paths(
             r, c = int(valid_rows[idx]), int(valid_cols[idx])
             for step in range(max_steps):
                 angle = float(p[r, c])
+                if angle == -1.0:  # WBT flat/peak terminus — legitimate endpoint
+                    break
                 deltas = _dinf_neighbors(angle)
                 if not deltas:
                     violations += 1
