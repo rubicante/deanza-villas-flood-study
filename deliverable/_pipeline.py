@@ -9,6 +9,7 @@ import argparse
 import shutil
 import struct
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,7 @@ from deliverable import (
     extract_streams,
     verify_accumulation, verify_monotonicity_along_paths,
 )
+from deliverable.parcels import generate_deanza_villas
 from deliverable.reachability import filter_reachable
 from deliverable.upstream import contributing_area
 
@@ -143,7 +145,7 @@ def _export_binary(
 
 # -- Prepare (contributing area) --
 
-def prepare() -> None:
+def prepare(parcel_fn: Callable[[], Path] | None = None) -> None:
     """Fetch 10m DEM superset, compute contributing area, save GeoJSONs, clean up."""
     if CONTRIBUTING_AREA.exists():
         print(f"Contributing area exists — delete to rerun:\n  {CONTRIBUTING_AREA}")
@@ -152,6 +154,14 @@ def prepare() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     MAPS.mkdir(parents=True, exist_ok=True)
     _BOOTSTRAP_DIR.mkdir(parents=True, exist_ok=True)
+
+    if not PARCEL.exists():
+        if parcel_fn is None:
+            raise RuntimeError(
+                f"Parcel boundary not found: {PARCEL}\n"
+                "Pass a parcel_fn to prepare() or run fetch_parcel_deanza_villas.py."
+            )
+        parcel_fn()
 
     parcel = gpd.read_file(PARCEL)
     parcel_buffered = gpd.GeoDataFrame(
@@ -355,7 +365,7 @@ if __name__ == "__main__":
               reachability_mode=args.reachability)
 
     COMMANDS = {
-        "prepare":   prepare,
+        "prepare":   lambda: prepare(parcel_fn=generate_deanza_villas),
         "dinf1m":    lambda: run(1.0, "dinf"),
         "dinf10m":   lambda: run(10.0, "dinf"),
         "d81m":      lambda: run(1.0, "d8"),
