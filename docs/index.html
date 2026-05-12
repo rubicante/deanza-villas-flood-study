@@ -83,9 +83,9 @@
       <span id="slider-val">5,000</span>
       <span id="dataset-picker" style="display:flex;gap:2px;">
         <button data-ds="d81m" style="background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:4px 0 0 4px;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;">D8 1m</button>
-        <button data-ds="dinf1m" style="background:#7ee787;color:#0d1117;border:1px solid #7ee787;border-radius:0;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;font-weight:600;">D∞ 1m</button>
+        <button data-ds="dinf1m" style="background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:0;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;">D∞ 1m</button>
         <button data-ds="d810m" style="background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:0;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;">D8 10m</button>
-        <button data-ds="dinf10m" style="background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:0 4px 4px 0;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;">D∞ 10m</button>
+        <button data-ds="dinf10m" style="background:#7ee787;color:#0d1117;border:1px solid #7ee787;border-radius:0 4px 4px 0;cursor:pointer;font-size:11px;padding:4px 8px;white-space:nowrap;font-weight:600;">D∞ 10m</button>
       </span>
     </div>
     <div id="stats">
@@ -124,7 +124,7 @@ const datasets = {
   d810m:   { data: null, count: 0, color: 'd8',   resolution: 10 },
   d81m:    { data: null, count: 0, color: 'd8',   resolution: 1 },
 };
-let activeDs = 'dinf1m';
+let activeDs = 'dinf10m';
 
 function activeData() { return datasets[activeDs].data; }
 function activeCount() { return datasets[activeDs].count; }
