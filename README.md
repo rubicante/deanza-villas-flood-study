@@ -15,15 +15,30 @@ accumulation threshold (250–100k cells). The map shows which upstream terrain
 drains toward the parcel under those assumptions. Tweak the threshold to see
 fine distributary detail or just the major channels.
 
-**Reference layers** (toggle in legend)
+### Input
 
 | Layer | Source |
 |---|---|
-| Parcel boundary | Generated on demand by the parcel script |
-| Contributing area | Computed upstream catchment |
-| HUC-12 Borrego Palm Canyon | `scripts/fetch_huc12.py` |
-| FEMA flood hazard (AO/A) | `scripts/fetch_fema.py` |
-| DRI 2015 fan zones (active/inactive) | Committed reference layer |
+| Parcel boundary | A polygon representing our area of interest. Examples bundled: (1) De Anza Country Club, (2) De Anza Villas. |
+
+### Computed¹
+
+| Layer | Source |
+|---|---|
+| Contributing area | Upstream cells that drain into the parcel |
+| D8 1m stream network | D8 flow accumulation on 1m DEM |
+| D8 10m stream network | D8 flow accumulation on 10m DEM |
+| D∞ 1m stream network | D∞ flow accumulation on 1m DEM |
+| D∞ 10m stream network | D∞ flow accumulation on 10m DEM |
+
+¹ All stream networks are extracted from flow accumulation rasters by cell-count thresholding
+
+### Reference
+
+| Layer | Source |
+|---|---|
+| Borrego Palm Canyon watershed (USGS) | Watershed Boundary Dataset, HUC-12 181002030302 |
+| Flood zones (FEMA) | National Flood Hazard Layer, DFIRM 06073C (Nov 2023) |
 
 ---
 

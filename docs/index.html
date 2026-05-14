@@ -57,17 +57,12 @@
       <label class="legend-item" for="tog-huc12">
         <input type="checkbox" id="tog-huc12">
         <span class="legend-line" style="border-top:1.5px solid rgba(31,119,180,0.6)"></span>
-        <span class="label-text">HUC-12 Borrego Palm Canyon</span>
+        <span class="label-text" title="USGS Watershed Boundary Dataset, HUC-12 181002030302">Borrego Palm Canyon watershed (USGS)</span>
       </label>
       <label class="legend-item" for="tog-fema">
         <input type="checkbox" id="tog-fema">
         <span class="legend-line" style="border-top:1px solid #e31a1c"></span>
-        <span class="label-text">FEMA flood hazard (AO/A)</span>
-      </label>
-      <label class="legend-item" for="tog-dri">
-        <input type="checkbox" id="tog-dri">
-        <span class="legend-line" style="background:linear-gradient(90deg,#d47a38 50%,#6e7681 50%);height:8px;border-radius:0"></span>
-        <span class="label-text">DRI 2015 fan zones (active/inactive)</span>
+        <span class="label-text" title="National Flood Hazard Layer, DFIRM 06073C (Nov 2023)">Flood zones (FEMA)</span>
       </label>
     </div>
     <div class="hint" id="hint">Loading data…</div>
@@ -108,7 +103,6 @@ const WATERSHED_URL = 'parcel_contributing_area.geojson';
 const HUC12_URL = 'borrego_palm_canyon_huc12.geojson';
 const FEMA_URL = 'nfhl_borrego_valley.geojson';
 const PARCEL_URL = 'parcel_boundary.geojson';
-const DRI_URL = 'dri_2015_fan_zones.geojson';
 
 // Log scale
 const ACCUM_MIN = 250, ACCUM_MAX = 100000;
@@ -312,11 +306,10 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
     loadingInfo.textContent = 'Loading boundary layers…';
     const wsData = await fetch(WATERSHED_URL).then(r => r.json());
 
-    let huc12Data=null, femaData=null, parcelData=null, driData=null;
+    let huc12Data=null, femaData=null, parcelData=null;
     try { huc12Data = await fetch(HUC12_URL).then(r => r.json()); } catch(e) { console.warn('HUC12:', e); }
     try { femaData = await fetch(FEMA_URL).then(r => r.json()); } catch(e) { console.warn('FEMA:', e); }
     try { parcelData = await fetch(PARCEL_URL).then(r => r.json()); } catch(e) { console.warn('Parcel:', e); }
-    try { driData = await fetch(DRI_URL).then(r => r.json()); } catch(e) { console.warn('DRI:', e); }
 
     // Init MapLibre
     map = new maplibregl.Map({
@@ -342,24 +335,10 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
         map.addLayer({ id: 'huc12-line', type: 'line', source: 'huc12', paint: { 'line-color': '#1f77b4', 'line-width': 1.5, 'line-opacity': 0.6 }, layout: { visibility: 'none' } }, 'huc12-fill');
       }
 
-      // DRI 2015 fan zones — OFF by default
-      if (driData) {
-        const activeFeature = driData.features.find(f => f.properties.fan_class === 'active');
-        const inactiveFeature = driData.features.find(f => f.properties.fan_class === 'inactive');
-        if (activeFeature) {
-          map.addSource('dri-active', { type: 'geojson', data: { type: 'FeatureCollection', features: [activeFeature] } });
-          map.addLayer({ id: 'dri-active-fill', type: 'fill', source: 'dri-active', paint: { 'fill-color': '#d47a38', 'fill-opacity': 0.15, 'fill-outline-color': '#d47a38' }, layout: { visibility: 'none' } }, 'huc12-line');
-        }
-        if (inactiveFeature) {
-          map.addSource('dri-inactive', { type: 'geojson', data: { type: 'FeatureCollection', features: [inactiveFeature] } });
-          map.addLayer({ id: 'dri-inactive-fill', type: 'fill', source: 'dri-inactive', paint: { 'fill-color': '#6e7681', 'fill-opacity': 0.12, 'fill-outline-color': '#6e7681' }, layout: { visibility: 'none' } }, 'dri-active-fill');
-        }
-      }
-
       // FEMA — OFF by default
       if (femaData) {
         map.addSource('fema', { type: 'geojson', data: femaData });
-        map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } }, 'dri-inactive-fill');
+        map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } }, 'huc12-line');
       }
 
       // Parcel complex boundary — ON by default
@@ -373,7 +352,6 @@ function bindLayerToggle(checkboxId, layerIds, mapRef) {
       bindLayerToggle('tog-huc12', ['huc12-fill', 'huc12-line'], map);
       bindLayerToggle('tog-fema', ['fema-fill'], map);
       bindLayerToggle('tog-parcel', ['parcel-line'], map);
-      bindLayerToggle('tog-dri', ['dri-active-fill', 'dri-inactive-fill'], map);
 
       // Center on parcel centroid, zoom to fit CA
       map.fitBounds(geojsonBounds(wsData), { padding: 60, maxZoom: 17, duration: 0 });
