@@ -1,14 +1,11 @@
-# Alluvial Fan Flood Study
+
+Flood risk depends on flow routing, and flow routing depends on which algorithm you pick and how much detail you feed it. This program will run locally on any area of interest.
 
 **[→ Live explorer](https://rubicante.github.io/deanza-villas-flood-study/)**
 
-Flood risk on an alluvial fan depends on flow routing, and flow routing depends
-on which algorithm you pick and how much detail you feed it. This explorer lets
-you compare the answers side by side.
-
 ---
 
-## The explorer
+## Stream Explorer
 
 Pick a flow algorithm (D8 or D∞), a DEM resolution (1m or 10m), and an
 accumulation threshold (250–100k cells). The map shows which upstream terrain
@@ -17,23 +14,19 @@ fine distributary detail or just the major channels.
 
 ### Input
 
-| Layer | Source |
-|---|---|
-| Parcel boundary | A polygon representing our area of interest. Examples bundled: (1) De Anza Country Club, (2) De Anza Villas. |
+- **Parcel boundary**: A polygon representing our area of interest. Default is the De Anza Country Club golf course.
 
-### Computed¹
+### Output
 
-| Layer | Source |
-|---|---|
-| Contributing area | Upstream cells that drain into the parcel |
-| D8 1m stream network | D8 flow accumulation on 1m DEM |
-| D8 10m stream network | D8 flow accumulation on 10m DEM |
-| D∞ 1m stream network | D∞ flow accumulation on 1m DEM |
-| D∞ 10m stream network | D∞ flow accumulation on 10m DEM |
+- **Contributing area**: Upstream cells that drain into the parcel
+- **D8 1m stream network**: D8 flow accumulation on 1m DEM
+- **D8 10m stream network**: D8 flow accumulation on 10m DEM
+- **D∞ 1m stream network**: D∞ flow accumulation on 1m DEM
+- **D∞ 10m stream network**: D∞ flow accumulation on 10m DEM
 
-¹ All stream networks are extracted from flow accumulation rasters by cell-count thresholding
+All stream networks are extracted from flow accumulation rasters by cell-count thresholding.
 
-### Reference
+### Reference layers
 
 | Layer | Source |
 |---|---|
@@ -63,9 +56,6 @@ python -m deliverable._pipeline d810m            # D8 10m
 python -m deliverable._pipeline clean            # delete derived artifacts
 python -m deliverable._pipeline clean-all        # also delete DEM tile cache
 ```
-
-Elevation data: USGS The National Map (no API key).
-Parcel data: SANDAG Parcels_East and OpenStreetMap (no API key).
 
 ---
 
