@@ -1,0 +1,572 @@
+{
+  "format_version": 2,
+  "default_parcel": "country_club",
+  "layers": {
+    "huc12": "borrego_palm_canyon_huc12.geojson",
+    "fema": "nfhl_borrego_valley.geojson"
+  },
+  "parcels": {
+    "country_club": {
+      "name": "De Anza Country Club",
+      "boundary": "country_club/parcel_boundary.geojson",
+      "contributing_area": "country_club/parcel_contributing_area.geojson",
+      "datasets": {
+        "dinf10m": {
+          "file": "country_club/dinf_10m.bin",
+          "algorithm": "dinf",
+          "resolution_m": 10.0,
+          "units": "area_m2",
+          "cells": 24511,
+          "params": {
+            "resolution_m": 10.0,
+            "algorithm": "dinf",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T17:36:32+00:00",
+          "dem": {
+            "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+            "queried_utc": "2026-09-24T17:36:32+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260915",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_13_n34w117_20260915.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260610",
+                "publicationDate": "2026-06-10",
+                "file": "USGS_13_n34w117_20260610.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20250826",
+                "publicationDate": "2025-08-27",
+                "file": "USGS_13_n34w117_20250826.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20240327",
+                "publicationDate": "2024-03-27",
+                "file": "USGS_13_n34w117_20240327.tif"
+              },
+              {
+                "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+                "publicationDate": "2019-09-24",
+                "file": "USGS_13_n34w117_20190924.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20120201",
+                "publicationDate": "2012-02-01",
+                "file": "USGS_13_n34w117_20120201.tif"
+              }
+            ]
+          }
+        },
+        "d810m": {
+          "file": "country_club/d8_10m.bin",
+          "algorithm": "d8",
+          "resolution_m": 10.0,
+          "units": "area_m2",
+          "cells": 17410,
+          "params": {
+            "resolution_m": 10.0,
+            "algorithm": "d8",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T17:36:34+00:00",
+          "dem": {
+            "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+            "queried_utc": "2026-09-24T17:36:32+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260915",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_13_n34w117_20260915.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260610",
+                "publicationDate": "2026-06-10",
+                "file": "USGS_13_n34w117_20260610.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20250826",
+                "publicationDate": "2025-08-27",
+                "file": "USGS_13_n34w117_20250826.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20240327",
+                "publicationDate": "2024-03-27",
+                "file": "USGS_13_n34w117_20240327.tif"
+              },
+              {
+                "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+                "publicationDate": "2019-09-24",
+                "file": "USGS_13_n34w117_20190924.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20120201",
+                "publicationDate": "2012-02-01",
+                "file": "USGS_13_n34w117_20120201.tif"
+              }
+            ]
+          }
+        },
+        "dinf1m": {
+          "file": "country_club/dinf_1m.bin",
+          "algorithm": "dinf",
+          "resolution_m": 1.0,
+          "units": "area_m2",
+          "cells": 2378964,
+          "params": {
+            "resolution_m": 1.0,
+            "algorithm": "dinf",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T17:39:57+00:00",
+          "dem": {
+            "dataset": "Digital Elevation Model (DEM) 1 meter",
+            "queried_utc": "2026-09-24T17:38:56+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1 Meter 11 x54y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_1M_11_x54y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x54y370 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x54y370_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y370_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x54y370 CA_CaliforniaGaps_B23",
+                "publicationDate": "2025-08-20",
+                "file": "USGS_1M_11_x54y370_CA_CaliforniaGaps_B23.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_CaliforniaGaps_B23",
+                "publicationDate": "2025-08-20",
+                "file": "USGS_1M_11_x55y370_CA_CaliforniaGaps_B23.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y369_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y370_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS one meter x54y369 CA SanDiegoCo 2016",
+                "publicationDate": "2020-03-30",
+                "file": "USGS_one_meter_x54y369_CA_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y370 CA SanDiegoCo 2016",
+                "publicationDate": "2020-03-30",
+                "file": "USGS_one_meter_x54y370_CA_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x54y369_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y370 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x54y370_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x55y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x55y370 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y370_CA_Eastern_SanDiegoCo_2016.tif"
+              }
+            ]
+          }
+        },
+        "d81m": {
+          "file": "country_club/d8_1m.bin",
+          "algorithm": "d8",
+          "resolution_m": 1.0,
+          "units": "area_m2",
+          "cells": 1977565,
+          "params": {
+            "resolution_m": 1.0,
+            "algorithm": "d8",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T17:40:17+00:00",
+          "dem": {
+            "dataset": "Digital Elevation Model (DEM) 1 meter",
+            "queried_utc": "2026-09-24T17:38:56+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1 Meter 11 x54y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_1M_11_x54y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x54y370 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x54y370_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y370_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x54y370 CA_CaliforniaGaps_B23",
+                "publicationDate": "2025-08-20",
+                "file": "USGS_1M_11_x54y370_CA_CaliforniaGaps_B23.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_CaliforniaGaps_B23",
+                "publicationDate": "2025-08-20",
+                "file": "USGS_1M_11_x55y370_CA_CaliforniaGaps_B23.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y369_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y370 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y370_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS one meter x54y369 CA SanDiegoCo 2016",
+                "publicationDate": "2020-03-30",
+                "file": "USGS_one_meter_x54y369_CA_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y370 CA SanDiegoCo 2016",
+                "publicationDate": "2020-03-30",
+                "file": "USGS_one_meter_x54y370_CA_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x54y369_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x54y370 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x54y370_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x55y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif"
+              },
+              {
+                "title": "USGS one meter x55y370 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y370_CA_Eastern_SanDiegoCo_2016.tif"
+              }
+            ]
+          }
+        }
+      },
+      "contributing_area_dem": {
+        "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+        "queried_utc": "2026-09-24T17:35:47+00:00",
+        "merge": "rasterio merge method='first', newest publication first",
+        "tiles": [
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20260915",
+            "publicationDate": "2026-09-15",
+            "file": "USGS_13_n34w117_20260915.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20260610",
+            "publicationDate": "2026-06-10",
+            "file": "USGS_13_n34w117_20260610.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20250826",
+            "publicationDate": "2025-08-27",
+            "file": "USGS_13_n34w117_20250826.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20240327",
+            "publicationDate": "2024-03-27",
+            "file": "USGS_13_n34w117_20240327.tif"
+          },
+          {
+            "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+            "publicationDate": "2019-09-24",
+            "file": "USGS_13_n34w117_20190924.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20120201",
+            "publicationDate": "2012-02-01",
+            "file": "USGS_13_n34w117_20120201.tif"
+          }
+        ]
+      }
+    },
+    "deanza_villas": {
+      "name": "De Anza Villas",
+      "datasets": {
+        "dinf10m": {
+          "file": "deanza_villas/dinf_10m.bin",
+          "algorithm": "dinf",
+          "resolution_m": 10.0,
+          "units": "area_m2",
+          "cells": 255,
+          "params": {
+            "resolution_m": 10.0,
+            "algorithm": "dinf",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T18:28:27+00:00",
+          "dem": {
+            "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+            "queried_utc": "2026-09-24T18:28:26+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260915",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_13_n34w117_20260915.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260610",
+                "publicationDate": "2026-06-10",
+                "file": "USGS_13_n34w117_20260610.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20250826",
+                "publicationDate": "2025-08-27",
+                "file": "USGS_13_n34w117_20250826.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20240327",
+                "publicationDate": "2024-03-27",
+                "file": "USGS_13_n34w117_20240327.tif"
+              },
+              {
+                "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+                "publicationDate": "2019-09-24",
+                "file": "USGS_13_n34w117_20190924.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20120201",
+                "publicationDate": "2012-02-01",
+                "file": "USGS_13_n34w117_20120201.tif"
+              }
+            ]
+          }
+        },
+        "d810m": {
+          "file": "deanza_villas/d8_10m.bin",
+          "algorithm": "d8",
+          "resolution_m": 10.0,
+          "units": "area_m2",
+          "cells": 265,
+          "params": {
+            "resolution_m": 10.0,
+            "algorithm": "d8",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T18:28:28+00:00",
+          "dem": {
+            "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+            "queried_utc": "2026-09-24T18:28:26+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260915",
+                "publicationDate": "2026-09-15",
+                "file": "USGS_13_n34w117_20260915.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20260610",
+                "publicationDate": "2026-06-10",
+                "file": "USGS_13_n34w117_20260610.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20250826",
+                "publicationDate": "2025-08-27",
+                "file": "USGS_13_n34w117_20250826.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20240327",
+                "publicationDate": "2024-03-27",
+                "file": "USGS_13_n34w117_20240327.tif"
+              },
+              {
+                "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+                "publicationDate": "2019-09-24",
+                "file": "USGS_13_n34w117_20190924.tif"
+              },
+              {
+                "title": "USGS 1/3 Arc Second n34w117 20120201",
+                "publicationDate": "2012-02-01",
+                "file": "USGS_13_n34w117_20120201.tif"
+              }
+            ]
+          }
+        },
+        "dinf1m": {
+          "file": "deanza_villas/dinf_1m.bin",
+          "algorithm": "dinf",
+          "resolution_m": 1.0,
+          "units": "area_m2",
+          "cells": 66842,
+          "params": {
+            "resolution_m": 1.0,
+            "algorithm": "dinf",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T18:28:31+00:00",
+          "dem": {
+            "dataset": "Digital Elevation Model (DEM) 1 meter",
+            "queried_utc": "2026-09-24T18:28:30+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y369_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS one meter x55y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif"
+              }
+            ]
+          }
+        },
+        "d81m": {
+          "file": "deanza_villas/d8_1m.bin",
+          "algorithm": "d8",
+          "resolution_m": 1.0,
+          "units": "area_m2",
+          "cells": 51145,
+          "params": {
+            "resolution_m": 1.0,
+            "algorithm": "d8",
+            "stream_threshold": 250,
+            "threshold_frac": null,
+            "hydro_strategy": "breach_then_fill",
+            "reachability_mode": "none"
+          },
+          "built_utc": "2026-09-24T18:28:33+00:00",
+          "dem": {
+            "dataset": "Digital Elevation Model (DEM) 1 meter",
+            "queried_utc": "2026-09-24T18:28:30+00:00",
+            "merge": "rasterio merge method='first', newest publication first",
+            "tiles": [
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SanDiegoCo_D24",
+                "publicationDate": "2026-09-14",
+                "file": "USGS_1M_11_x55y369_CA_SanDiegoCo_D24.tif"
+              },
+              {
+                "title": "USGS 1 Meter 11 x55y369 CA_SaltonSea_EarthMRI_2021_D21",
+                "publicationDate": "2024-03-21",
+                "file": "USGS_1M_11_x55y369_CA_SaltonSea_EarthMRI_2021_D21.tif"
+              },
+              {
+                "title": "USGS one meter x55y369 CA Eastern SanDiegoCo 2016",
+                "publicationDate": "2020-03-06",
+                "file": "USGS_1m_x55y369_CA_Eastern_SanDiegoCo_2016.tif"
+              }
+            ]
+          }
+        }
+      },
+      "boundary": "deanza_villas/parcel_boundary.geojson",
+      "contributing_area": "deanza_villas/parcel_contributing_area.geojson",
+      "contributing_area_dem": {
+        "dataset": "National Elevation Dataset (NED) 1/3 arc-second",
+        "queried_utc": "2026-09-24T18:27:52+00:00",
+        "merge": "rasterio merge method='first', newest publication first",
+        "tiles": [
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20260915",
+            "publicationDate": "2026-09-15",
+            "file": "USGS_13_n34w117_20260915.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20260610",
+            "publicationDate": "2026-06-10",
+            "file": "USGS_13_n34w117_20260610.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20250826",
+            "publicationDate": "2025-08-27",
+            "file": "USGS_13_n34w117_20250826.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20240327",
+            "publicationDate": "2024-03-27",
+            "file": "USGS_13_n34w117_20240327.tif"
+          },
+          {
+            "title": "USGS 13 arc-second n34w117 1 x 1 degree",
+            "publicationDate": "2019-09-24",
+            "file": "USGS_13_n34w117_20190924.tif"
+          },
+          {
+            "title": "USGS 1/3 Arc Second n34w117 20120201",
+            "publicationDate": "2012-02-01",
+            "file": "USGS_13_n34w117_20120201.tif"
+          }
+        ]
+      }
+    }
+  }
+}
