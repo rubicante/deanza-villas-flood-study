@@ -2,7 +2,7 @@
 
 The `whitebox` package's `run_tool` never checks the process exit code and,
 with verbose mode off, discards all output including errors, so a crashed
-tool looks like success. WBT 2.3.6 FillDepressions also panics
+tool looks like success. WBT 2.4.0 FillDepressions also panics
 intermittently (exit 101, ~1–6% of runs on identical input). This runner:
 
   - calls the WBT binary directly with absolute paths (WBT silently writes

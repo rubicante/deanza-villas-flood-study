@@ -6,7 +6,7 @@ Key spike lessons:
   - breach_then_fill is correct for alluvial fans (fill-only creates flats)
   - Verify no NaN in output
   - WBT writes float64 by default → caller should fetch float32 first
-  - WBT 2.3.6 FillDepressions intermittently panics (exit 101); floodflow.wbt
+  - WBT 2.4.0 FillDepressions intermittently panics (exit 101); floodflow.wbt
     checks exit codes and retries panics
 
 Strategies:

@@ -60,7 +60,7 @@ memory. The 1m out-of-memory risk didn't materialise.
 
 ### Found while committing
 The first commit attempt was blocked by the new pre-commit hook: the synthetic
-WBT test failed. That turned out to be a real WBT 2.3.6 bug. `FillDepressions`
+WBT test failed. That turned out to be a real WBT 2.4.0 bug. `FillDepressions`
 intermittently panics (exit 101), and the `whitebox` wrapper ignores exit
 codes and, with verbose off, error output too. The failure rate was 1–6% on
 identical input.
@@ -167,12 +167,29 @@ The branch was fast-forwarded into `main`, and `gh-pages` published and
 pushed. GitHub Pages must be switched to serve `gh-pages` (root); that's done
 in the repo settings. From here, development happens directly on `main`.
 
+### Phase 7: post-launch follow-ups — done 2026-09-24
+- **3.6** ✅ The contributing-area trace is numba-compiled (`_trace_upstream`,
+  a packed-index queue). A single `_flows_toward` function holds the D∞ rule,
+  shared by the compiled trace and the readable Python reference that the
+  tests use.
+  - It matches the old implementation mask for mask on the real 10m pointer
+    for both properties (399,127 and 9,225 cells).
+  - A property test compares it against the reference on 20 random grids.
+  - It's about 90× faster: 71M cells in 3.4 s, against roughly 5 min before.
+    NaN pointers are now skipped instead of crashing. A 1m contributing-area
+    trace is now practical.
+- **3.7 `--dem-as-of`:** won't do. You prefer the latest tiles, and provenance
+  is still recorded.
+- **WhiteboxTools upgrade:** there's nothing to upgrade to. `whitebox==2.3.6`
+  is the wrapper (latest on PyPI), and it runs the **v2.4.0** binary, the
+  latest open-source release. The docs called this "WBT 2.3.6" and are now
+  corrected. The fill-depressions panic exists in the current release, so the
+  retry in `floodflow/wbt.py` stays. The binary is downloaded at install time
+  rather than pinned, which is now documented in AGENTS.md and
+  `pyproject.toml`.
+
 ### Still open
-- **Misleading breach log.** `preprocess.py` logs "M m³ removed" as a negative
-  number, because WBT `breach_depressions` also fills what it can't breach.
-  The number is real; the label is wrong. On the 25 km bootstrap it reports
-  1.2 km³ of net fill, presumably around the closed Borrego Sink basin. That's
-  worth a look, though it's outside the contributing area.
+Nothing required. See Future areas of study below.
 
 ## TL;DR
 
@@ -207,7 +224,7 @@ worth keeping. The problems sit around that core:
 | 1.7 | `fetch.py` `_download_tile()` | A tile counts as cached if it's larger than 100 KB, so an interrupted download becomes a permanently corrupt cache entry. | Download to `*.part` and rename it into place when finished. Optionally check `Content-Length`. | ✅ `.part` + rename, plus a `Content-Length` check. |
 | 1.8 | `fetch.py` `_query_tnm()` | `max: 100` with no pagination. Because we now fetch every overlapping survey per tile position (on purpose), a larger area can exceed 100 results and get truncated without any warning. | Page through results using `offset`/`total`, or raise if `total > len(items)`. | ✅ Paginates with `offset`; raises if short. Live test: 119 tiles for the 25 km extent (previously truncated at 100). |
 | 1.9 | `verify.py` `verify_monotonicity_along_paths()` | For D∞ it doesn't check monotonicity at all, only whether the pointer is valid. The name and docstring promise more than it does. | Implement the tolerant monotonic check the docstring describes, or rename it to `verify_pointer_validity` for D∞. | ✅ Implemented a real check: `accum[nbr] ≥ share × accum[cell]`. 0 violations on real WBT data, and it catches a reversed pointer. |
-| 1.10 | `d8.py` | The default is `backend="auto"`, which tries WBT `d8_flow_accumulation` first. `AGENTS.md` says that call hangs forever on WBT 2.3.6. The `pyflwdir` backend uses `from_dem`, which `AGENTS.md` says never to use. | Keep only `wbt_ptr_pyflwdir` (see 2.2). | ✅ Default `wbt_ptr_pyflwdir`; `auto` and `pyflwdir` removed; `wbt` kept as opt-in for retesting after a WBT upgrade. |
+| 1.10 | `d8.py` | The default is `backend="auto"`, which tries WBT `d8_flow_accumulation` first. `AGENTS.md` says that call hangs forever on WBT 2.4.0. The `pyflwdir` backend uses `from_dem`, which `AGENTS.md` says never to use. | Keep only `wbt_ptr_pyflwdir` (see 2.2). | ✅ Default `wbt_ptr_pyflwdir`; `auto` and `pyflwdir` removed; `wbt` kept as opt-in for retesting after a WBT upgrade. |
 | 1.11 | `_pipeline.py` `build()` signature | The function default is `reachability_mode="boolean"`, but the CLI default is `"none"`, and `AGENTS.md` says `none` is correct for fan terrain. Calling `build()` as a library function gives different results from the CLI. | Make `"none"` the single default. | ✅ |
 | 1.12 | Binary lon/lat precision | lon/lat are stored as absolute float32, which gives about 0.7 m × 0.4 m quantization at this latitude. That's close enough to 1m cells to produce visible jitter or moiré at max zoom. | Store float32 offsets from an origin written in the header, or store integer cell indices plus a transform (see 4.3). | ✅ In the exporter (float64 origin + float32 offsets, ~1 mm). ⚠️ The published files were migrated, not regenerated, so they keep v1 precision until the next run. |
 | 1.13 | Explorer cell size (found during 1.6) | The formula `156543 · cos φ / 2^z` assumes 256 px tiles, but MapLibre zoom uses 512 px tiles, so every cell was drawn at **half** its ground size. | Measure pixels per cell by projecting a cell-height offset. | ✅ Measured 0.61 px per 10 m at the default zoom, vs 0.30 px from the old formula. |
@@ -295,10 +312,9 @@ IDs and publication dates used for each dataset in the manifest, and add an
 optional `--dem-as-of YYYY-MM-DD` to reproduce an earlier build.
 ✅ Recording is done: each fetched DEM gets a `.tiles.json` sidecar, which is
 copied into the manifest as `dem` (per dataset) and `contributing_area_dem`.
-⏸ `--dem-as-of` isn't done yet (it would be a publication-date filter in
-`_query_tnm`).
+✗ `--dem-as-of`: won't do (latest tiles preferred).
 
-3.6 **Performance of the contributing-area BFS.** `upstream.py` is a pure-Python
+3.6 ✅ (Phase 7) **Performance of the contributing-area BFS.** `upstream.py` is a pure-Python
 BFS. It's fine at 10m (422K cells) but would take minutes to hours at 1m.
 Vectorizing it or running it under numba (already installed via pyflwdir) is
 cheap insurance for larger areas.
@@ -393,3 +409,72 @@ the v1 binaries stay in place.
 ---
 
 ## Future areas of study
+
+Everything on the site today is **terrain-only flow routing**: where water
+would tend to go, not how deep or how fast, and not how often. These are the
+directions that would actually sharpen the flood-risk picture, roughly in
+order of value for the two properties.
+
+### 1. From flow paths to flood depths (hydraulics)
+- **2D rain-on-grid modelling** on the 1m lidar DEM, for depth and velocity
+  maps. HEC-RAS 2D is free. FLO-2D is the model FEMA commonly accepts for
+  alluvial fans.
+- **Check against FEMA.** Compare modelled depths with the FEMA zones: AO with
+  1–2 ft at the Country Club, and Zone A with *no* base flood depth at De Anza
+  Villas. A modelled depth for the Villas would fill a real gap.
+- **Design storms.** NOAA Atlas 14 precipitation frequency (e.g. 100-year 1-,
+  6- and 24-hour) for Borrego Springs. Short, intense summer monsoon cells
+  probably matter more than long winter storms. Worth checking against recent
+  local events, e.g. Tropical Storm Hilary (Aug 2023).
+
+### 2. Alluvial-fan behaviour
+- **Channel shifting.** On an active fan, flow paths can jump to new channels
+  (avulsion). Single-flow-direction routing can't represent that. FEMA's
+  alluvial-fan methods and a probabilistic flow-path treatment are the next
+  step up.
+- **Lidar change detection.** This is newly possible with the 2024 San Diego
+  County lidar (tiles published 2026-09): difference it against the 2020
+  surveys to find channel migration, deposition, and scour near both
+  properties.
+- **DRI 2015 active/inactive fan mapping.** Bring it back as a layer. The
+  digitized polygons are in git history:
+  `git show d77ea00:docs/data/dri_2015_fan_zones.geojson`.
+
+### 3. What the DEM doesn't know
+- **Built features.** Walls, berms, culverts, road crowns, golf-course grading,
+  and County flood-protection works all redirect shallow sheet flow, and none
+  of them are in bare-earth lidar. They could be mapped from OSM, County data,
+  or a site walk, and burned into the DEM.
+- **Building elevations.** Compare Villas building pads and finished floors
+  against the County's Borrego Springs flood-protection guidelines
+  (`data/raw/docs/sd_county_borrego_guidelines.pdf`).
+- **Closed-basin fill.** Hydro-conditioning fills about 1.2 km³ in the 25 km
+  bootstrap, presumably around the Borrego Sink. It's outside both
+  contributing areas, but worth confirming it doesn't bias routing. Least-cost
+  breaching (`BreachDepressionsLeastCost` with a max length) is a middle
+  ground to test (see TODO.md).
+
+### 4. Uncertainty instead of one answer
+- **A "likelihood of flow" layer.** Combine D8/D∞, 1m/10m, and threshold
+  choices into one map, instead of four separate views.
+- **Flow-weighted reachability.** Revive `floodflow/experimental/reachability.py`
+  to show what *fraction* of upstream flow reaches each property. Its known
+  issue is that routing on the flat fan often misses the parcel.
+- **Why the Villas' traced area is so small** (0.92 km², inside the Country
+  Club's 39.9 km²). Test how sensitive that is to DEM resolution and to
+  hydro-conditioning.
+
+### 5. Validation against real events
+- **Satellite surface-water detection** after storms (OPERA DSWx-HLS; coverage
+  was researched in May, see DEVLOG).
+- **Photos, videos, and neighbours' accounts** of which washes ran and where
+  water crossed roads during past storms.
+- **FEMA map revisions (LOMRs).** Run `floodflow fetch-fema` periodically; it
+  reports any change against the published layer.
+
+### Smaller engineering follow-ups (from TODO.md)
+- Fail with a clear message when the contributing area is empty or sits on a
+  ridge.
+- Test on very different terrain.
+- Track cells affected by cycle truncation in flow-weighted reachability.
+- An explorer slider mode for flow-weighted binaries (value-units flag = 1).

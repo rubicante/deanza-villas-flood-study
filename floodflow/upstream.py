@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import time
-from collections import deque
 from pathlib import Path
 
 import geopandas as gpd
+import numba
 import numpy as np
 import rasterio
 from rasterio import features
@@ -15,6 +15,23 @@ from floodflow.encoding import DINF_NEIGHBORS
 from floodflow.geo import polygon_mask
 
 # WBT D∞ pointer: degrees, 0=North, clockwise.
+_DR = np.array([d[0] for d in DINF_NEIGHBORS], dtype=np.int64)
+_DC = np.array([d[1] for d in DINF_NEIGHBORS], dtype=np.int64)
+
+
+@numba.njit(cache=True)
+def _flows_toward(angle: float, direction: int) -> bool:
+    """Does a cell with D∞ `angle` send any flow in `direction` (0=N … 7=NW)?
+
+    Single source of truth for the trace. Flats/nodata (angle outside
+    [0, 360], or NaN) send nothing; 360° wraps to North."""
+    if not (angle >= 0.0 and angle <= 360.0):
+        return False
+    angle = angle % 360.0
+    idx1 = int(angle // 45.0) % 8
+    frac = (angle - idx1 * 45.0) / 45.0
+    return ((idx1 == direction and frac < 1.0 - 1e-6) or
+            ((idx1 + 1) % 8 == direction and frac > 1e-6))
 
 
 def _neighbors_flowing_into(r, c, ptr, rows, cols):
@@ -26,19 +43,40 @@ def _neighbors_flowing_into(r, c, ptr, rows, cols):
     result = []
     for out_idx, (dr, dc) in enumerate(DINF_NEIGHBORS):
         nr, nc = r + dr, c + dc
-        if nr < 0 or nr >= rows or nc < 0 or nc >= cols:
-            continue
-        angle = float(ptr[nr, nc])
-        if angle < 0 or angle > 360:
-            continue
-        angle %= 360  # 360.0 → 0.0 (North)
-        rev_dir = (out_idx + 4) % 8
-        idx1 = int(angle // 45) % 8
-        frac = (angle - idx1 * 45) / 45.0
-        if ((idx1 == rev_dir and frac < 1 - 1e-6) or
-                ((idx1 + 1) % 8 == rev_dir and frac > 1e-6)):
+        if 0 <= nr < rows and 0 <= nc < cols and \
+                _flows_toward(float(ptr[nr, nc]), (out_idx + 4) % 8):
             result.append((nr, nc))
     return result
+
+
+@numba.njit(cache=True)
+def _trace_upstream(ptr: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """BFS from every target cell to all cells with any D∞ flow into the
+    visited set. Returns a uint8 mask. Each cell is queued at most once, so
+    the queue is a flat array of packed row*cols+col indices."""
+    rows, cols = ptr.shape
+    visited = np.zeros((rows, cols), dtype=np.uint8)
+    queue = np.empty(rows * cols, dtype=np.int64)
+    head = tail = 0
+    for r in range(rows):
+        for c in range(cols):
+            if target[r, c]:
+                visited[r, c] = 1
+                queue[tail] = r * cols + c
+                tail += 1
+    while head < tail:
+        idx = queue[head]
+        head += 1
+        r, c = idx // cols, idx % cols
+        for k in range(8):
+            nr, nc = r + _DR[k], c + _DC[k]
+            if nr < 0 or nr >= rows or nc < 0 or nc >= cols or visited[nr, nc]:
+                continue
+            if _flows_toward(np.float64(ptr[nr, nc]), (k + 4) % 8):
+                visited[nr, nc] = 1
+                queue[tail] = nr * cols + nc
+                tail += 1
+    return visited
 
 
 def contributing_area(
@@ -75,20 +113,9 @@ def contributing_area(
 
     print(f"  Target: {n_target:,} cells")
 
-    visited = np.zeros(p_shape, dtype="uint8")
-    queue = deque()
-    for r, c in zip(*np.where(target_mask > 0)):
-        visited[int(r), int(c)] = 1
-        queue.append((int(r), int(c)))
-
-    print(f"  Tracing upstream from {len(queue):,} seed cells…")
+    print(f"  Tracing upstream from {n_target:,} seed cells…")
     t0 = time.time()
-    while queue:
-        r, c = queue.popleft()
-        for nr, nc in _neighbors_flowing_into(r, c, ptr, rows, cols):
-            if not visited[nr, nc]:
-                visited[nr, nc] = 1
-                queue.append((nr, nc))
+    visited = _trace_upstream(ptr, target_mask)
 
     n_contrib = int(visited.sum())
     area_km2 = n_contrib * p_res * p_res / 1e6

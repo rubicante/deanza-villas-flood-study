@@ -4,7 +4,7 @@ D8 flow accumulation.
 Backends:
     'wbt_ptr_pyflwdir' (default) — WBT pointer + pyflwdir accumulation (no refill)
     'wbt'                        — WBT d8_pointer + d8_flow_accumulation. Hangs on
-                                   WBT 2.3.6; kept only to retest after a WBT upgrade.
+                                   WBT 2.4.0; kept only to retest after a WBT upgrade.
 
 Removed: 'pyflwdir' (from_dem refills depressions, ~3.37× D∞ accumulation) and
 'auto' (tried the hanging WBT call first, so it never fell back).
@@ -55,7 +55,7 @@ def compute_d8_accum(
 
     backend:
         'wbt_ptr_pyflwdir' — WBT pointer + pyflwdir accumulation (no refill)
-        'wbt' — WBT d8_flow_accumulation (hangs on WBT 2.3.6; retest only)
+        'wbt' — WBT d8_flow_accumulation (hangs on WBT 2.4.0; retest only)
 
     watershed_geom : Path or None
         GeoJSON polygon to mask accumulation to. Required for >100M-cell grids

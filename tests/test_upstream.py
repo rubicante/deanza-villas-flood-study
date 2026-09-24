@@ -51,3 +51,44 @@ def test_contributing_area_raises_at_dem_edge(tmp_path):
     target = gpd.GeoDataFrame(geometry=[box_5070(22, 12, 25, 17)], crs="EPSG:5070")
     with pytest.raises(RuntimeError, match="reached the pointer boundary"):
         contributing_area(pointer, target)
+
+
+def _reference_trace(ptr, target):
+    """Plain-Python BFS over _neighbors_flowing_into (the readable spec)."""
+    from collections import deque
+    rows, cols = ptr.shape
+    visited = target.astype("uint8").copy()
+    queue = deque(zip(*np.nonzero(target)))
+    while queue:
+        r, c = queue.popleft()
+        for nr, nc in _neighbors_flowing_into(int(r), int(c), ptr, rows, cols):
+            if not visited[nr, nc]:
+                visited[nr, nc] = 1
+                queue.append((nr, nc))
+    return visited
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_numba_trace_matches_reference(seed):
+    from floodflow.upstream import _trace_upstream
+    rng = np.random.default_rng(seed)
+    shape = (int(rng.integers(5, 60)), int(rng.integers(5, 60)))
+    ptr = rng.uniform(0, 360, shape).astype("float32")
+    # sprinkle the edge cases: flats, exact multiples of 45°, 360°
+    special = rng.random(shape)
+    ptr[special < 0.10] = -1.0
+    ptr[(special >= 0.10) & (special < 0.20)] = rng.integers(0, 8, shape)[(special >= 0.10) & (special < 0.20)] * 45.0
+    ptr[(special >= 0.20) & (special < 0.23)] = 360.0
+    target = np.zeros(shape, dtype="uint8")
+    target[rng.integers(0, shape[0]), rng.integers(0, shape[1])] = 1
+    target[rng.integers(0, shape[0]), rng.integers(0, shape[1])] = 1
+    assert np.array_equal(_trace_upstream(ptr, target), _reference_trace(ptr, target))
+
+
+def test_numba_trace_ignores_nan():
+    from floodflow.upstream import _trace_upstream
+    ptr = np.full((3, 3), np.nan, dtype="float32")
+    ptr[0, 1] = 180.0
+    target = np.zeros((3, 3), dtype="uint8")
+    target[1, 1] = 1
+    assert _trace_upstream(ptr, target).sum() == 2

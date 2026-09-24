@@ -64,7 +64,14 @@ not cell count. On fan terrain, noisy flow angles → contour width → 0 →
 division overflow → inf. Always pass `out_type="cells"`. `verify_accumulation()`
 catches SCA mode: `nonzero_min == cell_width_in_meters` means you're in SCA mode.
 
-### WBT D8 accumulation hangs on WBT 2.3.6
+### WBT version: the binary is downloaded, not pinned
+`whitebox==2.3.6` is the Python wrapper, which is the latest on PyPI. On first
+use it downloads the WhiteboxTools binary, v2.4.0 (May 2024, the latest
+open-source release). `whitebox_tools --version` shows it. A fresh install
+could fetch a different binary. The tests (encoding, synthetic DEM, WBT
+runner) are the check.
+
+### WBT D8 accumulation hangs on WBT 2.4.0
 `d8_flow_accumulation` runs indefinitely on large rasters. Cause unknown — not
 memory, not nodata, not cycles. Fix: compute pointer with WBT, accumulate with
 `pyflwdir.from_array(ptr, ftype='d8', check_ftype=False)`. If upgrading WBT,
@@ -115,7 +122,7 @@ sits in a clear channel, not on a fan.
 Output is ~3× larger than expected. `compute_dinf()` recompresses to
 float32+LZW after WBT writes.
 
-### WBT 2.3.6 FillDepressions panics intermittently; the wrapper hides it
+### WBT 2.4.0 FillDepressions panics intermittently; the wrapper hides it
 About 1–6% of runs on identical input panic (`fill_depressions.rs:368`,
 exit 101) and write no output. The `whitebox` Python wrapper never checks the
 exit code, and with verbose off it drops all output, errors included, so this

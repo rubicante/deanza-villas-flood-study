@@ -7,7 +7,10 @@ requires-python = ">=3.12"
 # Pinned to versions tested with the Henderson Canyon / De Anza builds.
 # Do not upgrade without re-running the tests and diffing outputs.
 #
-#   whitebox==2.3.6  — D∞ defaults to SCA (not cells) on d_inf_flow_accumulation;
+#   whitebox==2.3.6  — Python wrapper (latest on PyPI). It downloads the WBT
+#                      *binary* on first use; that binary (v2.4.0 as of 2026-09,
+#                      the latest open-source release) is NOT pinned by this line.
+#                      WBT: D∞ defaults to SCA (not cells) on d_inf_flow_accumulation;
 #                      D8 accumulation hangs on this binary. Upgrading may fix
 #                      the hang but may also change pointer encoding or
 #                      accumulation behavior.
