@@ -36,7 +36,8 @@ Operating rules:
 - Derived outputs: `data/derived/runs/<parcel>/`. Published: `docs/data/<parcel>/`.
   `docs/data/**/*.bin` is gitignored on `main`; the binaries ship only on the
   one-commit `gh-pages` branch built by `floodflow publish` (`floodflow/deploy.py`).
-  Never push or merge without the user's go-ahead: Pages serves the live site.
+  Development happens directly on `main` (personal project). `floodflow publish
+  --push` updates the live site (GitHub Pages serves `gh-pages`).
 - Explorer (`docs/index.html`): MapLibre 4.7.1 + deck.gl 9.4.0, pinned with SRI.
   If you bump a version, recompute the `integrity` hashes. Stream layers need
   distinct ids per layer class (deck.gl matches layers by id).

@@ -162,6 +162,11 @@ data would never have been committed. It's anchored to `/data/` now.
   May-7 commits were checked first: a raster-laden duplicate of `b61e234`,
   plus a dropped stash of old AOI edits.
 
+### Go-live — 2026-09-24
+The branch was fast-forwarded into `main`, and `gh-pages` published and
+pushed. GitHub Pages must be switched to serve `gh-pages` (root); that's done
+in the repo settings. From here, development happens directly on `main`.
+
 ### Still open
 - **Misleading breach log.** `preprocess.py` logs "M m³ removed" as a negative
   number, because WBT `breach_depressions` also fills what it can't breach.
