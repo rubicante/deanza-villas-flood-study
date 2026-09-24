@@ -27,7 +27,8 @@ DATASETS: dict[str, tuple[float, str]] = {
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="floodflow",
-        description="Build parcel-centered stream datasets for the explorer.")
+        description="Build parcel-centered stream datasets for the explorer. "
+                    "Reference layers: `floodflow fetch-fema [--write]`, `floodflow fetch-huc12`.")
     parser.add_argument(
         "command", choices=["prepare", *DATASETS, "all", "clean", "clean-all"],
         help="Which step to run.")
@@ -51,7 +52,18 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+# Reference-layer fetchers keep their own options (see `floodflow fetch-fema -h`).
+FETCHERS = {
+    "fetch-fema": "floodflow.fema",
+    "fetch-huc12": "floodflow.huc12",
+}
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] in FETCHERS:
+        import importlib
+        return importlib.import_module(FETCHERS[argv[0]]).main(argv[1:])
     args = _parser().parse_args(argv)
 
     if args.command == "clean":

@@ -218,6 +218,15 @@ def record_dataset(layout: Layout, params: BuildParams, binary: Path, info: dict
     write_manifest(layout, manifest)
 
 
+def register_layer(key: str, path: Path, root: Path | None = None) -> None:
+    """Record a hand-fetched reference layer (e.g. FEMA, HUC-12) under
+    manifest["layers"]; `path` must live under docs/data/."""
+    layout = Layout.for_parcel(DEFAULT_PARCEL, *([root] if root else []))
+    manifest = read_manifest(layout)
+    manifest.setdefault("layers", {})[key] = _rel(layout, Path(path).resolve())
+    write_manifest(layout, manifest)
+
+
 def unpublish_datasets(layout: Layout) -> None:
     """Delete every published binary (all parcels) and drop them from the
     manifest. Parcel layers and hand-maintained reference layers stay."""

@@ -11,7 +11,8 @@ import time
 from pathlib import Path
 
 import rasterio
-from whitebox.whitebox_tools import WhiteboxTools
+
+from floodflow import wbt
 
 
 def compute_dinf(
@@ -29,18 +30,10 @@ def compute_dinf(
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    wbt = WhiteboxTools()
-    wbt.set_working_dir(str(output.parent))
-    wbt.set_verbose_mode(False)
-
     t0 = time.time()
-    wbt.d_inf_flow_accumulation(str(dem), str(output), out_type="cells")
+    wbt.run("DInfFlowAccumulation", output, input=dem, out_type="cells")
     if pointer is not None:
-        pointer = Path(pointer).resolve()
-        pointer.parent.mkdir(parents=True, exist_ok=True)
-        wbt.d_inf_pointer(str(dem), str(pointer))
-    if not output.exists():
-        raise RuntimeError(f"WBT d_inf_flow_accumulation failed: {output} not found")
+        wbt.run("DInfPointer", Path(pointer), dem=dem)
     print(f"  D∞: {time.time()-t0:.0f}s → {output}")
 
     # Compress (WBT writes uncompressed)

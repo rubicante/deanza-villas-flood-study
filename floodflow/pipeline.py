@@ -17,7 +17,6 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import rasterio
-import rasterio.features
 
 from floodflow.config import (
     BOOTSTRAP_BUFFER_M,
@@ -30,6 +29,7 @@ from floodflow.config import (
 from floodflow.d8 import compute_d8_accum, compute_d8_pointer
 from floodflow.dinf import compute_dinf
 from floodflow.fetch import fetch_dem_1m, fetch_dem_10m, provenance_path, read_provenance
+from floodflow.geo import polygon_mask
 from floodflow.preprocess import preprocess_dem
 from floodflow.publish import (
     export_binary,
@@ -47,15 +47,10 @@ from floodflow.verify import verify_accumulation, verify_monotonicity_along_path
 def _mask_to_boundary(raster_path: Path, boundary: Path,
                       output_path: Path) -> Path:
     """Mask a raster to a GeoJSON boundary polygon. Returns output Path."""
-    gdf = gpd.read_file(boundary)
-    gdf_proj = gdf.to_crs(TARGET_CRS)
     with rasterio.open(raster_path) as src:
         data = src.read(1)
         prof = src.profile.copy()
-    mask = rasterio.features.rasterize(
-        [(gdf_proj.geometry.iloc[0], 1)],
-        out_shape=data.shape, transform=prof["transform"], dtype="uint8",
-    )
+    mask = polygon_mask(boundary, prof["crs"], prof["transform"], data.shape)
     masked = np.where(mask, data, 0).astype(prof["dtype"])
     with rasterio.open(output_path, "w", **prof) as dst:
         dst.write(masked, 1)

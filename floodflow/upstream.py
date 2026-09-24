@@ -12,6 +12,7 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 
 from floodflow.encoding import DINF_NEIGHBORS
+from floodflow.geo import polygon_mask
 
 # WBT D∞ pointer: degrees, 0=North, clockwise.
 
@@ -67,12 +68,7 @@ def contributing_area(
 
     rows, cols = p_shape
 
-    tgdf = target_gdf.to_crs(p_crs)
-    target_geom = unary_union(tgdf.geometry.values)
-    target_mask = features.rasterize(
-        [(target_geom, 1)],
-        out_shape=p_shape, transform=p_transform, dtype="uint8",
-    )
+    target_mask = polygon_mask(target_gdf, p_crs, p_transform, p_shape)
     n_target = int(target_mask.sum())
     if n_target == 0:
         raise ValueError("Target geometry rasterized to 0 cells — check CRS")

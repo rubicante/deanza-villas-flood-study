@@ -12,7 +12,8 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from whitebox.whitebox_tools import WhiteboxTools
+
+from floodflow import wbt
 
 
 def extract_streams(
@@ -28,14 +29,9 @@ def extract_streams(
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    wbt = WhiteboxTools()
-    wbt.set_working_dir(str(output.parent))
-    wbt.set_verbose_mode(False)
-
     t0 = time.time()
-    wbt.extract_streams(str(accum), str(output), threshold, zero_background=True)
-    if not output.exists():
-        raise RuntimeError(f"WBT extract_streams failed: {output} not found")
+    wbt.run("ExtractStreams", output, flow_accum=accum, threshold=threshold,
+            zero_background=True)
 
     with rasterio.open(output) as src:
         n_stream = int((src.read(1) > 0).sum())

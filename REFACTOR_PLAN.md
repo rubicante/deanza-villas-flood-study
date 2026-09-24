@@ -72,6 +72,33 @@ identical input.
 Also, `.gitignore`'s `data/` rule was ignoring `docs/data/`, so the new site
 data would never have been committed. It's anchored to `/data/` now.
 
+### Phase 3: §2 simplification — done 2026-09-24 (deletions on hold)
+- **2.4** ✅ `floodflow/wbt.py` calls the WBT binary directly: it checks the
+  exit code *and* the output file, and retries only panics (exit 101). It
+  replaces the wrapper's `run_tool` everywhere, which also fixed the opt-in
+  D8 `wbt` backend: that call had been passing the DEM as the pointer. That
+  backend now matches pyflwdir exactly on the synthetic grid. Tested with a
+  fake WBT binary covering the success, panic-retry, persistent-panic,
+  exit-0-without-output, and non-panic-error cases.
+- **2.5** ✅ `preprocess.py`: removed the dead branch, deleted the
+  intermediate breached DEM, and fixed the breach log, which now reports
+  max cut, max fill, and a signed net volume.
+- **2.7** ✅ `geo.polygon_mask` rasterizes the *union* of all features. Two
+  call sites had used only the first feature. Experimental reachability keeps
+  its own copy.
+- **2.8** ✅ `floodflow fetch-huc12` and `floodflow fetch-fema [--write]`
+  (moved from `scripts/`) write straight to `docs/data/` and register in
+  the manifest's `layers`. HUC-12 regenerates byte-identical, and the area is
+  now computed instead of hardcoded (still 149.1 km²). ⚠️ The FEMA dry run
+  shows 49 zones live against 50 published. The missing one is an 8.1 ha AO
+  zone 7.5 km away, at the edge of the 8 km search radius. Likely cause: the
+  published file was queried around De Anza Villas (then the default).
+  Verify after the Villas run before writing.
+- **2.1, 2.2 (rest), 2.3:** deletions are on hold. `scripts/fetch_parcel_*.py`
+  (redundant with `floodflow prepare`), `watershed.py`, and
+  `data/raw/fema/nfhl_borrego_valley.geojson` (a duplicate of the published
+  copy) are candidates.
+
 ### Still open
 - **Stale local permissions.** `.claude/settings.json` still allowlists the
   old `deliverable` commands. It's harmless, but those entries are dead.

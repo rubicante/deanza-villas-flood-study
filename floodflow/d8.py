@@ -22,9 +22,10 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from whitebox.whitebox_tools import WhiteboxTools
 
+from floodflow import wbt
 from floodflow.encoding import WBT_TO_PYFLWDIR
+from floodflow.geo import polygon_mask
 
 
 def compute_d8_pointer(
@@ -36,14 +37,8 @@ def compute_d8_pointer(
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    wbt = WhiteboxTools()
-    wbt.set_working_dir(str(output.parent))
-    wbt.set_verbose_mode(False)
-
     t0 = time.time()
-    wbt.d8_pointer(str(dem), str(output))
-    if not output.exists():
-        raise RuntimeError(f"WBT d8_pointer failed: {output} not found")
+    wbt.run("D8Pointer", output, dem=dem)
     print(f"  D8 pointer: {time.time()-t0:.0f}s → {output}")
     return output
 
@@ -75,18 +70,14 @@ def compute_d8_accum(
     if backend not in backends:
         raise ValueError(f"Unknown backend '{backend}'. Choose from {backends}")
 
-    wbt = WhiteboxTools()
-    wbt.set_working_dir(str(output.parent))
-    wbt.set_verbose_mode(False)
-
     # --- WBT native ---
     if backend == "wbt":
         ptr = pointer or compute_d8_pointer(dem, output.parent / f"_{output.stem}_ptr.tif")
         ptr = Path(ptr).resolve()
         t0 = time.time()
-        wbt.d8_flow_accumulation(str(dem), str(output), out_type="cells", pntr=str(ptr))
-        if not output.exists():
-            raise RuntimeError(f"WBT d8_flow_accumulation failed: {output} not found")
+        # --input is the pointer and --pntr says so (the old wrapper call
+        # passed the DEM as input with a truthy pntr, i.e. DEM-as-pointer).
+        wbt.run("D8FlowAccumulation", output, input=ptr, out_type="cells", pntr=True)
         print(f"  D8 accum (wbt): {time.time()-t0:.0f}s → {output}")
         return output
 
@@ -114,19 +105,12 @@ def compute_d8_accum(
 
         # If watershed_geom provided, mask pointer to watershed
         if watershed_geom is not None:
-            import geopandas as gpd
-            ws_gdf = gpd.read_file(watershed_geom)
-            ws_gdf = ws_gdf.to_crs(ptr_profile["crs"])
-            ws_mask = rasterio.features.rasterize(
-                [(ws_gdf.geometry.iloc[0], 1)],
-                out_shape=ptr_data.shape,
-                transform=ptr_profile["transform"],
-                dtype="uint8",
-            )
+            ws_mask = polygon_mask(watershed_geom, ptr_profile["crs"],
+                                   ptr_profile["transform"], ptr_data.shape)
             ptr_data[ws_mask == 0] = 0
             # Update valid_mask to match
             valid_mask = valid_mask & (ws_mask > 0)
-            del ws_gdf, ws_mask
+            del ws_mask
 
         # Translate WBT D8 encoding → pyflwdir D8 encoding
         ptr_data = WBT_TO_PYFLWDIR[ptr_data]

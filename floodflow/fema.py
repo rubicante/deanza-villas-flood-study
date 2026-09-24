@@ -70,7 +70,9 @@ ENDPOINT = (
 
 PROJECT = Path(__file__).resolve().parents[1]
 PARCEL = PROJECT / "data" / "raw" / "vectors" / "deanza_country_club_boundary.geojson"
-OUTPUT = PROJECT / "data" / "raw" / "fema" / "nfhl_borrego_valley.geojson"
+# The published copy is the canonical one (explorer reads it via the manifest).
+OUTPUT = PROJECT / "docs" / "data" / "nfhl_borrego_valley.geojson"
+MANIFEST_LAYER = "fema"
 REQUEST_TIMEOUT = 30
 MAX_REDIRECTS = 3
 
@@ -346,6 +348,7 @@ def _diff_against_canonical(live: dict[str, Any]) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
+        prog="floodflow fetch-fema",
         description="Fetch FEMA NFHL flood hazard zones for the study area."
     )
     parser.add_argument(
@@ -462,6 +465,9 @@ def main(argv: list[str] | None = None) -> int:
     with open(output_path, "w") as f:
         json.dump(data, f)
     print(f"Written: {output_path} ({n} features)")
+    if output_path.resolve() == OUTPUT.resolve():
+        from floodflow.publish import register_layer
+        register_layer(MANIFEST_LAYER, output_path)
     return 0
 
 

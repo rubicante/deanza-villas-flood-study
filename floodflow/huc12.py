@@ -35,9 +35,8 @@ WBD_URL = (
 )
 
 CACHE_DIR = PROJECT / "data" / "raw" / ".cache"
-OUTPUT = (
-    PROJECT / "data" / "derived" / "vectors" / "borrego_palm_canyon_huc12.geojson"
-)
+# Published directly (explorer reads it via the manifest).
+OUTPUT = PROJECT / "docs" / "data" / "borrego_palm_canyon_huc12.geojson"
 
 HUC12 = "181002030302"
 REQUEST_TIMEOUT = 120  # 172 MB download
@@ -67,7 +66,7 @@ def _extract_huc12(wbd_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return huc
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     print(f"HUC-12: {HUC12} (Borrego Palm Canyon)")
     print("Source: USGS WBD Region 18 shapefile")
 
@@ -133,7 +132,7 @@ def main() -> int:
             "name": "Borrego Palm Canyon",
             "source": f"USGS Watershed Boundary Dataset (WBD) HUC12 {HUC12}, "
                       f"extracted from Region 18 shapefile",
-            "area_km2": 149.1,
+            "area_km2": round(float(huc.to_crs("EPSG:5070").area.iloc[0]) / 1e6, 1),
         },
         "geometry": json.loads(huc_4326.geometry.to_json())["features"][0]["geometry"],
     }
@@ -152,6 +151,8 @@ def main() -> int:
     with open(OUTPUT, "w") as f:
         json.dump(output, f, indent=2)
     print(f"Written: {OUTPUT}")
+    from floodflow.publish import register_layer
+    register_layer("huc12", OUTPUT)
 
     return 0
 
