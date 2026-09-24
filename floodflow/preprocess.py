@@ -6,6 +6,10 @@ Key spike lessons:
   - breach_then_fill is correct for alluvial fans (fill-only creates flats)
   - Verify no NaN in output
   - WBT writes float64 by default → caller should fetch float32 first
+  - WBT 2.3.6 FillDepressions intermittently panics (fill_depressions.rs:368,
+    exit 101, ~1–6% of runs on identical input), and the whitebox wrapper
+    ignores exit codes, so it looks like success with no output. WBT is
+    deterministic, so a missing output is retried (_run_until_output).
 
 Strategies:
     'fill_only'         — fill_depressions only
@@ -14,9 +18,22 @@ Strategies:
 """
 
 from pathlib import Path
+
 import numpy as np
 import rasterio
 from whitebox.whitebox_tools import WhiteboxTools
+
+_WBT_ATTEMPTS = 3
+
+
+def _run_until_output(run, output: Path, tool: str) -> None:
+    """Call a WBT tool until it writes `output` (see module docstring)."""
+    for attempt in range(1, _WBT_ATTEMPTS + 1):
+        run()
+        if output.exists():
+            return
+        print(f"  WARNING: WBT {tool} wrote no output (attempt {attempt}/{_WBT_ATTEMPTS})")
+    raise RuntimeError(f"WBT {tool} failed: {output} not found after {_WBT_ATTEMPTS} attempts")
 
 
 def preprocess_dem(
@@ -54,9 +71,9 @@ def preprocess_dem(
         with rasterio.open(current) as src:
             pre_data = src.read(1)
             pre_profile = src.profile
-        wbt.breach_depressions(str(current), str(breached), max_length=breach_max_length)
-        if not breached.exists():
-            raise RuntimeError(f"WBT breach_depressions failed: {breached} not found")
+        _run_until_output(
+            lambda: wbt.breach_depressions(str(current), str(breached), max_length=breach_max_length),
+            breached, "breach_depressions")
         # Log breach diagnostics
         with rasterio.open(breached) as src:
             post_data = src.read(1)
@@ -74,14 +91,10 @@ def preprocess_dem(
         current = breached
 
     if strategy in ("fill_only", "breach_then_fill"):
-        if strategy == "breach_then_fill":
-            filled_out = output  # write final output directly
-        else:
-            filled_out = output
-        wbt.fill_depressions(str(current), str(filled_out), fix_flats=fix_flats)
-        if not filled_out.exists():
-            raise RuntimeError(f"WBT fill_depressions failed: {filled_out} not found")
-        current = filled_out
+        _run_until_output(
+            lambda: wbt.fill_depressions(str(current), str(output), fix_flats=fix_flats),
+            output, "fill_depressions")
+        current = output
 
     if strategy == "breach_only":
         # Move breached to output

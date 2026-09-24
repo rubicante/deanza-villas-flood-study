@@ -6,9 +6,9 @@ See [README.md](README.md) for project overview, layout, quickstart, and parcel 
 
 ## Adding a new parcel
 
-Implement a generator in `deliverable/parcels.py` with signature
-`(output: Path) -> Path`, add an entry to `_PARCELS` in `_pipeline.py`, then
-run `clean` and `all --parcel <key>`.
+Implement a generator in `floodflow/parcels.py` with signature
+`(output: Path) -> Path`, add a `Parcel` to `PARCELS` in `floodflow/config.py`,
+then run `floodflow all --parcel <key>`.
 
 ## Planning workflow
 
@@ -26,12 +26,28 @@ Operating rules:
 
 ## Key conventions
 
-- Active parcel: select with `--parcel <key>`; registry is `_PARCELS` in `_pipeline.py`
+- Run = `Layout` (paths for one parcel) + `BuildParams` (one dataset), both in
+  `floodflow/config.py`. No module-level mutable state; the CLI (`cli.py`) and
+  library callers go through the same `prepare(layout)` / `build(layout, params)`.
+- Everything the explorer reads is owned by `floodflow/publish.py`: binary
+  format v2 (drainage area in m², float32 offsets from a float64 origin) and
+  `docs/data/manifest.json`. `build()` skips only when the manifest's recorded
+  `params` equal the requested ones (`null` never matches).
+- Derived outputs: `data/derived/runs/<parcel>/`. Published: `docs/data/<parcel>/`.
+  The `layers` section of the manifest (HUC-12, FEMA) is hand-maintained.
+- Direction tables (WBT D8 codes, D∞ neighbours, WBT→pyflwdir LUT) live only
+  in `floodflow/encoding.py`; `tests/test_encoding.py` checks them against pyflwdir.
+- `floodflow/experimental/` is optional analysis (reachability). Core code must
+  not import from it except behind `--reachability`.
 - CRS: EPSG:5070 (Albers Equal Area) throughout; EPSG:4326 for GeoJSON output
 - DEM tiles are cached in `data/raw/dem/tiles/` — never deleted by `clean`
 - Raw vector inputs live in `data/raw/vectors/` — never deleted by `clean`
-- `prepare()` calls `parcel_fn(PARCEL)` if boundary missing — generates on demand
-- Stream binaries: `dinf_1m.bin`, `dinf_10m.bin`, `d8_1m.bin`, `d8_10m.bin`
+- `prepare()` generates the parcel boundary if it is missing
+- TNM always serves the newest DEM surveys, so results can drift when USGS
+  publishes new tiles (2026-06/09 10m updates shrank the country-club
+  contributing area from 42.2 to 39.9 km²). Tile provenance is not yet recorded.
+- Tests: `pytest` (fast; `-m "not wbt"` skips the WhiteboxTools run). Lint: `ruff check .`
+  Both run in `.githooks/pre-commit` (`git config core.hooksPath .githooks`). No CI by choice.
 
 ## Known non-obvious invariants (hard-won)
 
@@ -59,7 +75,7 @@ direction and corrupts accumulation. `d8.py` masks automatically:
 
 ### `rasterio.warp.transform` returns lists, not arrays
 Indexing Python lists with boolean masks or argsort produces wrong results
-silently. Always wrap: `lons = np.asarray(lons)`. `_export_binary()` does this.
+silently. Always wrap: `lons = np.asarray(lons)`. `publish.export_binary()` does this.
 
 ### `features.shapes` / `features.rasterize` require int16 value + uint8 mask
 Passing uint8 for both corrupts edge cells by 1-2 pixels. Cast value array to
@@ -91,6 +107,13 @@ sits in a clear channel, not on a fan.
 ### WBT fill_depressions writes float64 uncompressed
 Output is ~3× larger than expected. `compute_dinf()` recompresses to
 float32+LZW after WBT writes.
+
+### WBT 2.3.6 FillDepressions panics intermittently; the wrapper hides it
+About 1–6% of runs on identical input panic (`fill_depressions.rs:368`,
+exit 101) and write no output. The `whitebox` Python wrapper never checks the
+exit code, and with verbose off it drops all output, errors included, so this
+looks like success. `preprocess.py` retries when the output is missing. Other
+WBT calls only check that the output exists; they don't retry.
 
 ### WBT set_verbose_mode(False) prevents pipe stalls
 On large rasters, WBT progress output fills the pipe buffer and stalls the

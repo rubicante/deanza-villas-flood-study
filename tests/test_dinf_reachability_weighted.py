@@ -1,26 +1,16 @@
 """Test D∞ flow-weighted reachability — three constructed grids.
 
-Run: .venv/bin/python tests/test_dinf_reachability_weighted.py
+Run: pytest tests/test_dinf_reachability_weighted.py
 
 Tests the _dinf_reachable_weighted function in isolation (no file I/O).
 Hand-verifiable fraction values for each case.
 """
 
 import sys
-from pathlib import Path
 
 import numpy as np
 
-ROOT = Path("/home/hermes/workspace/deanza-villas-flood-study")
-sys.path.insert(0, str(ROOT))
-
-
-# -- We'll import _dinf_reachable_weighted after it exists.
-#    For now, import what we can and skip if not yet implemented.
-try:
-    from deliverable.reachability import _dinf_reachable_weighted
-except ImportError:
-    _dinf_reachable_weighted = None
+from floodflow.experimental.reachability import _dinf_reachable_weighted
 
 
 def make_ptr(rows, cols, flows):
@@ -176,10 +166,6 @@ def test_case3_cycle_alternate():
 # ═══════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    if _dinf_reachable_weighted is None:
-        print("SKIP: _dinf_reachable_weighted not yet implemented")
-        sys.exit(0)
-
     failures = 0
     for name, fn in [
         ("Case 1: simple split", test_case1_simple_split),

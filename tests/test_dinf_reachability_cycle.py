@@ -1,17 +1,13 @@
 """Test D∞ reachability cycle handling — three cases from project plan Phase 1.
 
-Run: .venv/bin/python tests/test_dinf_reachability_cycle.py
+Run: pytest tests/test_dinf_reachability_cycle.py
 """
 
 import sys
-from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from deliverable.reachability import _dinf_trace  # noqa: E402
+from floodflow.experimental.reachability import _dinf_trace
 
 
 def make_ptr(rows: int, cols: int, flows: dict[tuple[int, int], float]) -> np.ndarray:

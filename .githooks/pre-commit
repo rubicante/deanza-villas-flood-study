@@ -1,0 +1,10 @@
+#!/bin/sh
+# Lint + tests before every commit (~2 s). Enable once per clone:
+#   git config core.hooksPath .githooks
+# Skip for a one-off with: git commit --no-verify
+set -e
+cd "$(git rev-parse --show-toplevel)"
+BIN=.venv/bin
+[ -x "$BIN/ruff" ] || BIN=$(dirname "$(command -v ruff)")
+"$BIN/ruff" check .
+"$BIN/python" -m pytest -q -p no:cacheprovider

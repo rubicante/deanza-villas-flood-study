@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-import re
 import time
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +22,17 @@ _DATASET_10M = "National Elevation Dataset (NED) 1/3 arc-second"
 NODATA = -32768.0
 
 
+def provenance_path(dem: Path) -> Path:
+    """Sidecar JSON written next to every fetched DEM: which TNM tiles went in."""
+    dem = Path(dem)
+    return dem.with_name(dem.name + ".tiles.json")
+
+
+def read_provenance(dem: Path) -> dict | None:
+    p = provenance_path(dem)
+    return json.loads(p.read_text()) if p.exists() else None
+
+
 def _query_tnm(bbox: tuple[float, float, float, float], dataset: str) -> list[dict]:
     """Return all tiles covering bbox (w,s,e,n in EPSG:4326), sorted newest-first.
 
@@ -30,16 +41,27 @@ def _query_tnm(bbox: tuple[float, float, float, float], dataset: str) -> list[di
     Raises RuntimeError if no tiles are found.
     """
     w, s, e, n = bbox
-    params = {
-        "datasets": dataset,
-        "bbox": f"{w},{s},{e},{n}",
-        "outputFormat": "JSON",
-        "max": 100,
-    }
-    url = TNM_API + "?" + urllib.parse.urlencode(params)
-    with urllib.request.urlopen(url, timeout=30) as resp:
-        data = json.load(resp)
-    items = data.get("items", [])
+    page_size = 100
+    items: list[dict] = []
+    while True:
+        params = {
+            "datasets": dataset,
+            "bbox": f"{w},{s},{e},{n}",
+            "outputFormat": "JSON",
+            "max": page_size,
+            "offset": len(items),
+        }
+        url = TNM_API + "?" + urllib.parse.urlencode(params)
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            data = json.load(resp)
+        page = data.get("items", [])
+        items.extend(page)
+        total = int(data.get("total", len(items)))
+        if not page or len(items) >= total:
+            break
+    if len(items) < total:
+        raise RuntimeError(
+            f"TNM reported {total} tiles but only {len(items)} were returned")
     if not items:
         raise RuntimeError(
             f"TNM returned no tiles for '{dataset}' and bbox {bbox}. "
@@ -53,12 +75,22 @@ def _download_tile(url: str, cache_dir: Path) -> Path:
     """Download a tile to cache_dir. Returns path. Skips if already cached."""
     fname = Path(url).name
     dest = cache_dir / fname
-    if dest.exists() and dest.stat().st_size > 100_000:
+    if dest.exists():
         print(f"  cached: {fname}", flush=True)
         return dest
     print(f"  downloading {fname} ...", end=" ", flush=True)
     t0 = time.time()
-    urllib.request.urlretrieve(url, dest)
+    # Download to .part and rename on success so an interrupted download
+    # never looks like a cached tile.
+    part = dest.with_name(dest.name + ".part")
+    _, headers = urllib.request.urlretrieve(url, part)
+    expected = headers.get("Content-Length")
+    got = part.stat().st_size
+    if expected is not None and got != int(expected):
+        part.unlink()
+        raise RuntimeError(
+            f"Incomplete download of {fname}: got {got} of {expected} bytes")
+    part.replace(dest)
     mb = dest.stat().st_size / 1e6
     print(f"{mb:.0f} MB in {time.time() - t0:.0f}s", flush=True)
     return dest
@@ -174,6 +206,16 @@ def _fetch_dem(
     }
     with rasterio.open(output, "w", **out_profile) as dst:
         dst.write(out_image[0].astype("float32"), 1)
+
+    # Provenance: TNM serves the newest surveys, so record exactly which
+    # tiles (newest first = merge priority) produced this DEM.
+    provenance_path(output).write_text(json.dumps({
+        "dataset": dataset,
+        "queried_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "merge": "rasterio merge method='first', newest publication first",
+        "tiles": [{"title": t.get("title"), "publicationDate": t.get("publicationDate"),
+                   "file": Path(t["downloadURL"]).name} for t in tiles_meta],
+    }, indent=2) + "\n")
 
     n_valid = int(np.sum(out_image[0] != NODATA))
     print(

@@ -3,12 +3,13 @@ Stream extraction and generic export.
 
 Key spike lessons:
   - WBT extract_streams with zero_background=True
-  - Keep export format generic (GeoJSON). Project-specific binary in _pipeline.py
+  - Keep export format generic (GeoJSON). Project-specific binary in publish.py
 """
 
-from pathlib import Path
-import time
 import json
+import time
+from pathlib import Path
+
 import numpy as np
 import rasterio
 from whitebox.whitebox_tools import WhiteboxTools

@@ -6,8 +6,11 @@ Key spike lessons:
 """
 
 from pathlib import Path
+
 import numpy as np
 import rasterio
+
+from floodflow.encoding import D8_DELTA, dinf_neighbors
 
 
 def verify_accumulation(
@@ -62,9 +65,11 @@ def verify_monotonicity_along_paths(
     non-decreasing (upstream accum ≤ downstream accum).
 
     For D∞: follows the primary Tarboton neighbor (larger flow fraction).
-    Allows a tolerance of 1 cell because Tarboton flow-splitting means a
-    cell's accumulation can be slightly less than any single upstream
-    contributor (the cell's inflow is partitioned between two neighbors).
+    Accumulation is not monotonic under flow splitting, but each receiving
+    neighbor must hold at least the share this cell sends it:
+    accum[nbr] >= proportion * accum[cell] (relative tolerance 1e-4 for
+    float32). Paths whose pointer leads off-grid are counted separately and
+    tolerated up to 1% (normal at the edge of a small DEM).
 
     Catches: encoding-table corruption, masking off-by-ones, nodata
     leakage — bugs that corrupt the flow field without changing the
@@ -89,7 +94,6 @@ def verify_monotonicity_along_paths(
         valid = a > 0
 
     if pointer_type == "d8":
-        from deliverable.reachability import _D8_DELTA
         valid = valid & (p > 0) & (p <= 128)
         valid_rows, valid_cols = np.where(valid)
         if len(valid_rows) == 0:
@@ -104,9 +108,9 @@ def verify_monotonicity_along_paths(
             r, c = int(valid_rows[idx]), int(valid_cols[idx])
             for step in range(max_steps):
                 code = int(p[r, c])
-                if code == 0 or code not in _D8_DELTA:
+                if code == 0 or code not in D8_DELTA:
                     break
-                dr, dc = _D8_DELTA[code]
+                dr, dc = D8_DELTA[code]
                 nr, nc = r + dr, c + dc
                 if not (0 <= nr < rows and 0 <= nc < cols):
                     break
@@ -127,8 +131,6 @@ def verify_monotonicity_along_paths(
                 "violations": violations}
 
     elif pointer_type == "dinf":
-        from deliverable.reachability import _dinf_neighbors
-
         valid = valid & (p >= 0) & (p <= 360)
         valid_rows, valid_cols = np.where(valid)
         if len(valid_rows) == 0:
@@ -138,6 +140,7 @@ def verify_monotonicity_along_paths(
         rng = random.Random(42)
         idxs = rng.sample(range(len(valid_rows)), n)
         violations = 0
+        edge_paths = 0
 
         for idx in idxs:
             r, c = int(valid_rows[idx]), int(valid_cols[idx])
@@ -145,39 +148,41 @@ def verify_monotonicity_along_paths(
                 angle = float(p[r, c])
                 if angle == -1.0:  # WBT flat/peak terminus — legitimate endpoint
                     break
-                deltas = _dinf_neighbors(angle)
-                if not deltas:
-                    violations += 1
+                nbrs = dinf_neighbors(angle, with_proportions=True)
+                if not nbrs:
+                    edge_paths += 1
                     break
-                # Check: at least one downstream neighbor on-grid.
-                # Zero-accum downstream is normal at boundary mask.
-                any_on_grid = False
-                for dr, dc in deltas:
-                    nr, nc = r + dr, c + dc
-                    if 0 <= nr < rows and 0 <= nc < cols:
-                        any_on_grid = True
-                        break
-                if not any_on_grid:
-                    violations += 1
+                on_grid = [(r + dr, c + dc, f) for dr, dc, f in nbrs
+                           if 0 <= r + dr < rows and 0 <= c + dc < cols]
+                if not on_grid:
+                    edge_paths += 1
                     break
-                # Follow primary neighbor for next step
-                dr, dc = deltas[0]
-                r, c = r + dr, c + dc
+                bad = False
+                for nr, nc, f in on_grid:
+                    if a[nr, nc] <= 0:  # masked out / nodata downstream
+                        continue
+                    share = f * float(a[r, c])
+                    if float(a[nr, nc]) < share * (1 - 1e-4):
+                        bad = True
+                if bad:
+                    violations += 1
+                    break  # one violation per path
+                nr, nc, _ = max(on_grid, key=lambda t: t[2])
+                if a[nr, nc] <= 0:
+                    break
+                r, c = nr, nc
 
-        # Allow a small number of edge cases (grid boundary cells whose
-        # pointer points off-grid — normal on small DEMs).
-        if violations > n * 0.01:
+        assert violations == 0, (
+            f"D∞ accumulation: {violations}/{n} paths violated "
+            f"(downstream neighbor holds less than its received share)")
+        if edge_paths > n * 0.01:
             raise AssertionError(
-                f"D∞ pointer validity: {violations}/{n} paths had no on-grid "
+                f"D∞ pointer validity: {edge_paths}/{n} paths had no on-grid "
                 f"downstream neighbor (pit or grid edge)")
-        if violations:
-            print(f"  D∞ pointer validity: {n} paths × {max_steps} steps, "
-                  f"{violations} edge violations (OK)")
-        else:
-            print(f"  D∞ pointer validity: {n} paths × {max_steps} steps, "
-                  f"{violations} violations")
+        print(f"  D∞ accumulation: {n} paths × {max_steps} steps, "
+              f"{violations} violations, {edge_paths} edge paths")
         return {"n_samples": n, "max_steps": max_steps,
-                "violations": violations}
+                "violations": violations, "edge_paths": edge_paths}
 
     else:
         raise ValueError(f"Unknown pointer_type: {pointer_type}")

@@ -7,8 +7,9 @@ Key spike lessons:
   - No memory guard — let WBT fail and surface the OSError
 """
 
-from pathlib import Path
 import time
+from pathlib import Path
+
 import rasterio
 from whitebox.whitebox_tools import WhiteboxTools
 

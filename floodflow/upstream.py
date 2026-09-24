@@ -4,20 +4,16 @@ import time
 from collections import deque
 from pathlib import Path
 
+import geopandas as gpd
 import numpy as np
 import rasterio
 from rasterio import features
 from shapely.geometry import shape
 from shapely.ops import unary_union
-import geopandas as gpd
 
+from floodflow.encoding import DINF_NEIGHBORS
 
 # WBT D∞ pointer: degrees, 0=North, clockwise.
-# Index → (row_delta, col_delta): 0=N, 1=NE, 2=E, 3=SE, 4=S, 5=SW, 6=W, 7=NW
-_DINF_NEIGHBORS = [
-    (-1, 0), (-1, 1), (0, 1), (1, 1),
-    (1, 0), (1, -1), (0, -1), (-1, -1),
-]
 
 
 def _neighbors_flowing_into(r, c, ptr, rows, cols):
@@ -27,7 +23,7 @@ def _neighbors_flowing_into(r, c, ptr, rows, cols):
     its angle spans the reverse direction (out_idx + 4) % 8.
     """
     result = []
-    for out_idx, (dr, dc) in enumerate(_DINF_NEIGHBORS):
+    for out_idx, (dr, dc) in enumerate(DINF_NEIGHBORS):
         nr, nc = r + dr, c + dc
         if nr < 0 or nr >= rows or nc < 0 or nc >= cols:
             continue

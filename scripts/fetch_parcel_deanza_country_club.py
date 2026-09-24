@@ -2,12 +2,13 @@
 
     python -m scripts.fetch_parcel_deanza_country_club
 
-Delegates to deliverable.parcels.generate_deanza_country_club.
+Delegates to floodflow.parcels.generate_deanza_country_club.
 Delete data/raw/vectors/deanza_country_club_boundary.geojson to force re-fetch.
 """
 
 import sys
-from deliverable.parcels import generate_deanza_country_club
+
+from floodflow.parcels import generate_deanza_country_club
 
 if __name__ == "__main__":
     generate_deanza_country_club()
