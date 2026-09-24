@@ -149,9 +149,20 @@ data would never have been committed. It's anchored to `/data/` now.
      folder `/ (root)`.
   4. Open the site on your phone.
 
+### Phase 6: deletions + git cleanup — done 2026-09-24 (after laptop check)
+- **Dead code:** `floodflow/watershed.py`, `streams.export_geojson`,
+  `scripts/fetch_parcel_*.py`.
+- **Dead artifacts:** the unused DRI fan-zones layer, the unreferenced 65 MB
+  DEM, the duplicate FEMA copy, dead `.claude/settings.json` entries, a
+  duplicate DRI PDF, and about 2.8 GB of old-pipeline outputs in
+  `data/derived/`.
+- **DEVLOG:** condensed to the findings still worth keeping. The full text is
+  at `git show d77ea00:DEVLOG.md`.
+- **git:** removed the backup refs and ran `git gc`. The three unreachable
+  May-7 commits were checked first: a raster-laden duplicate of `b61e234`,
+  plus a dropped stash of old AOI edits.
+
 ### Still open
-- **Stale local permissions.** `.claude/settings.json` still allowlists the
-  old `deliverable` commands. It's harmless, but those entries are dead.
 - **Misleading breach log.** `preprocess.py` logs "M m³ removed" as a negative
   number, because WBT `breach_depressions` also fills what it can't breach.
   The number is real; the label is wrong. On the 25 km bootstrap it reports

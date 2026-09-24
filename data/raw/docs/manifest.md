@@ -23,6 +23,7 @@
 - DRI: about 90% of the 61 sq mi study area is geomorphically and hydraulically active alluvial fan landforms.
 - FEMA/County guidance: alluvial fan hazards in Borrego Springs are mapped as Zone AO with depth/velocity information.
 
-## Next step
+## Where they're used
 
-Use these source documents together with FEMA NFHL context to build the terrain context summary map and memo.
+Background for the explorer's "About this map" caveat (docs/index.html). The
+FEMA layer itself comes from `floodflow fetch-fema` (docs/data/nfhl_borrego_valley.geojson).

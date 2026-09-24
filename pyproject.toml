@@ -50,7 +50,6 @@ markers = ["wbt: runs WhiteboxTools on a tiny synthetic DEM (a few seconds)"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["floodflow/watershed.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

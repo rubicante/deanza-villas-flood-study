@@ -91,7 +91,6 @@ floodflow/experimental/      Reachability filter (off by default; kept for study
 docs/                        Explorer (index.html), served by GitHub Pages
 docs/data/manifest.json      What the explorer loads: parcels, datasets, layers
 docs/data/<parcel>/          Stream binaries + parcel/contributing-area GeoJSON
-scripts/                     One-off data fetch scripts
 tests/                       pytest suite
 data/raw/vectors/            Parcel boundaries (fetched on demand, not committed)
 data/raw/dem/tiles/          Cached DEM tiles (not committed)
