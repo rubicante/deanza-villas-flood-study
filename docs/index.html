@@ -2,497 +2,514 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stream Explorer — De Anza Villas Flood Study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>De Anza Flood Explorer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+      integrity="sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V" crossorigin="anonymous">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0d1117; color:#c9d1d9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; }
-  #app { display:grid; grid-template-rows:1fr auto; height:100vh; }
-  #map-container { position:relative; }
-  #map { width:100%; height:100%; }
-  #overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
-  #map-veil { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.25); pointer-events:none; z-index:5; }
-  #legend { position:absolute; bottom:20px; left:20px; background:rgba(22,27,34,0.92); border:1px solid #30363d; border-radius:8px; padding:10px 14px; font-size:12px; z-index:20; max-width:340px; user-select:none; }
-  .legend-item { display:flex; align-items:center; gap:6px; margin:2px 0; cursor:pointer; }
-  .legend-item input[type=checkbox] { margin:0; accent-color:#58a6ff; cursor:pointer; width:13px; height:13px; }
-  .legend-item span.label-text { cursor:pointer; color:#c9d1d9; font-size:12px; white-space:nowrap; }
+  :root { --bg:#0d1117; --panel:#161b22; --panel2:rgba(22,27,34,0.94); --line:#30363d; --line2:#21262d;
+          --text:#c9d1d9; --muted:#8b949e; --faint:#6e7681; --bright:#f0f6fc; --accent:#58a6ff; --go:#7ee787; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; }
+  #app { display:grid; grid-template-rows:1fr auto; height:100vh; height:100dvh; }
+  #map-container { position:relative; min-height:0; }
+  #map { position:absolute; inset:0; }
+  .panel { background:var(--panel2); border:1px solid var(--line); border-radius:8px; font-size:12px; }
+
+  /* Legend + layer toggles (bottom-left) */
+  #legend { position:absolute; bottom:16px; left:16px; z-index:20; max-width:min(340px, calc(100vw - 32px)); padding:8px 12px; user-select:none; }
+  #legend summary { cursor:pointer; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; list-style:none; }
+  #legend summary::-webkit-details-marker { display:none; }
+  #legend summary::before { content:'▸ '; } #legend[open] summary::before { content:'▾ '; }
+  .legend-item { display:flex; align-items:center; gap:6px; margin:3px 0; cursor:pointer; }
+  .legend-item input { margin:0; accent-color:var(--accent); width:14px; height:14px; }
   .legend-line { width:20px; height:0; flex-shrink:0; }
-  .legend-section { margin-top:6px; padding-top:4px; border-top:1px solid #21262d; }
-  .legend-section-label { font-size:10px; color:#484f58; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
-  #controls { background:#161b22; border-top:1px solid #30363d; padding:14px 24px 16px; }
-  #top-row { display:flex; align-items:center; gap:16px; max-width:950px; margin-bottom:4px; }
-  #top-row label { font-size:13px; color:#8b949e; white-space:nowrap; min-width:180px; }
-  #slider-val { font-size:13px; color:#f0f6fc; font-weight:600; min-width:70px; text-align:right; font-variant-numeric:tabular-nums; }
-  #slider-wrap { flex:1; display:flex; flex-direction:column; }
-  #slider-wrap input[type=range] { width:100%; margin:0; -webkit-appearance:none; height:8px; border-radius:4px; background:linear-gradient(to right,#7ee787,#a6d280,#ffd166,#f0883e,#e06c50); outline:none; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#f0f6fc; border:2px solid #58a6ff; cursor:pointer; }
-  #tick-labels { position:relative; height:14px; margin-top:4px; font-size:10px; color:#484f58; user-select:none; }
+  #ramp-wrap { margin-top:6px; padding-top:6px; border-top:1px solid var(--line2); }
+  #ramp { height:8px; border-radius:4px; }
+  #ramp-labels { display:flex; justify-content:space-between; color:var(--faint); font-size:10px; margin-top:2px; }
+
+  /* About panel (top-left) */
+  #about-btn { position:absolute; top:12px; left:12px; z-index:25; padding:6px 10px; color:var(--text); cursor:pointer; }
+  #about { position:absolute; top:12px; left:12px; z-index:30; width:min(420px, calc(100vw - 24px)); max-height:calc(100% - 24px); overflow:auto; padding:14px 16px; line-height:1.5; font-size:13px; }
+  #about h2 { font-size:15px; color:var(--bright); margin-bottom:6px; }
+  #about h3 { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 4px; }
+  #about p { margin:6px 0; } #about ul { margin:4px 0 4px 18px; }
+  #about .caveat { border-left:3px solid #f0883e; padding-left:10px; }
+  #about-close { float:right; background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; line-height:1; }
+  #about a { color:var(--accent); }
+
+  /* Controls (bottom bar) */
+  #controls { background:var(--panel); border-top:1px solid var(--line); padding:12px 20px calc(12px + env(safe-area-inset-bottom)); }
+  #top-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  #top-row > label { font-size:13px; color:var(--muted); white-space:nowrap; }
+  #slider-wrap { flex:1 1 260px; min-width:200px; display:flex; flex-direction:column; }
+  #slider-wrap input[type=range] { width:100%; margin:0; -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:linear-gradient(to right,#7ee787,#a6d280,#ffd166,#f0883e,#e06c50); outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:var(--bright); border:2px solid var(--accent); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:var(--bright); border:2px solid var(--accent); cursor:pointer; }
+  #tick-labels { position:relative; height:14px; margin-top:4px; font-size:10px; color:var(--faint); user-select:none; }
   #tick-labels span { position:absolute; transform:translateX(-50%); white-space:nowrap; }
   #tick-labels span:first-child { transform:none; }
   #tick-labels span:last-child { transform:translateX(-100%); }
-  #stats { display:flex; gap:32px; margin-top:10px; font-size:13px; flex-wrap:wrap; }
-  .stat { display:flex; gap:8px; align-items:baseline; }
-  .stat-label { color:#8b949e; }
-  .stat-value { color:#f0f6fc; font-variant-numeric:tabular-nums; font-size:18px; font-weight:600; }
-  .hint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#8b949e; font-size:14px; z-index:30; transition:opacity 0.3s; }
-  #loading-info { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); color:#484f58; font-size:11px; z-index:30; }
-  .maplibregl-ctrl-attrib { font-size:9px !important; }
+  #slider-val { font-size:14px; color:var(--bright); font-weight:600; min-width:70px; text-align:right; font-variant-numeric:tabular-nums; }
   #dataset-picker { display:flex; gap:2px; }
-  .ds-btn { background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:0; cursor:pointer; font-size:11px; padding:4px 8px; white-space:nowrap; }
-  .ds-btn:first-child { border-radius:4px 0 0 4px; }
-  .ds-btn:last-child { border-radius:0 4px 4px 0; }
-  .ds-btn[aria-pressed="true"] { background:#7ee787; color:#0d1117; border-color:#7ee787; font-weight:600; }
-  #parcel-picker { background:#21262d; color:#c9d1d9; border:1px solid #30363d; border-radius:4px; font-size:11px; padding:4px 6px; }
+  .ds-btn { background:var(--line2); color:var(--muted); border:1px solid var(--line); border-radius:0; cursor:pointer; font-size:12px; padding:6px 9px; white-space:nowrap; }
+  .ds-btn:first-child { border-radius:4px 0 0 4px; } .ds-btn:last-child { border-radius:0 4px 4px 0; }
+  .ds-btn[aria-pressed="true"] { background:var(--go); color:var(--bg); border-color:var(--go); font-weight:600; }
+  .ds-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  #stats { display:flex; gap:24px; margin-top:10px; font-size:13px; flex-wrap:wrap; align-items:center; }
+  .stat { display:flex; gap:8px; align-items:baseline; }
+  .stat-label { color:var(--muted); }
+  .stat-value { color:var(--bright); font-variant-numeric:tabular-nums; font-size:17px; font-weight:600; }
+  #empty-hint { color:#f0883e; font-size:13px; }
+  #parcel-picker { background:var(--line2); color:var(--text); border:1px solid var(--line); border-radius:4px; font-size:13px; padding:5px 8px; }
+  #status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:var(--muted); font-size:14px; z-index:40; text-align:center; pointer-events:none; }
+  #status.error { color:#f85149; pointer-events:auto; }
+  .maplibregl-ctrl-attrib { font-size:9px !important; }
+
+  @media (max-width: 640px) {
+    #controls { padding:10px 12px calc(10px + env(safe-area-inset-bottom)); }
+    #top-row > label { display:none; }
+    #slider-wrap { flex-basis:100%; order:2; }
+    #slider-val { order:1; text-align:left; }
+    #dataset-picker { order:1; margin-left:auto; }
+    .ds-btn { padding:6px 7px; font-size:11px; }
+    #stats { gap:14px; margin-top:8px; }
+    .stat-value { font-size:15px; }
+    #legend { bottom:10px; left:10px; }
+    #tick-labels span.minor { display:none; }
+    .maplibregl-ctrl-top-right { display:none; }  /* pinch to zoom */
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="map-container">
     <div id="map"></div>
-    <div id="map-veil"></div>
-    <canvas id="overlay"></canvas>
-    <div id="legend">
-      <label class="legend-item" for="tog-parcel">
-        <input type="checkbox" id="tog-parcel" checked>
-        <span class="legend-line" style="border-top:2px solid #ff7f0e"></span>
-        <span class="label-text">Parcel</span>
-      </label>
-      <label class="legend-item" for="tog-watershed">
-        <input type="checkbox" id="tog-watershed">
-        <span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span>
-        <span class="label-text">Contributing area</span>
-      </label>
-      <label class="legend-item" for="tog-huc12">
-        <input type="checkbox" id="tog-huc12">
-        <span class="legend-line" style="border-top:1.5px solid rgba(31,119,180,0.6)"></span>
-        <span class="label-text" title="USGS Watershed Boundary Dataset, HUC-12 181002030302">Borrego Palm Canyon watershed (USGS)</span>
-      </label>
-      <label class="legend-item" for="tog-fema">
-        <input type="checkbox" id="tog-fema">
-        <span class="legend-line" style="border-top:1px solid #e31a1c"></span>
-        <span class="label-text" title="National Flood Hazard Layer, DFIRM 06073C (Nov 2023)">Flood zones (FEMA)</span>
-      </label>
-    </div>
-    <div class="hint" id="hint">Loading data…</div>
-    <div id="loading-info"></div>
+    <button id="about-btn" class="panel" type="button" aria-controls="about">ⓘ About this map</button>
+    <section id="about" class="panel" hidden aria-label="About this map">
+      <button id="about-close" type="button" aria-label="Close">×</button>
+      <h2>De Anza Flood Explorer</h2>
+      <p>The coloured lines are the paths water would <em>tend</em> to follow across the terrain toward the selected property. They're computed from USGS elevation data. Brighter and warmer colours mean more upstream land drains through that spot.</p>
+      <h3>Controls</h3>
+      <ul>
+        <li><b>Slider:</b> hides channels that drain less than the chosen area. Slide right to see only the main washes, left to see small rills.</li>
+        <li><b>D8 / D∞:</b> two standard ways of routing water. D8 sends each cell's water to its single steepest neighbour. D∞ can split it between two neighbours, which suits spreading flow on the fan.</li>
+        <li><b>1m / 10m:</b> the elevation detail. 1m shows fine channels; 10m is smoother.</li>
+      </ul>
+      <h3>Please read</h3>
+      <p class="caveat"><b>This is not a flood map.</b> It shows possible flow paths from terrain alone, with no rainfall, no pipes or walls, and no depths. De Anza sits on an active alluvial fan, where floods can jump to new channels. San Diego County and FEMA guidance treats the whole fan as subject to flooding, including areas with no line on this map. The drainage traced to a single property can look small because flow on the fan spreads out. That doesn't mean the property is safe.</p>
+      <p>For official flood zones, turn on <b>Flood zones (FEMA)</b> in the legend, or see the FEMA Flood Map Service Center (msc.fema.gov).</p>
+      <h3>Data</h3>
+      <p id="about-data">USGS 3DEP elevation (1m lidar and 10m), FEMA National Flood Hazard Layer, USGS Watershed Boundary Dataset. Imagery © Esri.</p>
+    </section>
+    <details id="legend" class="panel" open>
+      <summary>Legend</summary>
+      <label class="legend-item"><input type="checkbox" id="tog-parcel" checked>
+        <span class="legend-line" style="border-top:2px solid #ff7f0e"></span><span>Property</span></label>
+      <label class="legend-item"><input type="checkbox" id="tog-watershed">
+        <span class="legend-line" style="border-top:2.5px dashed #58a6ff"></span><span>Area draining to it</span></label>
+      <label class="legend-item"><input type="checkbox" id="tog-huc12">
+        <span class="legend-line" style="border-top:1.5px solid rgba(31,119,180,0.8)"></span><span title="USGS Watershed Boundary Dataset, HUC-12 181002030302">Borrego Palm Canyon watershed (USGS)</span></label>
+      <label class="legend-item"><input type="checkbox" id="tog-fema">
+        <span class="legend-line" style="border-top:6px solid rgba(227,26,28,0.5)"></span><span title="National Flood Hazard Layer, DFIRM 06073C">Flood zones (FEMA)</span></label>
+      <div id="ramp-wrap">
+        <div id="ramp"></div>
+        <div id="ramp-labels"><span id="ramp-lo"></span><span>upstream area</span><span id="ramp-hi"></span></div>
+      </div>
+    </details>
+    <div id="status" role="status">Loading…</div>
   </div>
   <div id="controls">
     <div id="top-row">
-      <label for="threshold">Drainage area threshold (log scale)</label>
+      <label for="threshold">Minimum upstream area</label>
       <div id="slider-wrap">
-        <input type="range" id="threshold" min="0" max="1000" step="1">
+        <input type="range" id="threshold" min="0" max="1000" step="1" aria-label="Minimum upstream area">
         <div id="tick-labels"></div>
       </div>
       <span id="slider-val">—</span>
       <span id="dataset-picker" role="group" aria-label="Dataset"></span>
     </div>
     <div id="stats">
-      <div class="stat"><span class="stat-label">Cells visible</span><span class="stat-value" id="stat-cells">—</span></div>
-      <div class="stat"><span class="stat-label">Stream cells</span><span class="stat-value" id="stat-total">—</span></div>
-      <select id="parcel-picker" aria-label="Parcel" hidden></select>
+      <select id="parcel-picker" aria-label="Property"></select>
+      <div class="stat"><span class="stat-label">Cells shown</span><span class="stat-value" id="stat-shown">—</span></div>
+      <div class="stat"><span class="stat-label">of</span><span class="stat-value" id="stat-total">—</span></div>
+      <span id="empty-hint" hidden></span>
     </div>
   </div>
 </div>
 
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"
+        integrity="sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.4.0/dist.min.js"
+        integrity="sha384-NrpHmp6N6IhXZ+gSV+uRLo+Hqprkw4BfdGzmxgWXhjakjkAabyfQxokSmn/aK0VB" crossorigin="anonymous"></script>
 <script>
+'use strict';
 // Everything is discovered through data/manifest.json (written by
 // floodflow/publish.py). Paths in the manifest are relative to data/.
 const DATA_ROOT = 'data/';
 const DS_ORDER = [['d81m', 'D8 1m'], ['dinf1m', 'D∞ 1m'], ['d810m', 'D8 10m'], ['dinf10m', 'D∞ 10m']];
 const DEFAULT_DS = 'dinf10m';
+const SQUARES_MIN_PX = 2;  // below this a cell is drawn as a min-size dot
 
-// Log scale over drainage area in m² (binary v2 stores area, not cell
-// counts, so 1m and 10m datasets share one threshold scale).
-const ACCUM_MIN = 250, ACCUM_MAX = 1e7;
-const DEFAULT_ACCUM = 1e5;  // 10 ha
+// Log scale over drainage area in m² (binary v2 stores area, so 1m and 10m
+// datasets share one threshold scale).
+const AREA_MIN = 250, AREA_MAX = 1e7, DEFAULT_AREA = 1e5;
 const TICKS = [250, 1e3, 1e4, 1e5, 1e6, 1e7];
-const LOG_MIN = Math.log(ACCUM_MIN), LOG_MAX = Math.log(ACCUM_MAX);
-const LOG_RANGE = LOG_MAX - LOG_MIN;
-function sliderToAccum(pos) { return Math.round(Math.exp(LOG_MIN + (pos/1000)*LOG_RANGE)); }
-function accumToSlider(a) { return Math.round(((Math.log(a)-LOG_MIN)/LOG_RANGE)*1000); }
+const MINOR_TICKS = new Set([1e3, 1e6]);  // hidden on narrow screens
+const LOG_MIN = Math.log(AREA_MIN), LOG_RANGE = Math.log(AREA_MAX) - LOG_MIN;
+const sliderToArea = pos => Math.round(Math.exp(LOG_MIN + (pos / 1000) * LOG_RANGE));
+const areaToSlider = a => Math.round(((Math.log(a) - LOG_MIN) / LOG_RANGE) * 1000);
 function formatArea(m2) {
   if (m2 < 1e4) return `${Math.round(m2).toLocaleString()} m²`;
-  if (m2 < 1e6) return `${+(m2/1e4).toPrecision(3)} ha`;
-  return `${+(m2/1e6).toPrecision(3)} km²`;
+  if (m2 < 1e6) return `${+(m2 / 1e4).toPrecision(3)} ha`;
+  return `${+(m2 / 1e6).toPrecision(3)} km²`;
 }
-function formatCount(c) {
-  return c > 1000000 ? (c/1e6).toFixed(1)+'M' : c > 1000 ? (c/1e3).toFixed(0)+'K' : c.toLocaleString();
+const formatCount = c => c >= 1e6 ? (c / 1e6).toFixed(1) + 'M' : c >= 1e4 ? Math.round(c / 1e3) + 'K' : c.toLocaleString();
+
+// Colour ramps: D∞ desert (olive → amber → rust), D8 blue. t in [0, 1].
+function rampDinf(t) {
+  const h = 80 - t * 70, s = 0.8, l = 0.28 + t * 0.32;
+  const c = (1 - Math.abs(2 * l - 1)) * s, hp = h / 60, x = c * (1 - Math.abs((hp % 2) - 1)), m = l - c / 2;
+  const [r, g, b] = hp < 1 ? [c, x, 0] : [x, c, 0];
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255, 60 + t * 195];
 }
+const rampD8 = t => [20 + t * 30, 100 + t * 80, 180 + t * 55, 60 + t * 195];
+const rampFor = alg => alg === 'd8' ? rampD8 : rampDinf;
 
-// Datasets of the active parcel, keyed by DS_ORDER key. Each holds a
-// stride-3 Float32Array [area_m2, lon - originLon, lat - originLat],
-// sorted descending by area.
-let datasets = {};
-let activeDs = null;
-
-function activeData() { return activeDs ? datasets[activeDs].data : null; }
-function activeCount() { return activeDs ? datasets[activeDs].count : 0; }
-function activeColorFn() { return datasets[activeDs].algorithm === 'd8' ? accumColorD8 : accumColor; }
-
-// Desert color theme (olive → amber → rust) — D∞
-function accumColor(accum) {
-  const t = Math.max(0, Math.min(1, (Math.log(accum)-LOG_MIN)/LOG_RANGE));
-  const h = 80 - t*70, s = 0.80, l = 0.28 + t*0.32;
-  const c = (1-Math.abs(2*l-1))*s, hp = h/60;
-  const x = c*(1-Math.abs((hp%2)-1)), m = l-c/2;
-  let r1,g1,b1;
-  if (hp<1) {r1=c;g1=x;b1=0;} else if (hp<2) {r1=x;g1=c;b1=0;} else {r1=0;g1=x;b1=c;}
-  return { r: Math.round((r1+m)*255), g: Math.round((g1+m)*255), b: Math.round((b1+m)*255), a: Math.round(25+t*195) };
-}
-
-// Blue theme — D8
-function accumColorD8(accum) {
-  const t = Math.max(0, Math.min(1, (Math.log(accum)-LOG_MIN)/LOG_RANGE));
-  return { r: Math.round(20+t*30), g: Math.round(100+t*80), b: Math.round(180+t*55), a: Math.round(30+t*195) };
-}
-
-// Binary search (data sorted desc by accum, stride 3)
-function cutoffIdx(threshold) {
-  const data = activeData();
-  if (!data) return -1;
-  const count = activeCount();
-  let lo = 0, hi = count - 1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (data[mid*3] >= threshold) lo = mid + 1;
-    else hi = mid - 1;
-  }
-  return hi;
-}
-
-// Map + canvas
-let map;
-const container = document.getElementById('map-container');
-const canvas = document.getElementById('overlay');
-const ctx = canvas.getContext('2d');
-const loadingInfo = document.getElementById('loading-info');
-const hint = document.getElementById('hint');
-const slider = document.getElementById('threshold');
-const sliderVal = document.getElementById('slider-val');
-
-let currentAccum = DEFAULT_ACCUM;
-let needsRender = true;
-
-// Render cells as canvas overlay
-function renderCells() {
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-  if (!map) return;
-
-  const data = activeData();
-  if (!data) return;
-
-  const cutoff = cutoffIdx(currentAccum);
-  if (cutoff < 0) { document.getElementById('stat-cells').textContent = '0'; return; }
-
-  // Resolution-aware cell sizing: draw cells at their true ground
-  // footprint, in device pixels. Measure it by projecting one cell's
-  // height in latitude rather than assuming a tile size (MapLibre zoom
-  // uses 512px tiles, so the 256px constant 156543 gave half-size cells).
-  const dpr = window.devicePixelRatio || 1;
-  const ds = datasets[activeDs];
-  const res = ds.resolution;
-  const c0 = map.getCenter();
-  const pxPerCell = Math.abs(map.project([c0.lng, c0.lat]).y -
-                             map.project([c0.lng, c0.lat + res / 111320]).y) * dpr;
-  const cellSize = Math.max(1, Math.round(pxPerCell));
-  const half = cellSize / 2;
-  const oLon = ds.originLon, oLat = ds.originLat;
-
-  const bounds = map.getBounds();
-  const vpW = bounds.getWest(), vpS = bounds.getSouth();
-  const vpE = bounds.getEast(), vpN = bounds.getNorth();
-
-  const imgData = ctx.createImageData(W, H);
-  const buf = imgData.data;
-  const occupancy = new Uint8Array(W * H);
-  const colorFn = activeColorFn();
-  let visCount = 0;
-
-  for (let i = 0; i <= cutoff; i++) {
-    const accum = data[i * 3];
-    const lon = oLon + data[i * 3 + 1];
-    const lat = oLat + data[i * 3 + 2];
-    if (lon < vpW || lon > vpE || lat < vpS || lat > vpN) continue;
-
-    const color = colorFn(accum);
-    const pt = map.project([lon, lat]);
-    // Points are cell centres: centre the square on them
-    const ix = Math.round(pt.x * dpr - half), iy = Math.round(pt.y * dpr - half);
-
-    for (let dy = 0; dy < cellSize; dy++) {
-      const py = iy + dy;
-      if (py < 0 || py >= H) continue;
-      for (let dx = 0; dx < cellSize; dx++) {
-        const px = ix + dx;
-        if (px < 0 || px >= W) continue;
-        const occIdx = py * W + px;
-        if (occupancy[occIdx]) continue;
-        occupancy[occIdx] = 1;
-        const idx = occIdx * 4;
-        buf[idx]=color.r; buf[idx+1]=color.g; buf[idx+2]=color.b; buf[idx+3]=color.a;
-      }
-    }
-    visCount++;
-  }
-  ctx.putImageData(imgData, 0, 0);
-  document.getElementById('stat-cells').textContent = visCount.toLocaleString();
-}
-
-function sizeCanvas() {
-  const r = container.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
-  if (canvas.width === w && canvas.height === h) return;
-  canvas.width = w; canvas.height = h;
-  canvas.style.width = r.width + 'px'; canvas.style.height = r.height + 'px';
-}
-
-// Load a binary dataset
-function geojsonBounds(geojson) {
-  let minLon=Infinity, minLat=Infinity, maxLon=-Infinity, maxLat=-Infinity;
-  function scan(c) {
-    if (typeof c[0] === 'number') {
-      minLon=Math.min(minLon,c[0]); maxLon=Math.max(maxLon,c[0]);
-      minLat=Math.min(minLat,c[1]); maxLat=Math.max(maxLat,c[1]);
-    } else c.forEach(scan);
-  }
-  geojson.features.forEach(f => scan(f.geometry.coordinates));
-  return [[minLon, minLat], [maxLon, maxLat]];
-}
-
+// ---- Data loading ----
 async function loadJSON(path) {
   const resp = await fetch(DATA_ROOT + path);
   if (!resp.ok) throw new Error(`${path}: HTTP ${resp.status}`);
   return resp.json();
 }
 
-async function loadBinary(path, label) {
-  loadingInfo.textContent = `Loading ${label}…`;
+// Binary v2 (see floodflow/publish.py): header then [area_m2, dlon, dlat]
+// float32 triples sorted by area descending.
+async function loadBinary(path, algorithm) {
   const resp = await fetch(DATA_ROOT + path);
-  if (!resp.ok) throw new Error(`${label}: HTTP ${resp.status}`);
+  if (!resp.ok) throw new Error(`${path}: HTTP ${resp.status}`);
   const buf = await resp.arrayBuffer();
-  // Format v2 (see floodflow/publish.py):
-  // magic, version, count, resolution, units, reserved, origin lon/lat (f64)
   const dv = new DataView(buf);
-  const magic = dv.getUint32(0, true);
-  if (magic !== 0x48465342) {
-    throw new Error(`${label}: bad magic 0x${magic.toString(16)}, expected 0x48465342`);
-  }
-  const version = dv.getUint32(4, true);
-  if (version !== 2) {
-    throw new Error(`${label}: unsupported version ${version}`);
-  }
+  if (dv.getUint32(0, true) !== 0x48465342) throw new Error(`${path}: not a stream binary`);
+  if (dv.getUint32(4, true) !== 2) throw new Error(`${path}: unsupported version ${dv.getUint32(4, true)}`);
+  if (dv.getUint32(16, true) !== 0) throw new Error(`${path}: values are not drainage area`);
   const count = dv.getUint32(8, true);
-  const units = dv.getUint32(16, true);
-  if (units !== 0) {
-    throw new Error(`${label}: unsupported value units ${units} (expected drainage area)`);
-  }
   const data = new Float32Array(buf, 40, count * 3);
-  console.log(`${label}: ${count.toLocaleString()} cells, range ` +
-              `${formatArea(data[(count-1)*3])}–${formatArea(data[0])}`);
+  // Per-cell colours, computed once per dataset
+  const ramp = rampFor(algorithm), colors = new Uint8Array(count * 4);
+  for (let i = 0; i < count; i++) {
+    const t = Math.min(1, Math.max(0, (Math.log(data[i * 3]) - LOG_MIN) / LOG_RANGE));
+    colors.set(ramp(t), i * 4);
+  }
   return {
-    data, count,
+    data, count, colors, algorithm,
     resolution: dv.getFloat32(12, true),
-    originLon: dv.getFloat64(24, true),
-    originLat: dv.getFloat64(32, true),
+    origin: [dv.getFloat64(24, true), dv.getFloat64(32, true), 0],
   };
 }
 
-// Load one parcel's layers and datasets. Returns its GeoJSON layers.
-async function loadParcel(manifest, key) {
-  const p = manifest.parcels[key];
-  loadingInfo.textContent = `Loading ${p.name}…`;
-  const [boundary, ca] = await Promise.all([loadJSON(p.boundary), loadJSON(p.contributing_area)]);
-  const loaded = {};
-  for (const [dsKey, label] of DS_ORDER) {
-    const meta = p.datasets[dsKey];
-    if (!meta) continue;
-    try { loaded[dsKey] = { ...(await loadBinary(meta.file, label)), algorithm: meta.algorithm, label }; }
-    catch (e) { console.warn(`${label}:`, e); }
-  }
-  datasets = loaded;
-  activeDs = datasets[DEFAULT_DS] ? DEFAULT_DS : (Object.keys(datasets)[0] ?? null);
-  renderDatasetPicker();
-  loadingInfo.textContent = '';
-  return { boundary, ca };
+// Number of cells with area >= threshold (data sorted descending)
+function countAbove(ds, threshold) {
+  let lo = 0, hi = ds.count;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (ds.data[mid * 3] >= threshold) lo = mid + 1; else hi = mid; }
+  return lo;
 }
 
-function renderDatasetPicker() {
-  const picker = document.getElementById('dataset-picker');
-  picker.replaceChildren(...DS_ORDER.filter(([k]) => datasets[k]).map(([k, label]) => {
-    const b = document.createElement('button');
-    b.className = 'ds-btn';
-    b.dataset.ds = k;
-    b.textContent = label;
-    b.setAttribute('aria-pressed', String(k === activeDs));
-    return b;
-  }));
-  document.getElementById('stat-total').textContent = formatCount(activeCount());
+function geojsonBounds(geojson) {
+  let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+  const scan = c => typeof c[0] === 'number'
+    ? (w = Math.min(w, c[0]), e = Math.max(e, c[0]), s = Math.min(s, c[1]), n = Math.max(n, c[1]))
+    : c.forEach(scan);
+  geojson.features.forEach(f => scan(f.geometry.coordinates));
+  return [[w, s], [e, n]];
 }
 
-// Layer toggle helper
-function bindLayerToggle(checkboxId, layerIds, mapRef) {
-  const cb = document.getElementById(checkboxId);
-  if (!cb) return;
-  cb.addEventListener('change', () => {
-    const vis = cb.checked ? 'visible' : 'none';
-    layerIds.forEach(id => {
-      if (mapRef.getLayer(id)) mapRef.setLayoutProperty(id, 'visibility', vis);
-    });
-  });
+// ---- URL hash state: #parcel=…&ds=…&t=…&view=lng,lat,zoom ----
+function readHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const view = (h.get('view') || '').split(',').map(Number);
+  return {
+    parcel: h.get('parcel'), ds: h.get('ds'),
+    t: Number(h.get('t')) || null,
+    view: view.length === 3 && view.every(Number.isFinite) ? view : null,
+  };
+}
+let hashTimer = null;
+function writeHash(state, map) {
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    const c = map.getCenter();
+    const h = new URLSearchParams({ parcel: state.parcel, ds: state.ds, t: String(state.threshold),
+      view: `${c.lng.toFixed(5)},${c.lat.toFixed(5)},${map.getZoom().toFixed(2)}` });
+    history.replaceState(null, '', '#' + h.toString());
+  }, 300);
 }
 
-// Initialize
+// ---- App ----
+const $ = id => document.getElementById(id);
+const statusEl = $('status');
+function setStatus(msg, isError = false) {
+  statusEl.textContent = msg || '';
+  statusEl.hidden = !msg;
+  statusEl.classList.toggle('error', isError);
+}
+
 (async function init() {
-  try {
-    const manifest = await loadJSON('manifest.json');
-    const parcelKeys = Object.keys(manifest.parcels);
-    let activeParcel = manifest.parcels[manifest.default_parcel] ? manifest.default_parcel : parcelKeys[0];
+  let manifest;
+  try { manifest = await loadJSON('manifest.json'); }
+  catch (e) { setStatus('Could not load data: ' + e.message, true); return; }
 
-    const parcelPicker = document.getElementById('parcel-picker');
-    parcelPicker.replaceChildren(...parcelKeys.map(k => new Option(manifest.parcels[k].name, k)));
-    parcelPicker.value = activeParcel;
-    parcelPicker.hidden = parcelKeys.length < 2;
+  const fromHash = readHash();
+  const parcelKeys = Object.keys(manifest.parcels);
+  const state = {
+    parcel: manifest.parcels[fromHash.parcel] ? fromHash.parcel
+      : manifest.parcels[manifest.default_parcel] ? manifest.default_parcel : parcelKeys[0],
+    ds: null,
+    threshold: fromHash.t && fromHash.t >= AREA_MIN && fromHash.t <= AREA_MAX ? fromHash.t : DEFAULT_AREA,
+  };
+  const cache = new Map();   // "parcel/ds" → Promise<dataset>
+  let parcelGeo = null;      // { boundary, ca } for the active parcel
 
-    const { boundary: parcelData, ca: wsData } = await loadParcel(manifest, activeParcel);
-
-    // Reference layers (optional)
-    loadingInfo.textContent = 'Loading reference layers…';
-    const layers = manifest.layers || {};
-    let huc12Data = null, femaData = null;
-    if (layers.huc12) { try { huc12Data = await loadJSON(layers.huc12); } catch(e) { console.warn('HUC12:', e); } }
-    if (layers.fema) { try { femaData = await loadJSON(layers.fema); } catch(e) { console.warn('FEMA:', e); } }
-
-    // Init MapLibre
-    map = new maplibregl.Map({
-      container: 'map',
-      style: {
-        version: 8,
-        sources: { 'esri-satellite': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, attribution: 'Esri World Imagery' }},
-        layers: [{ id: 'satellite', type: 'raster', source: 'esri-satellite', paint: { 'raster-opacity': 0.5 } }]
-      },
-      center: geojsonBounds(wsData).reduce((a,b) => [(a[0]+b[0])/2,(a[1]+b[1])/2]), zoom: 10, maxZoom: 17, attributionControl: false
-    });
-    map.addControl(new maplibregl.AttributionControl({ compact: true }));
-
-    map.on('load', () => {
-      // Parcel contributing area — OFF by default
-      map.addSource('watershed', { type: 'geojson', data: wsData });
-      map.addLayer({ id: 'watershed-line', type: 'line', source: 'watershed', paint: { 'line-color': '#58a6ff', 'line-width': 2.5, 'line-dasharray': [3,2] }, layout: { visibility: 'none' } });
-
-      // HUC-12 — OFF by default
-      if (huc12Data) {
-        map.addSource('huc12', { type: 'geojson', data: huc12Data });
-        map.addLayer({ id: 'huc12-fill', type: 'fill', source: 'huc12', paint: { 'fill-color': '#1f77b4', 'fill-opacity': 0.06 }, layout: { visibility: 'none' } }, 'watershed-line');
-        map.addLayer({ id: 'huc12-line', type: 'line', source: 'huc12', paint: { 'line-color': '#1f77b4', 'line-width': 1.5, 'line-opacity': 0.6 }, layout: { visibility: 'none' } }, 'huc12-fill');
-      }
-
-      // FEMA — OFF by default
-      if (femaData) {
-        map.addSource('fema', { type: 'geojson', data: femaData });
-        map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } }, huc12Data ? 'huc12-line' : 'watershed-line');
-      }
-
-      // Parcel boundary — ON by default
-      map.addSource('parcel', { type: 'geojson', data: parcelData });
-      map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2, 'line-opacity': 0.95 }, layout: { visibility: 'visible' } }, femaData ? 'fema-fill' : 'watershed-line');
-
-      // Wire up layer toggles
-      bindLayerToggle('tog-watershed', ['watershed-line'], map);
-      bindLayerToggle('tog-huc12', ['huc12-fill', 'huc12-line'], map);
-      bindLayerToggle('tog-fema', ['fema-fill'], map);
-      bindLayerToggle('tog-parcel', ['parcel-line'], map);
-
-      // Zoom to fit the contributing area
-      map.fitBounds(geojsonBounds(wsData), { padding: 60, maxZoom: 17, duration: 0 });
-
-      sizeCanvas();
-      renderCells();
-      loadingInfo.textContent = '';
-      hint.style.opacity = '0';
-      setTimeout(() => hint.remove(), 300);
-    });
-
-    // Parcel picker
-    parcelPicker.addEventListener('change', async () => {
-      const key = parcelPicker.value;
-      if (key === activeParcel) return;
-      parcelPicker.disabled = true;
-      try {
-        const { boundary, ca } = await loadParcel(manifest, key);
-        activeParcel = key;
-        map.getSource('parcel').setData(boundary);
-        map.getSource('watershed').setData(ca);
-        map.fitBounds(geojsonBounds(ca), { padding: 60, maxZoom: 17, duration: 0 });
-        needsRender = true;
-      } catch (e) {
-        console.error(e);
-        parcelPicker.value = activeParcel;
-      } finally {
-        parcelPicker.disabled = false;
-      }
-    });
-
-    map.on('move', () => { needsRender = true; });
-    map.on('zoom', () => { needsRender = true; });
-    map.on('resize', () => { needsRender = true; });
-    function renderLoop() {
-      if (needsRender) { sizeCanvas(); renderCells(); needsRender = false; }
-      requestAnimationFrame(renderLoop);
+  function getDataset(parcel, dsKey) {
+    const key = parcel + '/' + dsKey;
+    if (!cache.has(key)) {
+      const meta = manifest.parcels[parcel].datasets[dsKey];
+      const p = loadBinary(meta.file, meta.algorithm);
+      p.catch(() => cache.delete(key));  // allow retry
+      cache.set(key, p);
     }
-    requestAnimationFrame(renderLoop);
-
-    // Slider
-    const tickLabels = document.getElementById('tick-labels');
-    for (const t of TICKS) {
-      const span = document.createElement('span');
-      span.textContent = formatArea(t);
-      span.style.left = (accumToSlider(t) / 10) + '%';
-      tickLabels.appendChild(span);
-    }
-    function setAccum(a) {
-      currentAccum = a;
-      sliderVal.textContent = formatArea(currentAccum);
-      renderCells();
-    }
-    function onSlider() { setAccum(sliderToAccum(parseInt(slider.value))); }
-    slider.value = accumToSlider(DEFAULT_ACCUM);
-    setAccum(DEFAULT_ACCUM);
-    slider.addEventListener('input', onSlider);
-
-    // Keyboard
-    document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'INPUT') return;
-      const step = e.shiftKey ? 50 : e.ctrlKey ? 10 : 25;
-      let v = parseInt(slider.value);
-      if (e.key === 'ArrowLeft') v = Math.max(0, v - step);
-      else if (e.key === 'ArrowRight') v = Math.min(1000, v + step);
-      else return;
-      slider.value = v; onSlider();
-    });
-
-    // Dataset picker
-    const picker = document.getElementById('dataset-picker');
-    picker.addEventListener('click', e => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      const ds = btn.dataset.ds;
-      if (ds === activeDs || !datasets[ds]) return;
-      activeDs = ds;
-      renderDatasetPicker();
-      needsRender = true;
-    });
-
-  } catch (err) {
-    console.error(err);
-    hint.textContent = 'Error: ' + err.message;
-    hint.style.color = '#f85149';
-    loadingInfo.textContent = '';
+    return cache.get(key);
   }
+
+  // Parcel picker
+  const parcelPicker = $('parcel-picker');
+  parcelPicker.replaceChildren(...parcelKeys.map(k => new Option(manifest.parcels[k].name, k)));
+  parcelPicker.value = state.parcel;
+  parcelPicker.hidden = parcelKeys.length < 2;
+
+  // Slider ticks
+  for (const t of TICKS) {
+    const span = document.createElement('span');
+    span.textContent = formatArea(t);
+    span.style.left = (areaToSlider(t) / 10) + '%';
+    if (MINOR_TICKS.has(t)) span.className = 'minor';
+    $('tick-labels').appendChild(span);
+  }
+  const slider = $('threshold');
+  slider.value = areaToSlider(state.threshold);
+
+  // Reference layers (optional)
+  const layers = manifest.layers || {};
+  const [huc12Data, femaData] = await Promise.all(['huc12', 'fema'].map(k =>
+    layers[k] ? loadJSON(layers[k]).catch(e => (console.warn(k, e), null)) : null));
+
+  async function loadParcelGeo(parcel) {
+    const p = manifest.parcels[parcel];
+    const [boundary, ca] = await Promise.all([loadJSON(p.boundary), loadJSON(p.contributing_area)]);
+    return { boundary, ca };
+  }
+  try { parcelGeo = await loadParcelGeo(state.parcel); }
+  catch (e) { setStatus('Could not load property: ' + e.message, true); return; }
+
+  const initialBounds = geojsonBounds(parcelGeo.ca);
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: { 'esri-satellite': { type: 'raster', tileSize: 256, attribution: 'Imagery © Esri',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'] } },
+      layers: [{ id: 'satellite', type: 'raster', source: 'esri-satellite',
+                 paint: { 'raster-opacity': 0.55, 'raster-brightness-max': 0.8 } }],
+    },
+    ...(fromHash.view ? { center: fromHash.view.slice(0, 2), zoom: fromHash.view[2] }
+                      : { bounds: initialBounds, fitBoundsOptions: { padding: 40 } }),
+    maxZoom: 18, attributionControl: false,
+  });
+  map.addControl(new maplibregl.AttributionControl({ compact: true }));
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  const overlay = new deck.MapboxOverlay({ interleaved: false, layers: [] });
+  map.addControl(overlay);
+
+  // Pixels per metre at the map centre (CSS px)
+  function pxPerMetre() {
+    const c = map.getCenter();
+    return Math.abs(map.project([c.lng, c.lat]).y - map.project([c.lng, c.lat + 1 / 111320]).y);
+  }
+
+  let activeData = null;
+  const filterExt = new deck.DataFilterExtension({ filterSize: 1 });
+  function renderStreams() {
+    if (!activeData) { overlay.setProps({ layers: [] }); return; }
+    const d = activeData;
+    const squares = d.resolution * pxPerMetre() >= SQUARES_MIN_PX;
+    const common = {
+      data: { length: d.count, attributes: {
+        getPosition: { value: d.data, size: 2, offset: 4, stride: 12 },
+        getFilterValue: { value: d.data, size: 1, offset: 0, stride: 12 },
+        getFillColor: { value: d.colors, size: 4, normalized: true },
+      } },
+      coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT_OFFSETS,
+      coordinateOrigin: d.origin,
+      extensions: [filterExt],
+      filterRange: [state.threshold, 1e15],
+      pickable: false,
+      updateTriggers: { getFillColor: d },
+    };
+    // Distinct ids per layer class: deck.gl matches layers by id, and reusing
+    // one id across classes makes it update the new layer with the old one's state.
+    overlay.setProps({ layers: [squares
+      // Exact cell footprint, centred on the cell centre (offset [0,0])
+      ? new deck.GridCellLayer({ ...common, id: 'streams-squares', cellSize: d.resolution, offset: [0, 0], extruded: false })
+      // Zoomed out: cells are sub-pixel, draw min-size dots instead
+      : new deck.ScatterplotLayer({ ...common, id: 'streams-dots', radiusUnits: 'pixels', getRadius: 0.8, stroked: false })] });
+    const shown = countAbove(d, state.threshold);
+    $('stat-shown').textContent = formatCount(shown);
+    $('stat-total').textContent = formatCount(d.count);
+    // Largest drainage area in this dataset is the first cell (sorted desc)
+    $('empty-hint').hidden = shown > 0;
+    $('empty-hint').textContent = shown > 0 ? '' :
+      `Nothing this large drains here — the biggest channel is ${formatArea(d.data[0])}. Move the slider left.`;
+  }
+
+  function renderLegendRamp(algorithm) {
+    const ramp = rampFor(algorithm);
+    const stops = [0, 0.25, 0.5, 0.75, 1].map(t => {
+      const [r, g, b, a] = ramp(t); return `rgba(${r | 0},${g | 0},${b | 0},${(a / 255).toFixed(2)}) ${t * 100}%`;
+    });
+    $('ramp').style.background = `linear-gradient(to right, ${stops.join(',')})`;
+    $('ramp-lo').textContent = formatArea(AREA_MIN);
+    $('ramp-hi').textContent = formatArea(AREA_MAX) + '+';
+  }
+
+  function renderDatasetPicker() {
+    const p = manifest.parcels[state.parcel];
+    $('dataset-picker').replaceChildren(...DS_ORDER.filter(([k]) => p.datasets[k]).map(([k, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'ds-btn'; b.dataset.ds = k; b.textContent = label;
+      b.setAttribute('aria-pressed', String(k === state.ds));
+      const meta = p.datasets[k];
+      b.title = `${formatCount(meta.cells)} cells` + (meta.resolution_m === 1 ? ' — large download' : '');
+      return b;
+    }));
+  }
+
+  let selectSeq = 0;
+  async function selectDataset(dsKey) {
+    const seq = ++selectSeq;
+    state.ds = dsKey;
+    renderDatasetPicker();
+    const meta = manifest.parcels[state.parcel].datasets[dsKey];
+    setStatus(`Loading ${DS_ORDER.find(([k]) => k === dsKey)[1]} (${formatCount(meta.cells)} cells)…`);
+    try {
+      const d = await getDataset(state.parcel, dsKey);
+      if (seq !== selectSeq) return;  // a newer selection won
+      activeData = d;
+      renderLegendRamp(d.algorithm);
+      renderStreams();
+      setStatus('');
+      writeHash(state, map);
+    } catch (e) {
+      if (seq !== selectSeq) return;
+      console.error(e);
+      setStatus(`Could not load this dataset: ${e.message}`, true);
+    }
+  }
+
+  function setThreshold(a) {
+    state.threshold = a;
+    $('slider-val').textContent = formatArea(a);
+    renderStreams();
+    writeHash(state, map);
+  }
+
+  map.on('load', () => {
+    map.addSource('watershed', { type: 'geojson', data: parcelGeo.ca });
+    map.addLayer({ id: 'watershed-line', type: 'line', source: 'watershed',
+      paint: { 'line-color': '#58a6ff', 'line-width': 2.5, 'line-dasharray': [3, 2] }, layout: { visibility: 'none' } });
+    if (huc12Data) {
+      map.addSource('huc12', { type: 'geojson', data: huc12Data });
+      map.addLayer({ id: 'huc12-fill', type: 'fill', source: 'huc12', paint: { 'fill-color': '#1f77b4', 'fill-opacity': 0.06 }, layout: { visibility: 'none' } });
+      map.addLayer({ id: 'huc12-line', type: 'line', source: 'huc12', paint: { 'line-color': '#1f77b4', 'line-width': 1.5, 'line-opacity': 0.8 }, layout: { visibility: 'none' } });
+    } else $('tog-huc12').closest('label').hidden = true;
+    if (femaData) {
+      map.addSource('fema', { type: 'geojson', data: femaData });
+      map.addLayer({ id: 'fema-fill', type: 'fill', source: 'fema', paint: { 'fill-color': '#e31a1c', 'fill-opacity': 0.25, 'fill-outline-color': '#e31a1c' }, layout: { visibility: 'none' } });
+    } else $('tog-fema').closest('label').hidden = true;
+    map.addSource('parcel', { type: 'geojson', data: parcelGeo.boundary });
+    map.addLayer({ id: 'parcel-line', type: 'line', source: 'parcel', paint: { 'line-color': '#ff7f0e', 'line-width': 2.5 } });
+
+    for (const [cb, ids] of [['tog-watershed', ['watershed-line']], ['tog-huc12', ['huc12-fill', 'huc12-line']],
+                             ['tog-fema', ['fema-fill']], ['tog-parcel', ['parcel-line']]]) {
+      $(cb).addEventListener('change', e => ids.forEach(id =>
+        map.getLayer(id) && map.setLayoutProperty(id, 'visibility', e.target.checked ? 'visible' : 'none')));
+    }
+
+    const datasets = manifest.parcels[state.parcel].datasets;
+    const firstDs = datasets[fromHash.ds] ? fromHash.ds : datasets[DEFAULT_DS] ? DEFAULT_DS : Object.keys(datasets)[0];
+    $('slider-val').textContent = formatArea(state.threshold);
+    if (firstDs) selectDataset(firstDs); else setStatus('No datasets published for this property.', true);
+  });
+
+  // Squares ↔ dots depends on zoom; the threshold filter itself is GPU-side.
+  let lastSquares = null;
+  map.on('zoom', () => {
+    if (!activeData) return;
+    const squares = activeData.resolution * pxPerMetre() >= SQUARES_MIN_PX;
+    if (squares !== lastSquares) { lastSquares = squares; renderStreams(); }
+  });
+  map.on('moveend', () => writeHash(state, map));
+
+  slider.addEventListener('input', () => setThreshold(sliderToArea(parseInt(slider.value))));
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    const step = e.shiftKey ? 50 : 25;
+    let v = parseInt(slider.value);
+    if (e.key === 'ArrowLeft') v = Math.max(0, v - step);
+    else if (e.key === 'ArrowRight') v = Math.min(1000, v + step);
+    else return;
+    slider.value = v; setThreshold(sliderToArea(v));
+  });
+
+  $('dataset-picker').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (btn && btn.dataset.ds !== state.ds) selectDataset(btn.dataset.ds);
+  });
+
+  parcelPicker.addEventListener('change', async () => {
+    const key = parcelPicker.value;
+    if (key === state.parcel) return;
+    parcelPicker.disabled = true;
+    try {
+      const geo = await loadParcelGeo(key);
+      state.parcel = key; parcelGeo = geo; activeData = null;
+      map.getSource('parcel').setData(geo.boundary);
+      map.getSource('watershed').setData(geo.ca);
+      map.fitBounds(geojsonBounds(geo.ca), { padding: 40, duration: 0 });
+      const ds = manifest.parcels[key].datasets;
+      await selectDataset(ds[state.ds] ? state.ds : ds[DEFAULT_DS] ? DEFAULT_DS : Object.keys(ds)[0]);
+    } catch (e) {
+      console.error(e);
+      parcelPicker.value = state.parcel;
+      setStatus('Could not load property: ' + e.message, true);
+    } finally {
+      parcelPicker.disabled = false;
+    }
+  });
+
+  // About panel: open on first visit, remembered per browser
+  const about = $('about'), aboutBtn = $('about-btn');
+  const showAbout = open => { about.hidden = !open; aboutBtn.hidden = open; };
+  aboutBtn.addEventListener('click', () => showAbout(true));
+  $('about-close').addEventListener('click', () => {
+    showAbout(false);
+    try { localStorage.setItem('aboutSeen', '1'); } catch (e) { /* storage unavailable */ }
+  });
+  let seen = false;
+  try { seen = localStorage.getItem('aboutSeen') === '1'; } catch (e) { /* storage unavailable */ }
+  showAbout(!seen);
+  if (window.matchMedia('(max-width: 640px)').matches) $('legend').open = false;
 })();
 </script>
 </body>

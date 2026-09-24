@@ -99,6 +99,56 @@ data would never have been committed. It's anchored to `/data/` now.
   `data/raw/fema/nfhl_borrego_valley.geojson` (a duplicate of the published
   copy) are candidates.
 
+### Phase 4: De Anza Villas + §4 explorer — done 2026-09-24
+- **De Anza Villas** is published alongside the Country Club (the default).
+  Its contributing area is only **0.92 km²**: a small mountain-front
+  catchment, and one that lies entirely inside the Country Club's 39.9 km².
+  **78% of the Villas is in FEMA Zone A** (a Special Flood Hazard Area; no
+  base flood depth set). The Country Club's zones are AO with 1–2 ft depths.
+  The About panel explains why a small traced area doesn't mean low risk.
+- **FEMA 49-vs-50 resolved:** a query centred on the Villas returns the
+  published 50 zones byte for byte. It was a query-centre artifact, so the
+  fetcher now centres on the Villas.
+- **4.1** ✅ deck.gl 9.4.0 (575 KB gzipped, not the ~300 KB I guessed
+  earlier) with binary attributes read straight from the v2 buffer and
+  `LNGLAT_OFFSETS`, so there are no per-point JS objects and full precision.
+  The threshold is a GPU filter (`DataFilterExtension`). Zoomed in, cells
+  are exact `GridCellLayer` squares centred on the cell centre
+  (`offset [0,0]`, verified in deck's source). Below 2 px per cell they're
+  drawn as dots, since sub-pixel squares don't render.
+- **4.2** ✅ Datasets load when selected and are cached. The first view
+  downloads about 0.3 MB instead of about 55 MB.
+- **4.4** ✅ An About panel in plain language (shown on first visit), a
+  colour-ramp legend, and a hint when the slider is above anything that
+  drains to the property.
+- **4.5** ✅ MapLibre 4.7.1 and deck.gl pinned on jsdelivr with SRI hashes
+  (checked against the npm tarball). Shareable URL hash
+  (`#parcel=…&ds=…&t=…&view=…`). Phone layout tested at 390 px.
+- **4.6** ✅ Title "De Anza Flood Explorer"; the parcel picker offers both
+  properties.
+- Tested in headless Chromium with software WebGL: every dataset for both
+  parcels, the slider, parcel switching, link restore, and phone layout.
+  Found and fixed a deck.gl layer-id collision on the dots→squares switch.
+  Known and harmless: luma.gl logs one "layout for attribute positions/normals"
+  warning for GridCellLayer with binary data (reproduced in isolation).
+  ⚠️ **Not tested on a real GPU or phone.** Try it on yours before go-live.
+
+### Phase 5: #4c deploy branch — done 2026-09-24 (not pushed)
+- `floodflow publish` builds a **one-commit `gh-pages`** branch with
+  `index.html`, the manifest, and exactly the files it references. It uses a
+  temporary index, so the working tree and current branch aren't touched.
+  `--push` force-pushes it; not run.
+- `main` no longer tracks `docs/data/**/*.bin`. They were also stripped from
+  this branch's unpushed commits, so merging adds no binaries to `main`'s
+  history. A backup ref `backup/before-bin-strip` keeps the pre-strip
+  commits until you delete it.
+- **Go-live checklist:**
+  1. Merge the branch into `main` and push.
+  2. `floodflow publish --push`.
+  3. In GitHub → Settings → Pages, set the source to branch `gh-pages`,
+     folder `/ (root)`.
+  4. Open the site on your phone.
+
 ### Still open
 - **Stale local permissions.** `.claude/settings.json` still allowlists the
   old `deliverable` commands. It's harmless, but those entries are dead.

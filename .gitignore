@@ -7,3 +7,6 @@ __pycache__/
 
 /data/
 
+
+# Stream binaries ship only on the gh-pages deploy branch (floodflow publish)
+docs/data/**/*.bin

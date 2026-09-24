@@ -69,7 +69,9 @@ ENDPOINT = (
 )
 
 PROJECT = Path(__file__).resolve().parents[1]
-PARCEL = PROJECT / "data" / "raw" / "vectors" / "deanza_country_club_boundary.geojson"
+# Query centre. The published file was fetched around De Anza Villas; the
+# country-club centre is ~0.5 km off and drops one AO zone at the 8 km edge.
+PARCEL = PROJECT / "data" / "raw" / "vectors" / "deanza_villas_boundary.geojson"
 # The published copy is the canonical one (explorer reads it via the manifest).
 OUTPUT = PROJECT / "docs" / "data" / "nfhl_borrego_valley.geojson"
 MANIFEST_LAYER = "fema"

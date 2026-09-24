@@ -3,6 +3,8 @@ Flood risk depends on flow routing, and flow routing depends on which algorithm 
 
 **[→ Live explorer](https://rubicante.github.io/deanza-villas-flood-study/)**
 
+To preview locally: `python -m http.server -d docs` and open http://localhost:8000.
+
 ---
 
 ## Stream Explorer
@@ -54,6 +56,11 @@ floodflow d810m            # D8 10m
 floodflow clean            # delete derived artifacts and published datasets
 floodflow clean-all        # also delete DEM tile cache
 ```
+
+To publish: `floodflow publish` rebuilds the one-commit `gh-pages` branch
+(site + data), and `floodflow publish --push` makes it live. The stream
+binaries live only on that branch, so `main`'s history doesn't grow when data
+is regenerated.
 
 `python -m floodflow …` works too. A dataset is rebuilt only when its build
 settings (parcel, threshold, hydro strategy, …) differ from what

@@ -28,7 +28,8 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="floodflow",
         description="Build parcel-centered stream datasets for the explorer. "
-                    "Reference layers: `floodflow fetch-fema [--write]`, `floodflow fetch-huc12`.")
+                    "Reference layers: `floodflow fetch-fema [--write]`, `floodflow fetch-huc12`. "
+                    "Deploy: `floodflow publish [--push]`.")
     parser.add_argument(
         "command", choices=["prepare", *DATASETS, "all", "clean", "clean-all"],
         help="Which step to run.")
@@ -56,6 +57,7 @@ def _parser() -> argparse.ArgumentParser:
 FETCHERS = {
     "fetch-fema": "floodflow.fema",
     "fetch-huc12": "floodflow.huc12",
+    "publish": "floodflow.deploy",
 }
 
 
