@@ -5,6 +5,15 @@ Flood risk depends on flow routing, and flow routing depends on which algorithm 
 
 To preview locally: `python -m http.server -d docs` and open http://localhost:8000.
 
+### Updating the site
+
+1. `floodflow all --parcel <key>`: regenerate data (only if you want fresh DEM tiles or new settings)
+2. Preview: `python -m http.server -d docs`, then open http://localhost:8000
+3. Commit to `main` (the pre-commit hook runs lint + tests; enable once per clone with `git config core.hooksPath .githooks`)
+4. `floodflow publish --push`: rebuilds and pushes the `gh-pages` branch that GitHub Pages serves
+
+Once a year or so: `floodflow fetch-fema` reports any FEMA flood-zone revisions.
+
 ---
 
 ## Stream Explorer
