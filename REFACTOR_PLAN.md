@@ -191,6 +191,17 @@ in the repo settings. From here, development happens directly on `main`.
 ### Still open
 Nothing required. See Future areas of study below.
 
+### Future study §1, 2D rain-on-grid — started 2026-09-24
+`floodflow flood` (local-inertial solver, Atlas 14 storms, raw lidar, FEMA
+comparison). First Villas 100-year 1-hour run at 4 m: 19% of the parcel
+≥0.3 m, max 1.15 m; FEMA Zone A is 61% ≥0.3 m, against 2% outside the flood
+zones. LISFLOOD-FP 8 was built as a cross-check. Its ACC solver agrees
+with ours on tilted planes, but its FV1 (full SWE) is unreliable for thin
+steep flow at these cell sizes. The comparison exposed our steep-terrain
+instability (a time step that ignored flow speed). Fixed, with no Froude
+cap: the Villas' p90 depth went from 0.46 to 0.51 m, and 21.6% of the parcel
+is ≥0.3 m. Details are in DEVLOG, open items in TODO.
+
 ## TL;DR
 
 The core hydrology (fetch → breach/fill → D8/D∞ → contributing area → stream

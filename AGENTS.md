@@ -129,6 +129,31 @@ exit code, and with verbose off it drops all output, errors included, so this
 looks like success. `preprocess.py` retries when the output is missing. Other
 WBT calls only check that the output exists; they don't retry.
 
+### 2D rain-on-grid: raw DEM, and a flow-speed time step
+`floodflow flood` models on the raw lidar, never the breached/filled DEM:
+in 2D, depressions are real storage. The local-inertial solver
+(`hydraulics.py`) sets Δt from the *face* flow speed, |q|/h_f + √(g h_f),
+with CFL 0.3. Don't go back to the textbook gravity-wave Δt (√(g h_max)):
+steep canyon and sheet flow is supercritical and went unstable with it,
+and the Froude cap (Fr ≤ 1) that hid this slowed 30% slopes ~1.5× and
+lowered the Villas' depths ~10%. Divide face discharge by *face* depth,
+never by the receiving cell's depth: a channel spilling onto a 1 mm film
+otherwise reads as 100 m/s (this collapsed Δt and polluted max speed).
+The domain is traced upstream of parcel ⊕ 300 m, not buffered from the
+parcel's own contributing area (a wash from outside that area floods the
+Villas' east side).
+
+### LISFLOOD-FP 8 cross-check: ACC agrees, FV1 doesn't suit thin steep flow
+Built locally (not a dependency): `~/.local/src/lisflood/bin/lisflood`
+(Zenodo 13121102, "v8.2" archive that reports 8.1.0; CPU, double, NetCDF
+from Debian packages extracted to `deps/root`, no root install). On the
+tilted-plane tests its ACC solver matches ours and the kinematic wave. Its
+FV1 full-SWE solver is off by 20% at 2% slope (2 m cells) and slow on steep
+slopes, converging only as the per-cell bed drop falls below the flow depth.
+Don't adopt FV1 for rain-on-grid at 1–4 m. FV1 takes rain only as NetCDF
+(`dynamicrainfile`), and its reader treats dimension ids as variable ids:
+define variables in dimension order (time, y, x). scipy reorders them.
+
 ### WBT set_verbose_mode(False) prevents pipe stalls
 On large rasters, WBT progress output fills the pipe buffer and stalls the
 parent. Always call `set_verbose_mode(False)`.

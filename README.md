@@ -75,6 +75,17 @@ is regenerated.
 settings (parcel, threshold, hydro strategy, …) differ from what
 `docs/data/manifest.json` records, so there's no need to `clean` between runs.
 
+### 2D rain-on-grid (experimental)
+
+`floodflow flood --parcel deanza_villas` runs a NOAA Atlas 14 design storm
+(default 100-year, 1-hour) over the parcel, the ground within 1 km of it,
+and the whole catchment upstream of the parcel plus 300 m. It uses raw 1m lidar averaged to
+`--res` (default 4 m) and a local-inertial 2D solver (`floodflow/hydraulics.py`).
+The output is max-depth, max-speed, and depth×speed GeoTIFFs plus a
+`summary.json` (parcel depth statistics, FEMA zone comparison, mass balance)
+in `data/derived/runs/<parcel>/flood/<tag>/`. It's not on the explorer yet.
+See `floodflow flood -h` for storm, roughness, and loss options.
+
 ---
 
 ## Parcels

@@ -15,6 +15,16 @@ Recommended relationship to other repo logs:
 
 ## Backlog
 
+- in_progress: 2D rain-on-grid (REFACTOR_PLAN "Future areas of study" §1)
+  - Speed spikes: 3 cells >50 m/s (max 165 m/s) ~760 m W of the Villas, in a channel with 144 cells >20 m/s (4 m run); find the trigger
+  - Spatially varying Manning's n (steep boulder channels ~0.07–0.15; 0.045 gives ~11 m/s at 1 m depth)
+  - Optional: run the Villas domain through LISFLOOD-FP ACC as an independent check (plane tests agree)
+  - Finer grids: 2 m and 1 m Villas runs; grid-convergence check
+  - Storm sensitivity: 6-h and 24-h durations, peak position, 25/500-year
+  - Check the deep channel south of the Villas (4 m modelled) against imagery / County flood-control works
+  - Country Club domain (40 km², coarser grid) — does fan flow from outside the Villas' traced area reach the Villas?
+  - Loss (infiltration) sensitivity; burn in buildings/walls (bare-earth lidar has none)
+  - Publish depth maps to the explorer
 - Graceful failure on empty/nodata/ridge contributing area (pipeline crashes mid-flow-accumulation rather than reporting a clean error)
 - Test pipeline on substantially different terrain (Appalachians, karst, glacial) — Jacksonville coastal plain is benign
 - Consider `BreachDepressionsLeastCost` with max breach length as middle-ground hydro strategy (between aggressive breach_then_fill and conservative fill_only)

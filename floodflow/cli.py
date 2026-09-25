@@ -29,6 +29,7 @@ def _parser() -> argparse.ArgumentParser:
         prog="floodflow",
         description="Build parcel-centered stream datasets for the explorer. "
                     "Reference layers: `floodflow fetch-fema [--write]`, `floodflow fetch-huc12`. "
+                    "2D rain-on-grid: `floodflow flood -h`. "
                     "Deploy: `floodflow publish [--push]`.")
     parser.add_argument(
         "command", choices=["prepare", *DATASETS, "all", "clean", "clean-all"],
@@ -53,8 +54,9 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-# Reference-layer fetchers keep their own options (see `floodflow fetch-fema -h`).
+# Subcommands that keep their own options (see e.g. `floodflow fetch-fema -h`).
 FETCHERS = {
+    "flood": "floodflow.flood",
     "fetch-fema": "floodflow.fema",
     "fetch-huc12": "floodflow.huc12",
     "publish": "floodflow.deploy",
