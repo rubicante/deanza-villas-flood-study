@@ -1,8 +1,8 @@
 """2D rain-on-grid hydraulics: a local-inertial shallow-water solver.
 
 The scheme is the one used by LISFLOOD-FP (Bates et al. 2010) with the
-θ-weighted flux of de Almeida et al. (2012). Water depth `h` lives at cell
-centres, unit-width discharge `q` (m²/s) on cell faces:
+optional θ-weighted flux of de Almeida et al. (2012). Water depth `h` lives at
+cell centres, unit-width discharge `q` (m²/s) on cell faces:
 
     q ← [θ q + (1-θ)/2 (q_left + q_right) − g h_f Δt ∂η/∂x]
         / [1 + g Δt n² |q| / h_f^(7/3)]
@@ -49,7 +49,9 @@ G = 9.81
 @dataclass(frozen=True)
 class SolverParams:
     manning_n: float = 0.045
-    theta: float = 0.8           # de Almeida weighting; 1 = Bates 2010
+    theta: float = 1.0           # 1 = Bates 2010. θ < 1 (de Almeida) averages q with its
+                                 # neighbours every step, so its smoothing grows as Δt
+                                 # shrinks: at 0.8 the Villas outflow depended on CFL
     cfl: float = 0.3             # on the flow-speed Δt; 0.5 overshoots on 30–60% planes
     dt_max: float = 2.0          # s
     fr_max: float = float("inf")  # optional Froude cap on face flux (1 = LISFLOOD-FP style)

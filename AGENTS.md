@@ -133,12 +133,18 @@ WBT calls only check that the output exists; they don't retry.
 `floodflow flood` models on the raw lidar, never the breached/filled DEM:
 in 2D, depressions are real storage. The local-inertial solver
 (`hydraulics.py`) sets Δt from the *face* flow speed, |q|/h_f + √(g h_f),
-with CFL 0.3. Don't go back to the textbook gravity-wave Δt (√(g h_max)):
+with CFL 0.3 and θ = 1. Don't go back to the textbook gravity-wave Δt (√(g h_max)):
 steep canyon and sheet flow is supercritical and went unstable with it,
 and the Froude cap (Fr ≤ 1) that hid this slowed 30% slopes ~1.5× and
 lowered the Villas' depths ~10%. Divide face discharge by *face* depth,
 never by the receiving cell's depth: a channel spilling onto a 1 mm film
 otherwise reads as 100 m/s (this collapsed Δt and polluted max speed).
+θ < 1 (de Almeida q-averaging) makes results depend on Δt: it averages every
+step, so smaller steps smooth more (8 m Villas outflow 219k → 129k m³ from CFL
+0.3 to 0.05 at θ = 0.8; identical at θ = 1). Tilted planes can't catch this
+(uniform q). θ = 1 is converged at 8 m and matches LISFLOOD-FP; at ≤4 m it
+still produces surges on steep chutes (4 m: speeds to ~80 m/s, per-cell max
+depth differs up to ~25% between CFL 0.3 and 0.15; domain budget identical).
 The domain is traced upstream of parcel ⊕ 300 m, not buffered from the
 parcel's own contributing area (a wash from outside that area floods the
 Villas' east side).
