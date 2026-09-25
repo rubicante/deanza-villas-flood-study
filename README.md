@@ -80,7 +80,9 @@ settings (parcel, threshold, hydro strategy, …) differ from what
 `floodflow flood --parcel deanza_villas` runs a NOAA Atlas 14 design storm
 (default 100-year, 1-hour) over the parcel, the ground within 1 km of it,
 and the whole catchment upstream of the parcel plus 300 m. It uses raw 1m lidar averaged to
-`--res` (default 4 m) and a local-inertial 2D solver (`floodflow/hydraulics.py`).
+`--res` (default 8 m) and a local-inertial 2D solver (`floodflow/hydraulics.py`).
+8 m gives the same results at every time step tested; at 4 m the parcel numbers agree
+within about 3%, but steep-chute depths and speeds still depend on the time step.
 The output is max-depth, max-speed, and depth×speed GeoTIFFs plus a
 `summary.json` (parcel depth statistics, FEMA zone comparison, mass balance)
 in `data/derived/runs/<parcel>/flood/<tag>/`. It's not on the explorer yet.

@@ -16,8 +16,7 @@ Recommended relationship to other repo logs:
 ## Backlog
 
 - in_progress: 2D rain-on-grid (REFACTOR_PLAN "Future areas of study" §1)
-  - Max-speed tracking artifact: track speed with the pre-update face depth (the depth the flux was computed with); see DEVLOG 2026-09-25
-  - Steep-chute surges at 1–2 m (roll-wave-like pulsing sets Δt; also inflates h_max on chutes?): decide on a fix before any 1 m run
+  - Fix steep-chute surges in the scheme (blocks 4 m as the official grid, and any 2/1 m run). At θ = 1 they don't shrink with Δt (4 m, CFL 0.3/0.15/0.075: ~1,000 cells >20 m/s, top ~75–80 m/s; 20–30% of steep cells' max depth moves >10%). Options: apply the θ-smoothing at a fixed rate per second instead of per step (so it doesn't depend on Δt), or a shock-capturing solver for supercritical flow. Re-run the 8 m / 4 m CFL checks and the LFP 8 m comparison after. See DEVLOG 2026-09-25
   - Spatially varying Manning's n (steep boulder channels ~0.07–0.15; 0.045 gives ~11 m/s at 1 m depth)
   - Optional: extend the LFP diffusive 8 m check past 45 min to cover the parcel's peak (hours of wall time)
   - Finer grids: 2 m and 1 m Villas runs; grid-convergence check

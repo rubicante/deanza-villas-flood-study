@@ -49,7 +49,7 @@ FT = 0.3048
 class FloodParams:
     ari_years: int = 100
     duration_min: int = 60
-    resolution_m: float = 4.0            # 2 m and 1 m not yet run
+    resolution_m: float = 8.0            # CFL-converged at θ = 1; ≤4 m surges on steep chutes
     manning_n: float = 0.045
     buffer_m: float = 300.0
     margin_m: float = 1000.0

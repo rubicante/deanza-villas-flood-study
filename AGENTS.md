@@ -142,9 +142,10 @@ otherwise reads as 100 m/s (this collapsed Δt and polluted max speed).
 θ < 1 (de Almeida q-averaging) makes results depend on Δt: it averages every
 step, so smaller steps smooth more (8 m Villas outflow 219k → 129k m³ from CFL
 0.3 to 0.05 at θ = 0.8; identical at θ = 1). Tilted planes can't catch this
-(uniform q). θ = 1 is converged at 8 m and matches LISFLOOD-FP; at ≤4 m it
-still produces surges on steep chutes (4 m: speeds to ~80 m/s, per-cell max
-depth differs up to ~25% between CFL 0.3 and 0.15; domain budget identical).
+(uniform q). θ = 1 is converged at 8 m and matches LISFLOOD-FP, so 8 m is the
+default `--res`. At ≤4 m it still surges on steep chutes, and a smaller Δt
+doesn't help (4 m, CFL 0.3/0.15/0.075: speeds to ~80 m/s, per-cell max depth
+scatters ~25%; domain budget identical). Fixing that needs a scheme change.
 The domain is traced upstream of parcel ⊕ 300 m, not buffered from the
 parcel's own contributing area (a wash from outside that area floods the
 Villas' east side).
