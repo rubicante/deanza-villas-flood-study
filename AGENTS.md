@@ -143,16 +143,24 @@ The domain is traced upstream of parcel ⊕ 300 m, not buffered from the
 parcel's own contributing area (a wash from outside that area floods the
 Villas' east side).
 
-### LISFLOOD-FP 8 cross-check: ACC agrees, FV1 doesn't suit thin steep flow
+### LISFLOOD-FP 8 cross-check: only its diffusive solver is usable here
 Built locally (not a dependency): `~/.local/src/lisflood/bin/lisflood`
 (Zenodo 13121102, "v8.2" archive that reports 8.1.0; CPU, double, NetCDF
-from Debian packages extracted to `deps/root`, no root install). On the
-tilted-plane tests its ACC solver matches ours and the kinematic wave. Its
-FV1 full-SWE solver is off by 20% at 2% slope (2 m cells) and slow on steep
-slopes, converging only as the per-cell bed drop falls below the flow depth.
-Don't adopt FV1 for rain-on-grid at 1–4 m. FV1 takes rain only as NetCDF
-(`dynamicrainfile`), and its reader treats dimension ids as variable ids:
-define variables in dimension order (time, y, x). scipy reorders them.
+from Debian packages extracted to `deps/root`, no root install).
+The solver is picked by keyword: none = diffusive (adaptive Δt), `acceleration`
+= ACC (local inertial), `fv1` = full SWE. On the tilted-plane tests
+(2/10/30%) the diffusive solver matches ours and the kinematic wave. ACC
+matches at 2% and 10% but loses ~90% of its water at 30%, and on the Villas
+4 m domain it goes unstable ~10 min into the storm (volume 2.5× rain by
+14 min), CFL 0.3 included. `max_Froude` is only read by the sub-grid-channel
+(SGC) solver; plain ACC ignores it. The diffusive solver is stable on the
+Villas domain but its Δt falls below 0.01 s as depths grow (hours+ at 4 m).
+At 8 m it reached 45 min in 69 min wall and agrees with ours (DEVLOG 2026-09-25).
+FV1 is off by 20% at 2% slope (2 m cells) and slow on steep slopes. FV1 takes
+rain only as NetCDF (`dynamicrainfile`), and its reader treats dimension ids
+as variable ids: define variables in dimension order (time, y, x). scipy
+reorders them. For a domain edge that drains, set `nodata_elevation` below the
+terrain and add `drain_nodata` (not supported by SGC).
 
 ### WBT set_verbose_mode(False) prevents pipe stalls
 On large rasters, WBT progress output fills the pipe buffer and stalls the

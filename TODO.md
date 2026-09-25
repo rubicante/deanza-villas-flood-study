@@ -18,7 +18,7 @@ Recommended relationship to other repo logs:
 - in_progress: 2D rain-on-grid (REFACTOR_PLAN "Future areas of study" §1)
   - Speed spikes: 3 cells >50 m/s (max 165 m/s) ~760 m W of the Villas, in a channel with 144 cells >20 m/s (4 m run); find the trigger
   - Spatially varying Manning's n (steep boulder channels ~0.07–0.15; 0.045 gives ~11 m/s at 1 m depth)
-  - Optional: run the Villas domain through LISFLOOD-FP ACC as an independent check (plane tests agree)
+  - Optional: extend the LFP diffusive 8 m check past 45 min to cover the parcel's peak (hours of wall time)
   - Finer grids: 2 m and 1 m Villas runs; grid-convergence check
   - Storm sensitivity: 6-h and 24-h durations, peak position, 25/500-year
   - Check the deep channel south of the Villas (4 m modelled) against imagery / County flood-control works
