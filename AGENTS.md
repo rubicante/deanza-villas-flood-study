@@ -143,6 +143,15 @@ The domain is traced upstream of parcel ⊕ 300 m, not buffered from the
 parcel's own contributing area (a wash from outside that area floods the
 Villas' east side).
 
+### `floodflow flood --remote`: Modal, and keep `floodflow/__init__` lazy
+`--remote [CPUS]` runs only the solver on a temporary Modal machine
+(`floodflow/remote.py`; tokens from `.env`: MODAL_TOKEN_ID/SECRET; `pip install
+.[remote]`). The remote image has only numpy + numba, and Modal imports
+`floodflow.remote` there, so `floodflow/__init__.py` must stay lazy (PEP 562):
+an eager import of d8/fetch/etc. fails remotely with "No module named rasterio".
+The 4 m Villas run on 64 cores matches the local run bit for bit (97 s vs 466 s).
+A crash while Modal imports the module makes the client retry forever: Ctrl-C it.
+
 ### LISFLOOD-FP 8 cross-check: only its diffusive solver is usable here
 Built locally (not a dependency): `~/.local/src/lisflood/bin/lisflood`
 (Zenodo 13121102, "v8.2" archive that reports 8.1.0; CPU, double, NetCDF

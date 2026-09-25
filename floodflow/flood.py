@@ -195,7 +195,8 @@ def summarise(layout: Layout, prof: dict, grid: Grid, state, params: FloodParams
     return out
 
 
-def run(layout: Layout, params: FloodParams) -> dict:
+def run(layout: Layout, params: FloodParams, remote_cpu: int | None = None) -> dict:
+    """`remote_cpu` runs the solver on a Modal machine with that many cores."""
     t0 = time.time()
     work = layout.run_dir / "flood"
     out_dir = work / params.tag
@@ -216,8 +217,13 @@ def run(layout: Layout, params: FloodParams) -> dict:
     grid = Grid(z, params.resolution_m, manning_n=params.manning_n)
     print(f"  grid: {z.shape[1]}×{z.shape[0]} at {params.resolution_m:g} m, "
           f"{grid.n_active / 1e6:.2f}M active cells ({grid.n_active * grid.dx ** 2 / 1e6:.2f} km²)")
-    state = simulate(grid, blocks, block_s=300.0, t_after=params.after_storm_min * 60.0,
-                     params=params.solver())
+    if remote_cpu:
+        from floodflow import remote
+        state = remote.simulate(grid, blocks, 300.0, params.after_storm_min * 60.0,
+                                params.solver(), z, cpu=remote_cpu)
+    else:
+        state = simulate(grid, blocks, block_s=300.0, t_after=params.after_storm_min * 60.0,
+                         params=params.solver())
 
     act = grid.active == 1
     _write(out_dir / "max_depth.tif", state.h_max, prof, act)
@@ -237,6 +243,7 @@ def run(layout: Layout, params: FloodParams) -> dict:
                  "resolution_m": params.resolution_m},
         "dem": read_provenance(dem_1m),
         "run": {"steps": state.steps, "sim_minutes": state.t / 60,
+                "where": f"modal, {remote_cpu} cores" if remote_cpu else "local",
                 "wall_seconds": round(time.time() - t0, 1)},
         "mass_balance": {k: round(v, 3) if k != "error_rel" else v for k, v in mb.items()},
         **summarise(layout, prof, grid, state, params),
@@ -265,6 +272,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--loss-rate", type=float, default=d.loss_rate_mm_h, help="mm/h")
     ap.add_argument("--after", type=int, default=d.after_storm_min,
                     help="Minutes simulated after the rain stops")
+    ap.add_argument("--remote", type=int, nargs="?", const=64, default=None, metavar="CPUS",
+                    help="Run the solver on Modal with CPUS cores (default 64); "
+                         "needs `pip install modal` and MODAL_TOKEN_ID/SECRET")
     a = ap.parse_args(argv)
     layout = Layout.for_parcel(a.parcel)
     if not layout.boundary.exists():
@@ -272,5 +282,6 @@ def main(argv: list[str] | None = None) -> int:
     run(layout, FloodParams(ari_years=a.ari, duration_min=a.duration, resolution_m=a.res,
                             manning_n=a.n, buffer_m=a.buffer, margin_m=a.margin,
                             initial_loss_mm=a.initial_loss,
-                            loss_rate_mm_h=a.loss_rate, after_storm_min=a.after))
+                            loss_rate_mm_h=a.loss_rate, after_storm_min=a.after),
+        remote_cpu=a.remote)
     return 0

@@ -35,6 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
+remote = ["modal>=1.5"]   # `floodflow flood --remote` (floodflow/remote.py)
 
 [project.scripts]
 floodflow = "floodflow.cli:main"

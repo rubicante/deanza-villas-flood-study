@@ -85,6 +85,8 @@ The output is max-depth, max-speed, and depth×speed GeoTIFFs plus a
 `summary.json` (parcel depth statistics, FEMA zone comparison, mass balance)
 in `data/derived/runs/<parcel>/flood/<tag>/`. It's not on the explorer yet.
 See `floodflow flood -h` for storm, roughness, and loss options.
+`--remote` runs the solver on [Modal](https://modal.com) (64 cores by default;
+`pip install -e .[remote]`, MODAL_TOKEN_ID/MODAL_TOKEN_SECRET in `.env`).
 
 ---
 
