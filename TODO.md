@@ -16,7 +16,8 @@ Recommended relationship to other repo logs:
 ## Backlog
 
 - in_progress: 2D rain-on-grid (REFACTOR_PLAN "Future areas of study" §1)
-  - Speed spikes: 3 cells >50 m/s (max 165 m/s) ~760 m W of the Villas, in a channel with 144 cells >20 m/s (4 m run); find the trigger
+  - Max-speed tracking artifact: track speed with the pre-update face depth (the depth the flux was computed with); see DEVLOG 2026-09-25
+  - Steep-chute surges at 1–2 m (roll-wave-like pulsing sets Δt; also inflates h_max on chutes?): decide on a fix before any 1 m run
   - Spatially varying Manning's n (steep boulder channels ~0.07–0.15; 0.045 gives ~11 m/s at 1 m depth)
   - Optional: extend the LFP diffusive 8 m check past 45 min to cover the parcel's peak (hours of wall time)
   - Finer grids: 2 m and 1 m Villas runs; grid-convergence check

@@ -307,7 +307,9 @@ def _track_speed(z, h, active, qx, qy, h_track, v_max, dv_max):
     """Running max speed and depth × speed. Velocity is face discharge over
     face flow depth (the speed the scheme moves water at), weighted by depth;
     dividing by the cell's own depth gave 100+ m/s where a channel spills
-    onto a thin film."""
+    onto a thin film. Call it with the depths the fluxes were computed from
+    (before `_update`): after the update, a face the step's flux just drained
+    reads e.g. 0.09 m²/s over 0.9 mm = 100 m/s."""
     ny, nx = h.shape
     for r in prange(ny):
         for c in range(nx):
@@ -384,12 +386,13 @@ def advance(grid: Grid, state: State, params: SolverParams, t_end: float,
         state.qx, qx_new = qx_new, state.qx
         state.qy, qy_new = qy_new, state.qy
         _limit(state.h, rain_eff, grid.active, state.qx, state.qy, scale, dt, dx)
+        # Before `_update`: the fluxes were computed from these depths.
+        _track_speed(grid.z, state.h, grid.active, state.qx, state.qy, p.h_track,
+                     state.v_max, state.dv_max)
         state.t += dt
         state.steps += 1
         out, loss, clip = _update(state.h, rain_eff, grid.active, state.qx, state.qy,
                                   dt, dx, p.loss_rate * dt, state.t, state.h_max, state.t_hmax)
-        _track_speed(grid.z, state.h, grid.active, state.qx, state.qy, p.h_track,
-                     state.v_max, state.dv_max)
         b["outflow_m3"] += out * cell_area
         b["loss_m3"] += loss * cell_area
         b["clipped_m3"] += clip * cell_area
