@@ -16,7 +16,7 @@ Recommended relationship to other repo logs:
 ## Backlog
 
 - in_progress: 2D rain-on-grid (REFACTOR_PLAN "Future areas of study" §1). 8 m is official; the parcel answer has held within ~10% across every numerics change, so input uncertainty now outweighs the numerics (DEVLOG 2026-09-25)
-  1. Sensitivity batch at 8 m, run in parallel on Modal (~1 min each): losses (initial + constant rate), Manning's n (incl. rougher channels ~0.07–0.15), storm length 1/6/24 h, 25/100/500-year, peak position. Output: one table of parcel/Zone A/outside-SFHA stats per case
+  1. Pick defensible losses for the fan soils (NRCS SSURGO hydrologic soil groups / San Diego County Hydrology Manual) and rerun storm length × losses: with no losses the 24 h storm is the worst case (parcel p90 ×1.10), but its 124 mm over a day may lose far more than a 1 h burst (DEVLOG 2026-10-13)
   2. Burn in buildings/walls (bare-earth lidar has none); likely matters more at parcel scale than solver choice
   3. Publish 8 m depth maps to the explorer
   4. Check the deep channel south of the Villas against imagery / County flood-control works

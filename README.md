@@ -89,6 +89,9 @@ in `data/derived/runs/<parcel>/flood/<tag>/`. It's not on the explorer yet.
 See `floodflow flood -h` for storm, roughness, and loss options.
 `--remote` runs the solver on [Modal](https://modal.com) (64 cores by default;
 `pip install -e .[remote]`, MODAL_TOKEN_ID/MODAL_TOKEN_SECRET in `.env`).
+`floodflow sensitivity` runs 22 one-at-a-time input cases (losses, Manning's n,
+steep-channel n, storm length, return period, peak position) in parallel on Modal
+(~5 min) and tabulates them in `data/derived/runs/<parcel>/flood/sensitivity_8m.{csv,md}`.
 
 ---
 

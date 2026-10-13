@@ -193,14 +193,16 @@ Nothing required. See Future areas of study below.
 
 ### Future study §1, 2D rain-on-grid — started 2026-09-24
 `floodflow flood` (local-inertial solver, Atlas 14 storms, raw lidar, FEMA
-comparison). First Villas 100-year 1-hour run at 4 m: 19% of the parcel
-≥0.3 m, max 1.15 m; FEMA Zone A is 61% ≥0.3 m, against 2% outside the flood
-zones. LISFLOOD-FP 8 was built as a cross-check. Its ACC solver agrees
-with ours on tilted planes, but its FV1 (full SWE) is unreliable for thin
-steep flow at these cell sizes. The comparison exposed our steep-terrain
-instability (a time step that ignored flow speed). Fixed, with no Froude
-cap: the Villas' p90 depth went from 0.46 to 0.51 m, and 21.6% of the parcel
-is ≥0.3 m. Details are in DEVLOG, open items in TODO.
+comparison). The official grid is 8 m with θ = 1, where results don't depend
+on the time step and match LISFLOOD-FP's diffusive solver. For the 100-year
+1-hour storm, the parcel p90 is 0.45 m and 20.3% of the parcel is ≥0.3 m;
+FEMA Zone A is 62% ≥0.3 m, against 2% outside the flood zones. (LFP's ACC
+and FV1 solvers proved unusable here; at ≤4 m ours still surges on steep
+chutes, which is parked.) The 2026-10-13 sensitivity batch (`floodflow
+sensitivity`) shows return period and losses dominate (losses up to −29%
+at plausible desert values), Manning's n moves the p90 by −5 to +13%, and
+channel roughness upstream doesn't matter at the parcel.
+Details are in DEVLOG, open items in TODO.
 
 ## TL;DR
 

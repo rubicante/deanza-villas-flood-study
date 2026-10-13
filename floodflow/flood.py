@@ -57,13 +57,17 @@ class FloodParams:
     loss_rate_mm_h: float = 0.0
     after_storm_min: int = 60
     peak_frac: float = 0.5
+    channel_n: float | None = None       # n on steep channels (see `channel_mask`)
 
     @property
     def tag(self) -> str:
         loss = (f"_il{self.initial_loss_mm:g}cl{self.loss_rate_mm_h:g}"
                 if self.initial_loss_mm or self.loss_rate_mm_h else "")
+        ch = f"_ch{self.channel_n:g}" if self.channel_n is not None else ""
+        peak = f"_pk{self.peak_frac:g}" if self.peak_frac != 0.5 else ""
+        after = f"_after{self.after_storm_min}" if self.after_storm_min != 60 else ""
         return (f"ari{self.ari_years}_{self.duration_min}min_{self.resolution_m:g}m"
-                f"_n{self.manning_n:g}{loss}")
+                f"_n{self.manning_n:g}{ch}{loss}{peak}{after}")
 
     def solver(self) -> SolverParams:
         return SolverParams(manning_n=self.manning_n,
@@ -195,36 +199,70 @@ def summarise(layout: Layout, prof: dict, grid: Grid, state, params: FloodParams
     return out
 
 
-def run(layout: Layout, params: FloodParams, remote_cpu: int | None = None) -> dict:
-    """`remote_cpu` runs the solver on a Modal machine with that many cores."""
-    t0 = time.time()
-    work = layout.run_dir / "flood"
-    out_dir = work / params.tag
-    out_dir.mkdir(parents=True, exist_ok=True)
+def channel_mask(z: np.ndarray, dx: float, reference: Path,
+                 min_depth_m: float = 0.3, min_slope: float = 0.05) -> np.ndarray:
+    """Steep channels: cells that `reference` (a max_depth.tif on the same
+    grid, normally the default-parameter run) floods ≥ `min_depth_m` on
+    slopes ≥ `min_slope`. Bare-earth lidar has no roughness map, and the
+    boulder canyons above the fan are where n = 0.045 is too smooth
+    (~11 m/s at 1 m depth); the sandy fan washes are left at the base n."""
+    if not reference.exists():
+        raise FileNotFoundError(f"{reference} not found: run `floodflow flood` with the "
+                                "default parameters first")
+    with rasterio.open(reference) as src:
+        h = src.read(1)
+    if h.shape != z.shape:
+        raise ValueError(f"{reference} is {h.shape}, the grid is {z.shape}")
+    gy, gx = np.gradient(np.where(np.isfinite(z), z, np.nan), dx)
+    slope = np.hypot(gx, gy)
+    return (np.nan_to_num(h) >= min_depth_m) & (np.nan_to_num(slope) >= min_slope)
 
-    print(f"=== flood: {layout.parcel.name}, {params.tag} ===")
+
+@dataclass
+class Inputs:
+    """Everything a run needs before the solver: built once, shared by a batch."""
+    z: np.ndarray
+    prof: dict
+    dem_1m: Path
+    storm: object                   # storm.PFTable
+
+    def blocks(self, params: FloodParams) -> np.ndarray:
+        return alternating_block(self.storm, params.ari_years, params.duration_min,
+                                 peak_frac=params.peak_frac)
+
+
+def inputs(layout: Layout, params: FloodParams) -> Inputs:
+    """Domain, terrain and the Atlas 14 table (depend only on parcel, buffer,
+    margin and resolution)."""
+    work = layout.run_dir / "flood"
+    work.mkdir(parents=True, exist_ok=True)
     dom = domain(layout, params.buffer_m, work, params.margin_m)
     print(f"  domain: {dom.area.sum() / 1e6:.2f} km²")
     z, prof, dem_1m = terrain(layout, dom, params, work)
-
     centroid = gpd.read_file(layout.boundary).to_crs("EPSG:4326").union_all().centroid
     pf = atlas14(round(centroid.y, 4), round(centroid.x, 4), layout.root / "data" / "raw" / "storm")
-    blocks = alternating_block(pf, params.ari_years, params.duration_min,
-                               peak_frac=params.peak_frac)
-    print(f"  storm: {params.ari_years}-yr {params.duration_min}-min, "
-          f"{blocks.sum() * 300e3:.1f} mm, peak {blocks.max() * 3.6e6:.0f} mm/h (5-min)")
+    return Inputs(z, prof, dem_1m, pf)
 
-    grid = Grid(z, params.resolution_m, manning_n=params.manning_n)
-    print(f"  grid: {z.shape[1]}×{z.shape[0]} at {params.resolution_m:g} m, "
-          f"{grid.n_active / 1e6:.2f}M active cells ({grid.n_active * grid.dx ** 2 / 1e6:.2f} km²)")
-    if remote_cpu:
-        from floodflow import remote
-        state = remote.simulate(grid, blocks, 300.0, params.after_storm_min * 60.0,
-                                params.solver(), z, cpu=remote_cpu)
-    else:
-        state = simulate(grid, blocks, block_s=300.0, t_after=params.after_storm_min * 60.0,
-                         params=params.solver())
 
+def grid_for(layout: Layout, params: FloodParams, inp: Inputs) -> Grid:
+    n: float | np.ndarray = params.manning_n
+    if params.channel_n is not None:
+        ref = layout.run_dir / "flood" / FloodParams(resolution_m=params.resolution_m,
+                                                     buffer_m=params.buffer_m,
+                                                     margin_m=params.margin_m).tag
+        mask = channel_mask(inp.z, params.resolution_m, ref / "max_depth.tif")
+        print(f"  channels: {mask.sum()} cells at n = {params.channel_n:g} "
+              f"({mask.sum() * params.resolution_m ** 2 / 1e4:.1f} ha)")
+        n = np.where(mask, params.channel_n, params.manning_n)
+    return Grid(inp.z, params.resolution_m, manning_n=n)
+
+
+def finish(layout: Layout, params: FloodParams, inp: Inputs, grid: Grid, state,
+           where: str, wall_s: float) -> dict:
+    """Write the rasters and summary.json for one finished run."""
+    out_dir = layout.run_dir / "flood" / params.tag
+    out_dir.mkdir(parents=True, exist_ok=True)
+    prof, blocks = inp.prof, inp.blocks(params)
     act = grid.active == 1
     _write(out_dir / "max_depth.tif", state.h_max, prof, act)
     _write(out_dir / "max_speed.tif", state.v_max, prof, act)
@@ -237,23 +275,44 @@ def run(layout: Layout, params: FloodParams, remote_cpu: int | None = None) -> d
         "parcel": layout.parcel.key,
         "params": asdict(params),
         "solver": asdict(params.solver()),
-        "storm": {"source": pf.source, "total_mm": round(float(blocks.sum() * 300e3), 2),
+        "storm": {"source": inp.storm.source, "total_mm": round(float(blocks.sum() * 300e3), 2),
                   "block_min": 5, "rain_mm_per_block": (blocks * 300e3).round(2).tolist()},
-        "grid": {"shape": list(z.shape), "active_cells": grid.n_active,
+        "grid": {"shape": list(inp.z.shape), "active_cells": grid.n_active,
                  "resolution_m": params.resolution_m},
-        "dem": read_provenance(dem_1m),
+        "dem": read_provenance(inp.dem_1m),
         "run": {"steps": state.steps, "sim_minutes": state.t / 60,
-                "where": f"modal, {remote_cpu} cores" if remote_cpu else "local",
-                "wall_seconds": round(time.time() - t0, 1)},
+                "where": where, "wall_seconds": round(wall_s, 1)},
         "mass_balance": {k: round(v, 3) if k != "error_rel" else v for k, v in mb.items()},
         **summarise(layout, prof, grid, state, params),
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
     p = summary["parcel"]
-    print(f"  parcel max depth: p50 {p['depth_m']['p50']} m, p90 {p['depth_m']['p90']} m, "
-          f"max {p['depth_m']['max']} m; ≥0.3 m over {p['fraction_deeper_than']['0.3m']:.1%}")
-    print(f"  → {out_dir} ({summary['run']['wall_seconds']:.0f} s)")
+    print(f"  {params.tag}: parcel p50 {p['depth_m']['p50']} m, p90 {p['depth_m']['p90']} m, "
+          f"max {p['depth_m']['max']} m; ≥0.3 m over {p['fraction_deeper_than']['0.3m']:.1%}"
+          f" → {out_dir}")
     return summary
+
+
+def run(layout: Layout, params: FloodParams, remote_cpu: int | None = None) -> dict:
+    """`remote_cpu` runs the solver on a Modal machine with that many cores."""
+    t0 = time.time()
+    print(f"=== flood: {layout.parcel.name}, {params.tag} ===")
+    inp = inputs(layout, params)
+    blocks = inp.blocks(params)
+    print(f"  storm: {params.ari_years}-yr {params.duration_min}-min, "
+          f"{blocks.sum() * 300e3:.1f} mm, peak {blocks.max() * 3.6e6:.0f} mm/h (5-min)")
+    grid = grid_for(layout, params, inp)
+    print(f"  grid: {inp.z.shape[1]}×{inp.z.shape[0]} at {params.resolution_m:g} m, "
+          f"{grid.n_active / 1e6:.2f}M active cells ({grid.n_active * grid.dx ** 2 / 1e6:.2f} km²)")
+    if remote_cpu:
+        from floodflow import remote
+        state = remote.simulate(grid, blocks, 300.0, params.after_storm_min * 60.0,
+                                params.solver(), inp.z, cpu=remote_cpu)
+    else:
+        state = simulate(grid, blocks, block_s=300.0, t_after=params.after_storm_min * 60.0,
+                         params=params.solver())
+    return finish(layout, params, inp, grid, state,
+                  f"modal, {remote_cpu} cores" if remote_cpu else "local", time.time() - t0)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -272,6 +331,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--loss-rate", type=float, default=d.loss_rate_mm_h, help="mm/h")
     ap.add_argument("--after", type=int, default=d.after_storm_min,
                     help="Minutes simulated after the rain stops")
+    ap.add_argument("--peak", type=float, default=d.peak_frac,
+                    help="Storm peak position as a fraction of its length")
+    ap.add_argument("--channel-n", type=float, default=None,
+                    help="Manning's n on steep channels (mask from the default-parameter run)")
     ap.add_argument("--remote", type=int, nargs="?", const=64, default=None, metavar="CPUS",
                     help="Run the solver on Modal with CPUS cores (default 64); "
                          "needs `pip install modal` and MODAL_TOKEN_ID/SECRET")
@@ -282,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     run(layout, FloodParams(ari_years=a.ari, duration_min=a.duration, resolution_m=a.res,
                             manning_n=a.n, buffer_m=a.buffer, margin_m=a.margin,
                             initial_loss_mm=a.initial_loss,
-                            loss_rate_mm_h=a.loss_rate, after_storm_min=a.after),
+                            loss_rate_mm_h=a.loss_rate, after_storm_min=a.after,
+                            peak_frac=a.peak, channel_n=a.channel_n),
         remote_cpu=a.remote)
     return 0
